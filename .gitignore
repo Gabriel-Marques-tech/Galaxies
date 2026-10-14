@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.env
+# dados e artefatos locais de projetos
+data/
+mlruns/
+# documentos do cliente ficam fora do repositório público
+*.pdf
