@@ -103,3 +103,37 @@ class TranscritorFalso:
 class EmbedderFalso:
     def embutir(self, frames):
         return [0.1, 0.2, 0.3]
+
+
+class JevFalso:
+    """Responde de forma determinística: choice na 1ª opção, score no nível do meio, noul 0.8."""
+
+    def __init__(self):
+        self.perguntas_feitas: list[str] = []
+
+    def perguntar(self, estado, perguntas):
+        respostas = {}
+        for nome, q in perguntas.items():
+            self.perguntas_feitas.append(nome)
+            if q["type"] == "choice":
+                rotulos = list(q["criteria"])
+                probs = {
+                    r: (0.7 if i == 0 else 0.3 / (len(rotulos) - 1)) for i, r in enumerate(rotulos)
+                }
+                respostas[nome] = {
+                    "type": "choice",
+                    "choice": rotulos[0],
+                    "confidence": 0.7,
+                    "probabilities": probs,
+                }
+            elif q["type"] == "score":
+                n = len(q["criteria"])
+                respostas[nome] = {
+                    "type": "score",
+                    "score": (n - 1) / 2,
+                    "confidence": 0.6,
+                    "probabilities": {str(i): 1 / n for i in range(n)},
+                }
+            else:
+                respostas[nome] = {"type": "noul", "noul": 0.8}
+        return respostas

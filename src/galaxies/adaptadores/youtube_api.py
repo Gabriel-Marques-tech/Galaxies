@@ -1,6 +1,7 @@
 """Implementação real da porta YouTube, sobre a YouTube Data API v3."""
 
 import re
+import time
 
 import httpx
 
@@ -16,12 +17,26 @@ def duracao_em_segundos(iso: str) -> int:
 class YouTubeAPI:
     def __init__(self, chave: str, cliente: httpx.Client | None = None):
         self._chave = chave
-        self._http = cliente or httpx.Client(timeout=30)
+        self._http = cliente or httpx.Client(timeout=60)
 
-    def _get(self, recurso: str, **params) -> dict:
-        resposta = self._http.get(f"{BASE}/{recurso}", params={**params, "key": self._chave})
-        resposta.raise_for_status()
-        return resposta.json()
+    def _get(self, recurso: str, tentativas: int = 4, **params) -> dict:
+        """Repete com espera crescente em erros transitórios (rede, 429, 5xx)."""
+        for tentativa in range(tentativas):
+            ultima = tentativa == tentativas - 1
+            try:
+                resposta = self._http.get(
+                    f"{BASE}/{recurso}", params={**params, "key": self._chave}
+                )
+            except httpx.TransportError:
+                if ultima:
+                    raise
+            else:
+                transitorio = resposta.status_code == 429 or resposta.status_code >= 500
+                if not transitorio or ultima:
+                    resposta.raise_for_status()
+                    return resposta.json()
+            time.sleep(2**tentativa)
+        raise AssertionError("inalcançável")
 
     def canal(self, ref):
         filtro = {"forHandle": ref} if ref.startswith("@") else {"id": ref}

@@ -5,11 +5,11 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from galaxies import armazenamento, camada_bruta, coleta
+from galaxies import atributos as atrib
 from galaxies.config import CanalSemente, ConfigProjeto, nome_valido
 from galaxies.erros import (
     ConfigInvalida,
     DependenciaAusente,
-    ErroGalaxies,
     ProjetoJaExiste,
     ProjetoNaoEncontrado,
 )
@@ -56,12 +56,68 @@ class Framework:
 
     # Serviços das próximas tasks. Assinaturas finais saem de cada uma.
 
-    def definir_atributos(self, projeto: str, atributos: list[dict]):  # #5
-        raise NotImplementedError("#5")
+    def atributos(self, projeto: str) -> list[atrib.Atributo]:
+        with self._abrir_existente(projeto) as banco:
+            return atrib.ler_definicoes(banco)
 
-    def coletar(self, projeto: str) -> coleta.ResumoColeta:
+    def definir_atributos(self, projeto: str, definicoes: list[dict]) -> list[atrib.Atributo]:
+        """Substitui os atributos do projeto. Respostas de atributos inalterados são mantidas."""
+        try:
+            novos = [atrib.Atributo.model_validate(d) for d in definicoes]
+            atrib.validar_lista(novos)
+        except (ValidationError, ValueError) as erro:
+            raise ConfigInvalida(str(erro)) from erro
+        with self._abrir_existente(projeto) as banco:
+            atrib.salvar_definicoes(banco, novos)
+        return novos
+
+    def calcular_atributos(self, projeto: str) -> camada_bruta.ResumoGanchos:
+        """Pergunta ao Jev só o que falta: atributos novos ou alterados, por vídeo."""
+        jev = self._exigir(self.dependencias.jev, "jev")
+        resumo = camada_bruta.ResumoGanchos()
+        with self._abrir_existente(projeto) as banco, executar(banco, "calcular_atributos") as ex:
+            definicoes = atrib.ler_definicoes(banco)
+            videos = {v.id: v for v in coleta.listar_videos(banco)}
+            for bruta in camada_bruta.listar(banco):
+                faltam = atrib.faltantes(banco, bruta.video_id, definicoes)
+                if not faltam:
+                    continue
+                video = videos[bruta.video_id]
+                estado = atrib.estado_do_video(video.titulo, video.descricao, video.tags, bruta)
+                perguntas = {a.id: a.como_pergunta_jev() for a in faltam}
+                ex.ultima_falha = None
+                try:
+                    with ex.etapa(
+                        "perguntar_jev", {"video_id": video.id, "perguntas": list(perguntas)}
+                    ) as registro:
+                        respostas = jev.perguntar(estado, perguntas)
+                        registro["saida"] = respostas
+                    atrib.salvar_respostas(banco, video.id, faltam, respostas)
+                    resumo.processados += 1
+                except Exception as e:
+                    etapa, erro = ex.ultima_falha or ("salvar", f"{type(e).__name__}: {e}")
+                    camada_bruta.registrar_falha(
+                        banco,
+                        camada_bruta.Falha(
+                            video_id=video.id, etapa=etapa, erro=erro, run_id=ex.run_id
+                        ),
+                    )
+                    resumo.falhas += 1
+        return resumo
+
+    def features_de_atributos(self, projeto: str) -> list[dict]:
+        with self._abrir_existente(projeto) as banco:
+            return atrib.features(banco, atrib.ler_definicoes(banco))
+
+    def coletar(self, projeto: str, so_faltantes: bool = False) -> coleta.ResumoColeta:
+        """Coleta os canais-semente. so_faltantes retoma uma coleta interrompida."""
         config = self.obter_projeto(projeto)
-        return self._coletar(projeto, config.canais_semente, "coletar")
+        sementes = config.canais_semente
+        if so_faltantes:
+            with self._abrir_existente(projeto) as banco:
+                feitos = coleta.ja_coletados(banco)
+            sementes = [s for s in sementes if s.ref not in feitos]
+        return self._coletar(projeto, sementes, "coletar", config.coletar_desde)
 
     def adicionar_canal(self, projeto: str, ref: str, setor: str) -> coleta.ResumoColeta:
         config = self.obter_projeto(projeto)
@@ -69,7 +125,7 @@ class Framework:
             semente = CanalSemente(ref=ref, setor=setor)
         except ValidationError as erro:
             raise ConfigInvalida(str(erro)) from erro
-        resumo = self._coletar(projeto, [semente], "adicionar_canal")
+        resumo = self._coletar(projeto, [semente], "adicionar_canal", config.coletar_desde)
         if not resumo.falhas and ref not in [c.ref for c in config.canais_semente]:
             config.canais_semente.append(semente)
             with self._abrir_existente(projeto) as banco:
@@ -97,7 +153,7 @@ class Framework:
                 coleta.registrar_cota(banco, execucao.run_id, youtube.unidades)
         return encontrados
 
-    def _coletar(self, projeto: str, sementes, operacao: str) -> coleta.ResumoColeta:
+    def _coletar(self, projeto: str, sementes, operacao: str, desde=None) -> coleta.ResumoColeta:
         youtube = coleta.YouTubeMedido(self._exigir(self.dependencias.youtube, "youtube"))
         with self._abrir_existente(projeto) as banco, executar(banco, operacao) as execucao:
             resumo = coleta.ResumoColeta()
@@ -106,8 +162,8 @@ class Framework:
                 for semente in sementes:
                     try:
                         with execucao.etapa("coletar_canal", semente.model_dump()):
-                            coleta.coletar_canal(banco, youtube, semente)
-                    except ErroGalaxies:
+                            coleta.coletar_canal(banco, youtube, semente, desde)
+                    except Exception:  # rede, API ou domínio: falha do canal, não da coleta
                         resumo.falhas.append(semente.ref)
             finally:
                 coleta.registrar_cota(banco, execucao.run_id, youtube.unidades)

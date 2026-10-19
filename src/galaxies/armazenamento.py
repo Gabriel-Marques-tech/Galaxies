@@ -27,6 +27,19 @@ CREATE TABLE IF NOT EXISTS camada_bruta (
     embedding    FLOAT[] NOT NULL,
     processado_em TIMESTAMPTZ NOT NULL
 );
+CREATE TABLE IF NOT EXISTS atributos (
+    ordem     INTEGER NOT NULL,
+    id        VARCHAR PRIMARY KEY,
+    definicao JSON NOT NULL
+);
+CREATE TABLE IF NOT EXISTS respostas (
+    video_id    VARCHAR NOT NULL,
+    atributo_id VARCHAR NOT NULL,
+    assinatura  VARCHAR NOT NULL,
+    resposta    JSON NOT NULL,
+    quando      TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (video_id, atributo_id)
+);
 CREATE TABLE IF NOT EXISTS falhas (
     video_id VARCHAR PRIMARY KEY,
     etapa    VARCHAR NOT NULL,

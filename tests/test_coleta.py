@@ -90,3 +90,45 @@ def test_descoberta_para_no_teto_de_cota(tmp_path):
     assert youtube.chamadas.count("buscar_canais") == 2
     assert len(encontrados) == 2
     assert framework.cota("moda-beleza") == 200
+
+
+def test_coleta_para_de_paginar_ao_chegar_na_data_de_corte(tmp_path):
+    novos = [video("moda1", publicado_em="2026-06-01T00:00:00Z") for _ in range(60)]
+    antigos = [video("moda1", publicado_em="2023-01-01T00:00:00Z") for _ in range(200)]
+    youtube = YouTubeFalso({"moda1": novos + antigos, "beleza1": []})
+    framework = Framework(raiz=tmp_path, dependencias=Dependencias(youtube=youtube))
+    framework.criar_projeto({**CONFIG, "coletar_desde": "2025-01-01"})
+
+    framework.coletar("moda-beleza")
+
+    assert len(framework.videos("moda-beleza")) == 60
+    # 2 páginas bastam para cruzar o corte; as outras 4 não são pedidas.
+    assert youtube.chamadas.count("pagina_de_uploads") == 2 + 1  # +1 do beleza1
+
+
+def test_erro_de_rede_num_canal_nao_derruba_a_coleta(tmp_path):
+    class RedeInstavel(YouTubeFalso):
+        def pagina_de_uploads(self, playlist_id, token):
+            if playlist_id == "UUmoda1":
+                raise TimeoutError("read timed out")
+            return super().pagina_de_uploads(playlist_id, token)
+
+    youtube = RedeInstavel({"moda1": [video("moda1")], "beleza1": [video("beleza1")]})
+    framework = framework_com(tmp_path, youtube)
+
+    resumo = framework.coletar("moda-beleza")
+
+    assert resumo.falhas == ["@moda1"]
+    assert {v.canal_id for v in framework.videos("moda-beleza")} == {"beleza1"}
+
+
+def test_retomar_coleta_pula_canais_ja_coletados(tmp_path):
+    youtube = YouTubeFalso({"moda1": [video("moda1")], "beleza1": [video("beleza1")]})
+    framework = framework_com(tmp_path, youtube)
+    framework.adicionar_canal("moda-beleza", "@moda1", setor="moda")
+    youtube.chamadas.clear()
+
+    framework.coletar("moda-beleza", so_faltantes=True)
+
+    assert youtube.chamadas.count("canal") == 1  # só beleza1
+    assert len(framework.videos("moda-beleza")) == 2

@@ -1,7 +1,7 @@
 """Coleta de Shorts pela YouTube Data API: canal → playlist de uploads → vídeos em lotes de 50."""
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import duckdb
 from pydantic import BaseModel
@@ -65,23 +65,33 @@ def e_short(video: dict) -> bool:
     return video["duracao_s"] <= DURACAO_MAXIMA_SHORT_S and video["vertical"]
 
 
-def coletar_canal(banco: duckdb.DuckDBPyConnection, youtube: YouTube, semente: CanalSemente):
+def coletar_canal(
+    banco: duckdb.DuckDBPyConnection,
+    youtube: YouTube,
+    semente: CanalSemente,
+    desde: date | None = None,
+):
     agora = datetime.now(UTC)
     canal = youtube.canal(semente.ref)
     if canal is None:
         raise CanalNaoEncontrado(semente.ref)
+    token = None
+    while True:
+        ids, token = youtube.pagina_de_uploads(canal["playlist_uploads"], token)
+        passou_do_corte = False
+        for video in youtube.videos(ids):
+            if desde and datetime.fromisoformat(video["publicado_em"]).date() < desde:
+                passou_do_corte = True  # a playlist vem do mais novo para o mais antigo
+                continue
+            if e_short(video):
+                _salvar_video(banco, video, agora)
+        if token is None or passou_do_corte:
+            break
+    # Só marca o canal como coletado no fim: uma falha no meio faz ele ser tentado de novo.
     banco.execute(
         "INSERT OR REPLACE INTO canais VALUES (?, ?, ?, ?, ?, ?)",
         [canal["id"], canal["handle"], canal["titulo"], canal["inscritos"], semente.setor, agora],
     )
-    token = None
-    while True:
-        ids, token = youtube.pagina_de_uploads(canal["playlist_uploads"], token)
-        for video in youtube.videos(ids):
-            if e_short(video):
-                _salvar_video(banco, video, agora)
-        if token is None:
-            break
 
 
 def _salvar_video(banco, video: dict, agora: datetime):
@@ -116,3 +126,9 @@ def listar_videos(banco: duckdb.DuckDBPyConnection) -> list[Video]:
 
 def contar_videos(banco: duckdb.DuckDBPyConnection) -> int:
     return banco.execute("SELECT COUNT(*) FROM videos").fetchone()[0]
+
+
+def ja_coletados(banco: duckdb.DuckDBPyConnection) -> set[str]:
+    """Refs (id ou handle) de canais com coleta completa."""
+    linhas = banco.execute("SELECT id FROM canais UNION SELECT handle FROM canais").fetchall()
+    return {r for (r,) in linhas}

@@ -1,4 +1,5 @@
 import re
+from datetime import date
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, StringConstraints
@@ -25,5 +26,7 @@ class ConfigProjeto(BaseModel):
     canais_semente: list[CanalSemente] = Field(min_length=1)
     alvo: Literal["likes", "views"]
     detalhes: str = ""
+    # Só coleta vídeos publicados a partir desta data; também poupa cota ao parar de paginar.
+    coletar_desde: date | None = None
     # Viral = alvo em 7 dias acima deste múltiplo da mediana do canal.
     limite_viral: float = Field(default=3.0, gt=1.0)
