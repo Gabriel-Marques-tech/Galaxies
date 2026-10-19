@@ -5,7 +5,10 @@ from galaxies import ConfigInvalida, Framework, ProjetoJaExiste, ProjetoNaoEncon
 CONFIG_MODA_BELEZA = {
     "nome": "moda-beleza",
     "setores": ["moda", "beleza"],
-    "canais_semente": ["UC_canal_a", "UC_canal_b"],
+    "canais_semente": [
+        {"ref": "@canal_a", "setor": "moda"},
+        {"ref": "@canal_b", "setor": "beleza"},
+    ],
     "alvo": "likes",
     "detalhes": "Shorts BR de moda e beleza",
 }
@@ -17,7 +20,7 @@ def test_projeto_criado_sobrevive_a_reabrir_o_framework(tmp_path):
     projeto = Framework(raiz=tmp_path).obter_projeto("moda-beleza")
 
     assert projeto.setores == ["moda", "beleza"]
-    assert projeto.canais_semente == ["UC_canal_a", "UC_canal_b"]
+    assert [c.ref for c in projeto.canais_semente] == ["@canal_a", "@canal_b"]
     assert projeto.alvo == "likes"
     assert projeto.detalhes == "Shorts BR de moda e beleza"
 

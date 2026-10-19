@@ -11,6 +11,31 @@ CREATE TABLE IF NOT EXISTS projeto (
     nome   VARCHAR PRIMARY KEY,
     config JSON NOT NULL
 );
+CREATE TABLE IF NOT EXISTS canais (
+    id          VARCHAR PRIMARY KEY,
+    handle      VARCHAR,
+    titulo      VARCHAR,
+    inscritos   BIGINT,
+    setor       VARCHAR NOT NULL,
+    coletado_em TIMESTAMPTZ NOT NULL
+);
+CREATE TABLE IF NOT EXISTS cota (
+    run_id   VARCHAR NOT NULL,
+    unidades INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS videos (
+    id           VARCHAR PRIMARY KEY,
+    canal_id     VARCHAR NOT NULL,
+    titulo       VARCHAR,
+    descricao    VARCHAR,
+    tags         JSON,
+    publicado_em TIMESTAMPTZ NOT NULL,
+    duracao_s    INTEGER NOT NULL,
+    views        BIGINT,
+    likes        BIGINT,
+    comentarios  BIGINT,
+    coletado_em  TIMESTAMPTZ NOT NULL
+);
 """
 
 

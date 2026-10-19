@@ -1,0 +1,463 @@
+{
+  "nome": "moda-beleza",
+  "setores": [
+    "moda",
+    "beleza"
+  ],
+  "canais_semente": [
+    {
+      "ref": "UCjyoe_EtZfjKDO8-6JIYohQ",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCgqri012bmK5HNkQKSUK2JA",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCqi_-IGx8rbugVXEdZY5jog",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCjivwB8MrrGCMlIuoSdkrQg",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCReIkF-jB-Rla8Ds3L-MzJQ",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCXOHs2NPDI0_D0tBV57LWsA",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCvirj1XeuPNE8OYpxp5briw",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCGUJKVVpYcm6NoYR2qTmwyA",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCC5Fz2DbSSjDMfaHvqEyNxA",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCCAWpk73j1QgBNL8tPP44dw",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCDwMdprjLhhFLfvE1QGn1Wg",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCiNK_NdXwJXVD_RjDgCAlNQ",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCakWedzMdUf3zuBZUqXXbRw",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCRSEMv7HKosvN1JnhKIXTDQ",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCgRepqgBgG84ntxo1eDHS1g",
+      "setor": "moda"
+    },
+    {
+      "ref": "UC2xY_2y9e9pRRSjOVazpgpQ",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCd5O5BuJu7OfhtRBf440idg",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCu_Al-bSlqBoP8fyaLcFflA",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCGk3Vw-G71o-fpbGZ2WLCPw",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCpGDX8Ve7rNb8VKx3nmKaGw",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCPNh7RxOjKLp2EbDnnv3piw",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCH9vPpSWQPSbtZ-IpvzaCRg",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCcq1f1vCHc1LV1P9aUAARfg",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCsE6sshMHMnVojvUDSbkLGA",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCL0sWgefmtjUNvtBafXQmhA",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCsVfMy0DOq4fmwuGEk3hDBA",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCymx9qP8LmYEg2acNSBipDw",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCgJl3Ojugyc7UqChM435aCg",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCQg7NEquBqs3BgnfPvzi7iQ",
+      "setor": "moda"
+    },
+    {
+      "ref": "UC-OkW6fmDbMWqkiEn4I-TgA",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCCXoBZ5hy0RELYeVGh5LgfQ",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCNKaLS8dpQ5rNpeh04w0WAg",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCQG7dCPJBw6iAEcW8nXV6ew",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCZXvS5bsAG_fcMdRTVv9Kkg",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCWzL6Qt4YnaH6TmT2C6nDDQ",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCKeYhePGqH4AIQuTackB63w",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCUM9J4jpLYwVe7SgCXg4z6Q",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCaEAh3gcVGGM17hvm7UWU5Q",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCePgdmrA190DZeuxMXJQMyQ",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCHc8O8pjHO2dhwz24iCYAcg",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCxaPXGlMqKN9Hqkgp0q_N4A",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCkOuOiQ6Rgz4Ao47UW87gSQ",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCqlmLXn5y0WjchZoZD0_8xw",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCNM3gHXDeeiuZN5pDf3NNCA",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCybYOLFPwDeeTR4DXsxjJCA",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCbE6YBWBBEkl56xXKqa3kPg",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCpPHbjVLLjHdVo80Pyn7e-w",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCcfgWzE9c2VX-LMNBo3gHNA",
+      "setor": "moda"
+    },
+    {
+      "ref": "UC2TKvstZAj1zfKiUQS8b3jA",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCKDH_0mAW59U-vqxHWY-0HQ",
+      "setor": "moda"
+    },
+    {
+      "ref": "UC_zQrZkHalRt-QzNb0kMPTw",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCRhBDJrOmR2BalLFkG1yHwg",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCKq0MLLZ_-tU405dR8OLavg",
+      "setor": "moda"
+    },
+    {
+      "ref": "UCobi8wbJKxiiooqYG0oMFkQ",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCK0oFT3Lk0kVB9rnjU4nTYg",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCCbteLHGTGK2RdXtT7kxCrA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCPyuwY3oJlLBRRr_gSkGCTw",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCI0hxWIdIqSuX_Mc7hnj2JQ",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCrarftBAvyqvw0S8ux8JMeg",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCIBp7eB3u-3h1exkj5y4loA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCtcVFZjsblXS0aFJb2cWFSA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCIAvTV3-J8hN9naMp5TLU_g",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCI_74i86w75RpD3EXof2NjA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UC07orE5xtDlnV8ik0y8agOg",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UC3VgOP0a1e2M0QlLihyQyCA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UC9jrwsgfzQDKNdseit1IdUg",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCikomNkyET4LTHjbQ8ATsFQ",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCITduaFTq1aI56609oQU5BQ",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCiFHLlEj8Vr5GikrE8t42JA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCMQx-rcFKcVaEdlxymTsBGg",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCnL8mRaSwxBbgXNqIR8qEzQ",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCN7sz9cmBX_3vwb6nBO-pjw",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCjY1Ge_X5i7X2rKQ516lBKA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCLbOGGGd1UsXfDRWBXX4Fvg",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCjVkmjKJ3ATdl0k4Ic4Rk9g",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCGeSFKIN2YVN7BA34zsKqMg",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCDqGMOvYz4sefp3V0jGNF4w",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UC_80JAW_lsfnBAqNYLYbDzw",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCnN1LzWMZqfykGrqbllhU0A",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCW4n3CWpqkgK4yqWcJVZFkw",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UC5LkDhTZWWUXWTTP_bSZtcw",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCESgzrsMnawp1aXDUdtE1MA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCHR0vaNPCsNkJrBmEjKH5Yw",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCfOMqHqa9EQilVnfWazrQ6Q",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCYoEJaGB1hixowrgS_DMBEQ",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCL9AucfGEPKwYQlX0KEFh2w",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCWxBdiF_gJF11JANQFSKrkA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCcSKaDC9xhsk2dIdepEyyiA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCwPSu38eiKy9xnCwiP1TFEg",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCHiJAsPm_HqgQ1CIoFb0R5A",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UC6EDr5-quE5Q1c30cPxe5UQ",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCiCWZk2fE0wOSuQrb5m-9yQ",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UC6OH0p0ekAZbE1WZDBrLbXA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCqBdVDn7h2aRA42OjoxxDOQ",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCkuZ7zKKYTSomYgr4JI4dOA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UChrwVMSPS-XiPx1U55M4TZA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCqqA0XXETPAHyzqguZEjKHA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCvVL2CupECc0DaSYas0_jIA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCgE2RGHqD1mI5m0f9YHkK7g",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCdNNAK9E0sJr3QcK61CIVwQ",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCKZtIWKdUIpZI85ro3Yoxqg",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UC-Yauu1wrNpLhg5B9GImEgQ",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UC7zJelhIFzaRBNRtviN_5GA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UC4Lg-g0jD7VrMoFDwQQqo8Q",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UC98-GjAyFtbJafFi2sUhWRg",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCyhuIpnZFE6K08Avjx9YMQQ",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCmus3xc2lB0qgOw2yuZxcJA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCujRuJWJABDmQcXMmXtGkrA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCAQfsJwdaEy5L9ehl4q0QrQ",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCgSvw7asvNq7wJWKMSW28Eg",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCYcClChNM-0rjqCGobSfJ4A",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UCcHR0RvLYk33ppkjBw3UaEA",
+      "setor": "beleza"
+    },
+    {
+      "ref": "UC3BIknatL1GFynLtV9l7pZg",
+      "setor": "beleza"
+    }
+  ],
+  "alvo": "likes",
+  "detalhes": "Shorts BR de moda e beleza. Canais do ranking HypeAuditor Brasil + buscas no YouTube."
+}

@@ -12,12 +12,17 @@ def nome_valido(nome: str) -> bool:
     return re.fullmatch(PADRAO_NOME, nome) is not None
 
 
+class CanalSemente(BaseModel):
+    ref: str = Field(pattern=r"^(@[\w.-]{3,30}|UC[\w-]{22})$")  # '@handle' ou 'UC...'
+    setor: str
+
+
 class ConfigProjeto(BaseModel):
     """O que o agente do usuário informa ao criar um projeto."""
 
     nome: NomeProjeto
     setores: list[str] = Field(min_length=1)
-    canais_semente: list[str] = Field(min_length=1)
+    canais_semente: list[CanalSemente] = Field(min_length=1)
     alvo: Literal["likes", "views"]
     detalhes: str = ""
     # Viral = alvo em 7 dias acima deste múltiplo da mediana do canal.

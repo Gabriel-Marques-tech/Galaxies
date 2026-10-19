@@ -3,7 +3,7 @@ from galaxies import Framework
 CONFIG = {
     "nome": "moda-beleza",
     "setores": ["moda", "beleza"],
-    "canais_semente": ["UC_canal_a"],
+    "canais_semente": [{"ref": "@canal_a", "setor": "moda"}],
     "alvo": "views",
 }
 

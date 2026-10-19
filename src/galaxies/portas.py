@@ -8,10 +8,28 @@ from pathlib import Path
 from typing import Protocol
 
 
-class YouTube(Protocol):  # #3
-    def canal(self, canal_id: str) -> dict: ...
-    def ids_de_uploads(self, canal_id: str) -> list[str]: ...
-    def videos(self, video_ids: list[str]) -> list[dict]: ...
+class YouTube(Protocol):
+    """YouTube Data API v3. Custo em unidades de cota anotado em cada método."""
+
+    def canal(self, ref: str) -> dict | None:
+        """1 unidade. ref = '@handle' ou 'UC...'. Devolve id, handle, titulo, inscritos,
+        playlist_uploads; None se não existir."""
+        ...
+
+    def pagina_de_uploads(
+        self, playlist_id: str, token: str | None
+    ) -> tuple[list[str], str | None]:
+        """1 unidade. Até 50 ids de vídeo e o token da próxima página (None no fim)."""
+        ...
+
+    def videos(self, ids: list[str]) -> list[dict]:
+        """1 unidade, até 50 ids. Cada vídeo: id, canal_id, titulo, descricao, tags,
+        publicado_em (ISO), duracao_s, vertical, views, likes, comentarios."""
+        ...
+
+    def buscar_canais(self, consulta: str, token: str | None) -> tuple[list[str], str | None]:
+        """100 unidades. Ids de canais que casam com a consulta."""
+        ...
 
 
 class DescritorDeGancho(Protocol):  # #4, Gemini Flash-Lite
