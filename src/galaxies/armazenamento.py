@@ -19,6 +19,21 @@ CREATE TABLE IF NOT EXISTS canais (
     setor       VARCHAR NOT NULL,
     coletado_em TIMESTAMPTZ NOT NULL
 );
+CREATE TABLE IF NOT EXISTS camada_bruta (
+    video_id     VARCHAR PRIMARY KEY,
+    frames       JSON NOT NULL,
+    descricao    VARCHAR NOT NULL,
+    transcricao  VARCHAR NOT NULL,
+    embedding    FLOAT[] NOT NULL,
+    processado_em TIMESTAMPTZ NOT NULL
+);
+CREATE TABLE IF NOT EXISTS falhas (
+    video_id VARCHAR PRIMARY KEY,
+    etapa    VARCHAR NOT NULL,
+    erro     VARCHAR NOT NULL,
+    run_id   VARCHAR NOT NULL,
+    quando   TIMESTAMPTZ NOT NULL
+);
 CREATE TABLE IF NOT EXISTS cota (
     run_id   VARCHAR NOT NULL,
     unidades INTEGER NOT NULL

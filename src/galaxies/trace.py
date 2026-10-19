@@ -49,6 +49,7 @@ class Execucao:
         self._banco = banco
         self.run_id = run_id
         self._ordem = 0
+        self.ultima_falha: tuple[str, str] | None = None  # (etapa, erro)
 
     @contextmanager
     def etapa(self, nome: str, entrada: Any = None):
@@ -60,6 +61,7 @@ class Execucao:
             yield registro
         except Exception as e:
             erro = f"{type(e).__name__}: {e}"
+            self.ultima_falha = (nome, erro)
             raise
         finally:
             self._banco.execute(

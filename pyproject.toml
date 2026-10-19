@@ -12,6 +12,17 @@ dependencies = [
     "pydantic>=2.14.1",
     "python-dotenv>=1.2.4",
     "pytz>=2026.5",
+    "yt-dlp>=2026.8.19",
+]
+
+[project.optional-dependencies]
+multimodal = [
+    "faster-whisper>=1.2.1",
+    "pillow>=13.0.0",
+    "protobuf>=7.36.2",
+    "sentencepiece>=0.2.2",
+    "torch>=2.14.1",
+    "transformers>=5.20.1",
 ]
 
 [build-system]
@@ -33,3 +44,11 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }

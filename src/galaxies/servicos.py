@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from galaxies import armazenamento, coleta
+from galaxies import armazenamento, camada_bruta, coleta
 from galaxies.config import CanalSemente, ConfigProjeto, nome_valido
 from galaxies.erros import (
     ConfigInvalida,
@@ -119,6 +119,41 @@ class Framework:
         with self._abrir_existente(projeto) as banco:
             return coleta.cota_total(banco)
 
+    def processar_ganchos(
+        self, projeto: str, limite_por_canal: int | None = None
+    ) -> camada_bruta.ResumoGanchos:
+        """Calcula a camada bruta dos vídeos que ainda não a têm. limite_por_canal restringe a
+        um subconjunto espaçado no tempo (a camada é cara)."""
+        deps = self.dependencias
+        for nome in ("extrator", "descritor", "transcritor", "embedder"):
+            self._exigir(getattr(deps, nome), nome)
+        resumo = camada_bruta.ResumoGanchos()
+        with self._abrir_existente(projeto) as banco, executar(banco, "processar_ganchos") as ex:
+            for video_id in camada_bruta.pendentes(banco, limite_por_canal):
+                pasta = self._pasta_do_projeto(projeto) / "ganchos" / video_id
+                ex.ultima_falha = None
+                try:
+                    camada_bruta.processar(banco, deps, ex, video_id, video_id, pasta)
+                    resumo.processados += 1
+                except Exception as e:
+                    etapa, erro = ex.ultima_falha or ("salvar", f"{type(e).__name__}: {e}")
+                    camada_bruta.registrar_falha(
+                        banco,
+                        camada_bruta.Falha(
+                            video_id=video_id, etapa=etapa, erro=erro, run_id=ex.run_id
+                        ),
+                    )
+                    resumo.falhas += 1
+        return resumo
+
+    def falhas(self, projeto: str) -> list[camada_bruta.Falha]:
+        with self._abrir_existente(projeto) as banco:
+            return camada_bruta.listar_falhas(banco)
+
+    def camada_bruta(self, projeto: str) -> list[camada_bruta.CamadaBruta]:
+        with self._abrir_existente(projeto) as banco:
+            return camada_bruta.listar(banco)
+
     def videos(self, projeto: str) -> list[coleta.Video]:
         with self._abrir_existente(projeto) as banco:
             return coleta.listar_videos(banco)
@@ -157,3 +192,6 @@ class Framework:
         if dependencia is None:
             raise DependenciaAusente(nome)
         return dependencia
+
+    def _pasta_do_projeto(self, nome: str) -> Path:
+        return armazenamento.caminho_do_banco(self.raiz, nome).parent

@@ -58,3 +58,48 @@ class YouTubeFalso:
     def buscar_canais(self, consulta, token):
         self.chamadas.append("buscar_canais")
         return self._busca.get(consulta, []), None
+
+
+class ExtratorFalso:
+    def __init__(self, falhar_em: set[str] = frozenset()):
+        self.falhar_em = falhar_em
+        self.extraidos: list[str] = []
+
+    def extrair(self, fonte, pasta, segundos):
+        from galaxies.portas import Gancho
+
+        if fonte in self.falhar_em:
+            raise RuntimeError(f"download falhou: {fonte}")
+        self.extraidos.append(fonte)
+        pasta.mkdir(parents=True, exist_ok=True)
+        frames = []
+        for i in range(3):
+            frame = pasta / f"frame_{i}.jpg"
+            frame.write_bytes(b"jpg")
+            frames.append(frame)
+        audio = pasta / "audio.wav"
+        audio.write_bytes(b"wav")
+        return Gancho(frames=frames, audio=audio)
+
+
+class DescritorFalso:
+    def __init__(self):
+        self.chamadas = 0
+
+    def descrever(self, frames):
+        self.chamadas += 1
+        return f"mulher mostra batom vermelho em close ({len(frames)} frames)"
+
+
+class TranscritorFalso:
+    def __init__(self):
+        self.chamadas = 0
+
+    def transcrever(self, audio):
+        self.chamadas += 1
+        return "gente, olha esse batom"
+
+
+class EmbedderFalso:
+    def embutir(self, frames):
+        return [0.1, 0.2, 0.3]

@@ -32,15 +32,28 @@ class YouTube(Protocol):
         ...
 
 
-class DescritorDeGancho(Protocol):  # #4, Gemini Flash-Lite
+@dataclass
+class Gancho:
+    frames: list[Path]
+    audio: Path | None  # None quando o vídeo não tem áudio
+
+
+class ExtratorDeGancho(Protocol):
+    def extrair(self, fonte: str, pasta: Path, segundos: int) -> Gancho:
+        """fonte = id de vídeo do YouTube ou caminho de arquivo local. Baixa só o trecho
+        inicial, salva frames e áudio em `pasta` e descarta o vídeo."""
+        ...
+
+
+class DescritorDeGancho(Protocol):  # Gemini Flash-Lite
     def descrever(self, frames: list[Path]) -> str: ...
 
 
-class Transcritor(Protocol):  # #4, Whisper
+class Transcritor(Protocol):  # Whisper
     def transcrever(self, audio: Path) -> str: ...
 
 
-class Embedder(Protocol):  # #4, SigLIP
+class Embedder(Protocol):  # SigLIP
     def embutir(self, frames: list[Path]) -> list[float]: ...
 
 
@@ -51,6 +64,7 @@ class Jev(Protocol):  # #5
 @dataclass
 class Dependencias:
     youtube: YouTube | None = None
+    extrator: ExtratorDeGancho | None = None
     descritor: DescritorDeGancho | None = None
     transcritor: Transcritor | None = None
     embedder: Embedder | None = None
