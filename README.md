@@ -1,12 +1,21 @@
 # Galaxies
 
-Framework para prever a performance de YouTube Shorts de um setor (entregue com um modelo
-treinado para moda e beleza). O agente do usuário (Claude Code, Codex) opera tudo via MCP:
-cria o projeto, coleta canais, ajusta os atributos ao setor, treina, avalia e analisa um
-vídeo antes de publicar.
+Um agente que **constrói** o modelo de previsão de performance de YouTube Shorts de um setor
+(entregue com o modelo criado para moda e beleza). O agente do usuário (Claude Code, Codex)
+trabalha via MCP como cientista de dados: coleta canais, define atributos do setor, roda
+experimentos, compara com o baseline e promove o melhor modelo. O humano acompanha e decide
+pela UI.
+
+- **Modo automático:** o agente roda o ciclo padrão e promove sozinho o melhor modelo que
+  supera o baseline. Para quem quer o modelo pronto e os números.
+- **Modo Data Scientist (`cientista`):** o humano participa. Aprova cada promoção, revisa as
+  respostas dos atributos e faz a triagem dos erros; as notas viram pistas para o agente.
+
+As regras de avaliação são fixas (o agente não as altera): todo experimento é comparado, nas
+mesmas linhas de teste, com o baseline do canal e com um controle só de metadados.
 
 Tudo roda em serviços gratuitos: YouTube Data API, Gemini pelo AI Studio (descrição do
-gancho), Workers AI da Cloudflare (atributos no formato do Jev), Whisper e SigLIP locais.
+gancho), Laya local (atributos no formato do Jev), Whisper e SigLIP locais.
 
 ## Setup
 
@@ -19,8 +28,13 @@ cp .env.example .env   # preencha as chaves
 |---|---|
 | `YOUTUBE_API_KEY` | Google Cloud Console → APIs → YouTube Data API v3 |
 | `GEMINI_API_KEY` | https://aistudio.google.com/apikey |
-| `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | dash.cloudflare.com (token com Workers AI) |
-| `ATRIBUTOS_MODELO` | `@cf/meta/llama-3.1-8b-instruct-fast` (grátis) ou `typesafe/jev` (pago) |
+| `ATRIBUTOS_MODELO` | `laya` (padrão, local), `@cf/meta/llama-3.1-8b-instruct-fast` ou `typesafe/jev` (pago) |
+| `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | só para os extratores do Workers AI / Jev |
+
+O [Laya](https://github.com/NandhaKishorM/laya) é um encoder aberto (Apache-2.0) que responde
+perguntas choice/score/noul no mesmo formato do Jev da TypeSafe. Não é o Jev; o Jev oficial
+continua disponível com `ATRIBUTOS_MODELO=typesafe/jev`. As respostas ficam guardadas por
+extrator, e a receita do experimento escolhe qual usar, o que permite compará-los.
 
 ## Conectar o agente (MCP, stdio)
 
@@ -41,14 +55,28 @@ args = ["--directory", "/caminho/para/Galaxies", "run", "--extra", "multimodal",
 
 Fluxo típico pedido ao agente:
 
-1. `criar_projeto` com setores, canais-semente e alvo (`likes` ou `views`).
-2. `coletar` → `processar_ganchos` (amostra) → `calcular_atributos` → `treinar`.
-   São jobs: o agente acompanha com `status`.
-3. `avaliar`: baseline do canal, camadas (metadados, +multimodal, +atributos) e ganho por
-   atributo.
-4. `definir_atributos` para adaptar as perguntas ao setor e treinar de novo.
-5. `analisar` um vídeo novo: faixa em 7 dias, timeline 1/3/7/14/30 dias, P(viral) e fatores.
-6. `runs`, `trace`, `erros`, `falhas`, `reprocessar` para auditar.
+1. `criar_projeto` com setores, canais-semente, alvo (`likes` ou `views`) e `modo`.
+2. Dados: `coletar` → `processar_ganchos` (amostra) → `calcular_atributos`. São jobs: o
+   agente acompanha com `status`.
+3. Modelo: `experimentar` com uma receita (camadas, atributos, extrator, hiperparâmetros) e
+   uma hipótese; `experimentos` para comparar; `promover` o melhor. No modo automático,
+   `ciclo_automatico` faz tudo.
+4. Adaptar: ler `erros`, `notas` e `concordancia`, ajustar com `definir_atributos` e
+   experimentar de novo.
+5. `analisar` um vídeo novo: faixa em 7 dias, timeline 1/3/7/14/30 dias, P(viral), fatores
+   e sugestões de mudança ("título em pergunta: +X%").
+6. `runs`, `trace`, `falhas`, `reprocessar` para auditar.
+
+## Console humano (UI)
+
+```bash
+uv run --extra multimodal galaxies-api   # API em :8000
+cd ui && npm install && npm run dev      # UI em :5173
+```
+
+Abas: **Modelos** (experimentos contra baseline e controle, sugestões, aprovar/rejeitar),
+**Revisão de atributos** (concordância humano × extrator), **Erros** (triagem: dado ruim ou
+padrão) e **Trace** (cada passo de cada execução).
 
 ## CLI
 

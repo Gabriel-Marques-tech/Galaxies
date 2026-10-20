@@ -3,11 +3,30 @@
 from datetime import date
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 from pydantic import ValidationError
 
-from galaxies import armazenamento, camada_bruta, coleta, erros, modelagem, treino
+from galaxies import (
+    armazenamento,
+    camada_bruta,
+    coleta,
+    erros,
+    experimentos,
+    humano,
+    modelagem,
+    otimizacao,
+    treino,
+)
 from galaxies import atributos as atrib
-from galaxies.analise import Analise, GanchoAnalisado, VideoNovo, linha_do_video, prever
+from galaxies.analise import (
+    Analise,
+    Comparacao,
+    GanchoAnalisado,
+    VideoNovo,
+    linha_do_video,
+    prever,
+)
 from galaxies.config import CanalSemente, ConfigProjeto, nome_valido
 from galaxies.erros import (
     CanalForaDaBase,
@@ -16,7 +35,8 @@ from galaxies.erros import (
     ProjetoJaExiste,
     ProjetoNaoEncontrado,
 )
-from galaxies.portas import Dependencias
+from galaxies.experimentos import Ciclo, Experimento, Receita
+from galaxies.portas import Dependencias, identificar
 from galaxies.trace import Etapa, Run, executar, ler_trace, listar_runs
 
 
@@ -42,12 +62,70 @@ class Framework:
             )
         return config
 
+    def listar_projetos(self) -> list[str]:
+        pasta = self.raiz / "projetos"
+        if not pasta.exists():
+            return []
+        return sorted(p.name for p in pasta.iterdir() if (p / "galaxies.duckdb").exists())
+
     def obter_projeto(self, nome: str) -> ConfigProjeto:
         with self._abrir_existente(nome) as banco:
             (config_json,) = banco.execute(
                 "SELECT config FROM projeto WHERE nome = ?", [nome]
             ).fetchone()
         return ConfigProjeto.model_validate_json(config_json)
+
+    def definir_modo(self, projeto: str, modo: str) -> ConfigProjeto:
+        """automatico ou cientista. Decisão do humano (UI); o agente não troca o modo."""
+        config = self.obter_projeto(projeto)
+        try:
+            config = ConfigProjeto.model_validate({**config.model_dump(), "modo": modo})
+        except ValidationError as erro:
+            raise ConfigInvalida(str(erro)) from erro
+        with self._abrir_existente(projeto) as banco:
+            banco.execute(
+                "UPDATE projeto SET config = ? WHERE nome = ?", [config.model_dump_json(), projeto]
+            )
+        return config
+
+    def canais(self, projeto: str) -> list[dict]:
+        """Canais da base, com quantos Shorts e quantos ganchos processados cada um tem."""
+        with self._abrir_existente(projeto) as banco:
+            linhas = banco.execute(
+                """
+                SELECT c.id, c.titulo, c.handle, c.setor, c.inscritos,
+                       count(v.id) AS videos, count(b.video_id) AS ganchos
+                FROM canais c
+                LEFT JOIN videos v ON v.canal_id = c.id
+                LEFT JOIN camada_bruta b ON b.video_id = v.id
+                WHERE c.id NOT IN (SELECT id FROM excluidos WHERE tipo = 'canal')
+                GROUP BY ALL ORDER BY c.inscritos DESC NULLS LAST
+                """
+            ).fetchall()
+        campos = ("id", "titulo", "handle", "setor", "inscritos", "videos", "ganchos")
+        return [dict(zip(campos, linha, strict=True)) for linha in linhas]
+
+    def resumo(self, projeto: str) -> dict:
+        """Números do projeto para a visão geral."""
+        with self._abrir_existente(projeto) as banco:
+            contar = lambda sql: banco.execute(sql).fetchone()[0]  # noqa: E731
+            por_extrator = dict(
+                banco.execute(
+                    "SELECT extrator, count(DISTINCT video_id) FROM respostas GROUP BY 1"
+                ).fetchall()
+            )
+            return {
+                "canais": contar("SELECT count(*) FROM canais"),
+                "videos": contar("SELECT count(*) FROM videos"),
+                "ganchos": contar("SELECT count(*) FROM camada_bruta"),
+                "falhas": contar("SELECT count(*) FROM falhas"),
+                "excluidos": contar("SELECT count(*) FROM excluidos"),
+                "atributos_por_extrator": por_extrator,
+                "experimentos": contar("SELECT count(*) FROM experimentos"),
+                "runs": contar("SELECT count(*) FROM runs"),
+                "revisoes": contar("SELECT count(*) FROM revisoes"),
+                "cota_youtube": contar("SELECT coalesce(sum(unidades), 0) FROM cota"),
+            }
 
     def runs(self, projeto: str) -> list[Run]:
         with self._abrir_existente(projeto) as banco:
@@ -77,12 +155,13 @@ class Framework:
     def calcular_atributos(self, projeto: str) -> camada_bruta.ResumoGanchos:
         """Pergunta ao Jev só o que falta: atributos novos ou alterados, por vídeo."""
         jev = self._exigir(self.dependencias.jev, "jev")
+        extrator = identificar(jev)
         resumo = camada_bruta.ResumoGanchos()
         with self._abrir_existente(projeto) as banco, executar(banco, "calcular_atributos") as ex:
             definicoes = atrib.ler_definicoes(banco)
             videos = {v.id: v for v in coleta.listar_videos(banco)}
             for bruta in camada_bruta.listar(banco):
-                faltam = atrib.faltantes(banco, bruta.video_id, definicoes)
+                faltam = atrib.faltantes(banco, bruta.video_id, definicoes, extrator)
                 if not faltam:
                     continue
                 video = videos[bruta.video_id]
@@ -95,7 +174,7 @@ class Framework:
                     ) as registro:
                         respostas = jev.perguntar(estado, perguntas)
                         registro["saida"] = respostas
-                    atrib.salvar_respostas(banco, video.id, faltam, respostas)
+                    atrib.salvar_respostas(banco, video.id, faltam, respostas, extrator)
                     resumo.processados += 1
                 except Exception as e:
                     etapa, erro = ex.ultima_falha or ("salvar", f"{type(e).__name__}: {e}")
@@ -249,19 +328,77 @@ class Framework:
             )
 
     def erros(self, projeto: str, alvo: str | None = None) -> modelagem.RelatorioErros:
-        """Falhas do pipeline por etapa + onde o último treino mais erra."""
+        """Falhas do pipeline por etapa, onde o modelo mais erra (experimento ativo, ou o
+        último diagnóstico) e as notas de padrão deixadas pelo humano."""
         alvo = alvo or self.obter_projeto(projeto).alvo
         with self._abrir_existente(projeto) as banco:
             falhas = camada_bruta.listar_falhas(banco)
+            ativo = experimentos.ativo(banco, alvo)
             avaliacao = modelagem.ultima_avaliacao(banco, alvo)
+            notas = humano.notas(banco)
         por_etapa: dict[str, int] = {}
         for f in falhas:
             por_etapa[f.etapa] = por_etapa.get(f.etapa, 0) + 1
+        fonte, origem = (
+            (ativo.resultado, f"experimento {ativo.id}")
+            if ativo
+            else (
+                avaliacao,
+                "diagnóstico" if avaliacao else "",
+            )
+        )
         return modelagem.RelatorioErros(
             falhas_por_etapa=por_etapa,
-            piores=avaliacao.piores if avaliacao else [],
-            segmentos=avaliacao.segmentos if avaliacao else {},
+            piores=fonte.piores if fonte else [],
+            segmentos=fonte.segmentos if fonte else {},
+            origem=origem,
+            notas_padrao=[n.nota for n in notas if n.tipo == "padrao"],
         )
+
+    # ------------------------------------------------------------ portões humanos
+
+    def amostra_para_revisao(
+        self, projeto: str, atributo_id: str, n: int = 20, extrator: str | None = None
+    ) -> list[humano.ItemRevisao]:
+        """Vídeos para o humano conferir um atributo (padrão: o extrator configurado)."""
+        with self._abrir_existente(projeto) as banco:
+            atributo = self._atributo(banco, atributo_id)
+            return humano.amostra(banco, atributo, extrator or self._extrator_atual(), n)
+
+    def revisar(self, projeto: str, video_id: str, atributo_id: str, valor) -> None:
+        with self._abrir_existente(projeto) as banco:
+            atributo = self._atributo(banco, atributo_id)
+            try:
+                humano.revisar(banco, atributo, video_id, valor)
+            except ValueError as erro:
+                raise erros.ErroGalaxies(str(erro)) from erro
+
+    def concordancia(self, projeto: str, extrator: str | None = None) -> list[humano.Concordancia]:
+        """Quanto o extrator concorda com as revisões humanas, por atributo."""
+        with self._abrir_existente(projeto) as banco:
+            return humano.concordancia(
+                banco, atrib.ler_definicoes(banco), extrator or self._extrator_atual()
+            )
+
+    def anotar_erro(self, projeto: str, video_id: str, tipo: str, nota: str) -> humano.Nota:
+        """dado_ruim: o vídeo sai da base. padrao: vira pista para o agente (erros)."""
+        if tipo not in ("dado_ruim", "padrao"):
+            raise ConfigInvalida("tipo deve ser 'dado_ruim' ou 'padrao'")
+        with self._abrir_existente(projeto) as banco:
+            return humano.anotar(banco, video_id, tipo, nota)
+
+    def notas(self, projeto: str) -> list[humano.Nota]:
+        with self._abrir_existente(projeto) as banco:
+            return humano.notas(banco)
+
+    def _atributo(self, banco, atributo_id: str) -> atrib.Atributo:
+        por_id = {a.id: a for a in atrib.ler_definicoes(banco)}
+        if atributo_id not in por_id:
+            raise erros.ErroGalaxies(f"atributo '{atributo_id}' não existe no projeto")
+        return por_id[atributo_id]
+
+    def _extrator_atual(self) -> str | None:
+        return identificar(self.dependencias.jev) if self.dependencias.jev else None
 
     def falhas(self, projeto: str) -> list[camada_bruta.Falha]:
         with self._abrir_existente(projeto) as banco:
@@ -276,19 +413,13 @@ class Framework:
             return coleta.listar_videos(banco)
 
     def treinar(self, projeto: str, alvo: str | None = None) -> modelagem.Avaliacao:
-        """Avalia por camadas no split temporal fixo e salva o modelo final do alvo."""
+        """Diagnóstico: avalia as camadas no split temporal fixo (sem gerar modelo)."""
         config = self.obter_projeto(projeto)
         alvo = alvo or config.alvo
         if alvo not in ("likes", "views"):
             raise ConfigInvalida(f"alvo '{alvo}' inválido: use likes ou views")
         with self._abrir_existente(projeto) as banco, executar(banco, "treinar") as ex:
-            avaliacao = treino.treinar(
-                banco,
-                alvo,
-                atrib.ler_definicoes(banco),
-                self._pasta_do_projeto(projeto) / "modelos",
-                ex,
-            )
+            avaliacao = treino.treinar(banco, alvo, atrib.ler_definicoes(banco), ex)
             modelagem.salvar_avaliacao(banco, ex.run_id, avaliacao)
         return avaliacao
 
@@ -301,23 +432,200 @@ class Framework:
             raise erros.ErroGalaxies(f"Nenhum treino para o alvo '{alvo}'. Rode treinar primeiro.")
         return avaliacao
 
+    # ------------------------------------------------------------ experimentos
+
+    def experimentar(
+        self, projeto: str, receita: Receita | dict, hipotese: str = "", alvo: str | None = None
+    ) -> Experimento:
+        """Treina uma receita e registra como candidato, comparado com o baseline do canal e
+        com o controle só de metadados nas mesmas linhas de teste."""
+        alvo = self._alvo(projeto, alvo)
+        try:
+            receita = Receita.model_validate(receita)
+        except ValidationError as erro:
+            raise ConfigInvalida(str(erro)) from erro
+        with self._abrir_existente(projeto) as banco, executar(banco, "experimentar") as ex:
+            with ex.etapa("treinar_receita", receita.model_dump()) as registro:
+                try:
+                    exp = experimentos.treinar(
+                        banco,
+                        alvo,
+                        receita,
+                        atrib.ler_definicoes(banco),
+                        self._pasta_do_projeto(projeto) / "modelos",
+                        hipotese,
+                        identificar(self.dependencias.jev) if self.dependencias.jev else None,
+                    )
+                except ValueError as erro:
+                    raise ConfigInvalida(str(erro)) from erro
+                registro["saida"] = exp.resultado.model_dump(include={"ganho", "modelo"})
+            experimentos.salvar(banco, exp)
+        return exp
+
+    def experimentos(self, projeto: str, alvo: str | None = None) -> list[Experimento]:
+        with self._abrir_existente(projeto) as banco:
+            return experimentos.listar(banco, alvo)
+
+    def promover(self, projeto: str, exp_id: str) -> Experimento:
+        """Automático: ativa se supera o baseline. Cientista: fica aguardando o humano."""
+        config = self.obter_projeto(projeto)
+        with self._abrir_existente(projeto) as banco:
+            exp = self._experimento(banco, exp_id)
+            if exp.resultado.ganho <= 0:
+                raise erros.ErroGalaxies(
+                    f"O experimento {exp_id} não supera o baseline do canal "
+                    f"(ganho {exp.resultado.ganho:.3f}): não pode ser promovido."
+                )
+            if config.modo == "cientista":
+                exp = exp.model_copy(update={"status": "aguardando_aprovacao"})
+                experimentos.salvar(banco, exp)
+                return exp
+            return experimentos.ativar(banco, exp)
+
+    def decidir(self, projeto: str, exp_id: str, aprovar: bool, nota: str = "") -> Experimento:
+        """Decisão humana sobre uma promoção (UI). Não é exposta ao agente."""
+        with self._abrir_existente(projeto) as banco:
+            exp = self._experimento(banco, exp_id)
+            if exp.status != "aguardando_aprovacao":
+                raise erros.ErroGalaxies(f"O experimento {exp_id} não aguarda aprovação.")
+            exp = exp.model_copy(update={"nota_humana": nota})
+            if aprovar:
+                return experimentos.ativar(banco, exp)
+            exp = exp.model_copy(update={"status": "rejeitado"})
+            experimentos.salvar(banco, exp)
+            return exp
+
+    def otimizar(
+        self, projeto: str, alvo: str | None = None, orcamento: int = 16, paciencia: int = 6
+    ) -> Ciclo:
+        """O agente busca a melhor receita na validação e avalia só a escolhida no teste.
+        Modo automático: promove se superar o baseline. Modo cientista: fica candidata."""
+        alvo = self._alvo(projeto, alvo)
+        with self._abrir_existente(projeto) as banco, executar(banco, "otimizar") as ex:
+            busca = otimizacao.otimizar(
+                banco, alvo, atrib.ler_definicoes(banco), ex, orcamento, paciencia
+            )
+        if busca.melhor is None:
+            return Ciclo(
+                experimentos=[],
+                promovido=None,
+                tentativas=[t.model_dump() for t in busca.tentativas],
+            )
+        resumo = ", ".join(
+            f"{t.origem}: {t.objetivo:+.1%}" for t in busca.tentativas if t.objetivo is not None
+        )
+        exp = self.experimentar(
+            projeto,
+            busca.melhor,
+            f"otimização: melhor de {len(busca.tentativas)} tentativas na validação "
+            f"({busca.objetivo_validacao:+.1%} sobre o controle). Tentativas: {resumo}",
+            alvo,
+        )
+        promovido = None
+        if self.obter_projeto(projeto).modo == "automatico" and exp.resultado.ganho > 0:
+            promovido = self.promover(projeto, exp.id).id
+        return Ciclo(
+            experimentos=[exp],
+            promovido=promovido,
+            tentativas=[t.model_dump() for t in busca.tentativas],
+            objetivo_validacao=busca.objetivo_validacao,
+        )
+
+    def ciclo_automatico(self, projeto: str, alvo: str | None = None) -> Ciclo:
+        """Modo automático: otimiza e promove sozinho."""
+        if self.obter_projeto(projeto).modo != "automatico":
+            raise erros.ErroGalaxies(
+                "Projeto no modo cientista: rode otimizar ou experimentar e promova com "
+                "aprovação humana."
+            )
+        return self.otimizar(projeto, alvo)
+
+    @staticmethod
+    def _historico_do_novo(banco, alvo: str, canal_id: str, linha) -> dict:
+        """Momento do canal na data planejada do vídeo novo (mesmas regras do treino)."""
+        videos = banco.execute(
+            f"SELECT id AS video_id, canal_id, publicado_em, {alvo} AS y FROM videos "
+            f"WHERE canal_id = ? AND {alvo} IS NOT NULL",
+            [canal_id],
+        ).df()
+        videos["publicado_em"] = pd.to_datetime(videos["publicado_em"], utc=True)
+        novo = pd.DataFrame(
+            {
+                "video_id": ["__novo__"],
+                "canal_id": [canal_id],
+                "publicado_em": linha["publicado_em"].to_numpy(),
+                "y": [np.nan],
+            }
+        )
+        novo["publicado_em"] = pd.to_datetime(novo["publicado_em"], utc=True)
+        hist = modelagem.historico(pd.concat([videos, novo], ignore_index=True))
+        return hist.set_index("video_id").loc["__novo__"].to_dict()
+
+    def calcular_texto(self, projeto: str, lote: int = 256) -> dict:
+        """Embedding de título + descrição dos vídeos que ainda não têm (camada texto)."""
+        embedder = self._exigir(self.dependencias.texto, "texto")
+        with self._abrir_existente(projeto) as banco, executar(banco, "calcular_texto") as ex:
+            faltam = banco.execute(
+                "SELECT id, titulo, descricao FROM videos "
+                "WHERE id NOT IN (SELECT video_id FROM texto_embedding) ORDER BY id"
+            ).fetchall()
+            for inicio in range(0, len(faltam), lote):
+                parte = faltam[inicio : inicio + lote]
+                with ex.etapa("embutir_lote", {"inicio": inicio, "n": len(parte)}):
+                    vetores = embedder.embutir_textos([_texto_do_video(t, d) for _, t, d in parte])
+                banco.executemany(
+                    "INSERT OR REPLACE INTO texto_embedding VALUES (?, ?)",
+                    [[v, e] for (v, _, _), e in zip(parte, vetores, strict=True)],
+                )
+        return {"calculados": len(faltam)}
+
+    def _experimento(self, banco, exp_id: str) -> Experimento:
+        try:
+            return experimentos.obter(banco, exp_id)
+        except ValueError as erro:
+            raise erros.ErroGalaxies(str(erro)) from erro
+
+    def _alvo(self, projeto: str, alvo: str | None) -> str:
+        alvo = alvo or self.obter_projeto(projeto).alvo
+        if alvo not in ("likes", "views"):
+            raise ConfigInvalida(f"alvo '{alvo}' inválido: use likes ou views")
+        return alvo
+
+    # ------------------------------------------------------------ análise
+
     def analisar(self, projeto: str, video: VideoNovo | dict, canal_id: str) -> Analise:
-        """Previsão de um Short ainda não publicado, para um canal que já está na base."""
+        """Previsão de um Short ainda não publicado com o modelo ativo do alvo do projeto."""
         config = self.obter_projeto(projeto)
         video = VideoNovo.model_validate(video)
-        carregado = modelagem.carregar_modelos(
-            self._pasta_do_projeto(projeto) / "modelos" / config.alvo
-        )
-        if carregado is None:
-            raise erros.ErroGalaxies(f"Nenhum modelo para '{config.alvo}'. Rode treinar primeiro.")
-        modelos, meta = carregado
+        with self._abrir_existente(projeto) as banco:
+            exp = experimentos.ativo(banco, config.alvo)
+        if exp is None:
+            raise erros.ErroGalaxies(
+                f"Nenhum modelo ativo para '{config.alvo}'. Rode experimentar e promova um."
+            )
+        pasta = self._pasta_do_projeto(projeto) / "modelos" / exp.id
+        modelos, meta = modelagem.carregar_modelos(pasta)
         if canal_id not in {c["canal_id"] for c in meta["canais"]}:
             raise CanalForaDaBase(canal_id)
+        if "atributos" in meta and self.dependencias.jev is not None:
+            atual = identificar(self.dependencias.jev)
+            if meta.get("extrator") not in (None, atual):
+                raise erros.ErroGalaxies(
+                    f"O modelo ativo foi treinado com atributos de '{meta['extrator']}', mas o "
+                    f"extrator configurado é '{atual}' (ATRIBUTOS_MODELO)."
+                )
+        precisa_video = "pca_multimodal" in meta or "atributos" in meta
+        if "pca_texto" in meta:
+            self._exigir(self.dependencias.texto, "texto")
+        if precisa_video and not video.fonte:
+            raise erros.ErroGalaxies(
+                f"O modelo ativo usa {exp.receita.camadas}: informe video.fonte (arquivo ou link)."
+            )
         with self._abrir_existente(projeto) as banco, executar(banco, "analisar") as ex:
             setor, inscritos = banco.execute(
                 "SELECT setor, inscritos FROM canais WHERE id = ?", [canal_id]
             ).fetchone()
-            gancho = atributos = None
+            gancho = respostas = bruta = None
             if video.fonte:
                 bruta = camada_bruta.processar(
                     banco,
@@ -331,32 +639,68 @@ class Framework:
                 gancho = GanchoAnalisado(descricao=bruta.descricao, transcricao=bruta.transcricao)
                 if self.dependencias.jev is not None:
                     definicoes = atrib.ler_definicoes(banco)
+                    if "atributos" in meta:
+                        definicoes = [atrib.Atributo.model_validate(a) for a in meta["atributos"]]
                     estado = atrib.estado_do_video(video.titulo, video.descricao, video.tags, bruta)
                     with ex.etapa("perguntar_atributos", {"estado": estado}) as registro:
-                        atributos = self.dependencias.jev.perguntar(
+                        respostas = self.dependencias.jev.perguntar(
                             estado, {a.id: a.como_pergunta_jev() for a in definicoes}
                         )
-                        registro["saida"] = atributos
+                        registro["saida"] = respostas
+            if "atributos" in meta and respostas is None:
+                raise DependenciaAusente("jev")
             linha = linha_do_video(video, {"canal_id": canal_id}, setor, inscritos)
+            historico = texto = None
+            if "historico" in exp.receita.camadas:
+                with ex.etapa("historico_do_canal") as registro:
+                    historico = self._historico_do_novo(banco, config.alvo, canal_id, linha)
+                    registro["saida"] = historico
+            if "pca_texto" in meta:
+                with ex.etapa("embutir_texto") as registro:
+                    (texto,) = self.dependencias.texto.embutir_textos(
+                        [_texto_do_video(video.titulo, video.descricao)]
+                    )
+                    registro["saida"] = {"dimensoes": len(texto)}
             with ex.etapa("prever", video.model_dump(mode="json")) as registro:
-                resultado = prever(modelos, meta, linha, config.limite_viral)
+                resultado = prever(
+                    modelos,
+                    meta,
+                    linha,
+                    config.limite_viral,
+                    embedding=bruta.embedding if bruta else None,
+                    respostas=respostas,
+                    historico=historico,
+                    texto=texto,
+                )
                 registro["saida"] = {
+                    "experimento": exp.id,
                     "timeline": [p.model_dump() for p in resultado["timeline"]],
-                    "p_viral": resultado["p_viral"],
+                    "chances": [c.model_dump() for c in resultado["chances"]],
                 }
             with ex.etapa("explicar") as registro:
-                registro["saida"] = [f.model_dump() for f in resultado["fatores"]]
+                registro["saida"] = {
+                    "fatores": [f.model_dump() for f in resultado["fatores"]],
+                    "sugestoes": [s.model_dump() for s in resultado["sugestoes"]],
+                }
             return Analise(
                 run_id=ex.run_id,
+                experimento_id=exp.id,
                 canal_id=canal_id,
                 alvo=config.alvo,
                 gancho=gancho,
-                atributos=atributos,
+                atributos=respostas,
                 **resultado,
             )
 
-    def comparar(self, projeto: str, video_a, video_b):  # #10
-        raise NotImplementedError("#10")
+    def comparar(
+        self, projeto: str, video_a: VideoNovo | dict, video_b: VideoNovo | dict, canal_id: str
+    ) -> Comparacao:
+        """A vs B no mesmo canal: duas análises e qual deve performar melhor em 7 dias.
+        A confiança disso é o acerto_pares do modelo ativo (experimentos)."""
+        a = self.analisar(projeto, video_a, canal_id)
+        b = self.analisar(projeto, video_b, canal_id)
+        diferenca = b.previsao_7d.q50 / max(a.previsao_7d.q50, 1.0) - 1
+        return Comparacao(a=a, b=b, vencedor="b" if diferenca > 0 else "a", diferenca=diferenca)
 
     def melhorar(self, projeto: str, video, variacoes: list[dict]):  # #11
         raise NotImplementedError("#11")
@@ -374,3 +718,7 @@ class Framework:
 
     def _pasta_do_projeto(self, nome: str) -> Path:
         return armazenamento.caminho_do_banco(self.raiz, nome).parent
+
+
+def _texto_do_video(titulo: str | None, descricao: str | None) -> str:
+    return f"{titulo or ''}\n{(descricao or '')[:300]}"

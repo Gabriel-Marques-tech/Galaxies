@@ -323,6 +323,23 @@ wheels = [
 ]
 
 [[package]]
+name = "fastapi"
+version = "0.156.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "annotated-doc" },
+    { name = "opentelemetry-api" },
+    { name = "pydantic" },
+    { name = "starlette" },
+    { name = "typing-extensions" },
+    { name = "typing-inspection" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/11/e3/400f278162f423df77f6a05fa5d51a54b8fafbc032ea902ce612fadb13f7/fastapi-0.156.2.tar.gz", hash = "sha256:6c735592f4842b04d62aa9147aa8f287ac95e293a5257257ca6a405819d4e066", size = 494193, upload-time = "2026-10-20T20:12:14.144Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/88/9d/fdd72314f3b6c52d1da8a75caa90719464d8997501b367edacbef1ee6f08/fastapi-0.156.2-py3-none-any.whl", hash = "sha256:5ccf73cbadf1f74382194e8edd4cf3b79df773d6f33c7387bbe85b465ef7d517", size = 146787, upload-time = "2026-10-20T20:12:12.607Z" },
+]
+
+[[package]]
 name = "faster-whisper"
 version = "1.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -370,6 +387,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "duckdb" },
+    { name = "fastapi" },
     { name = "httpx" },
     { name = "lightgbm" },
     { name = "mcp" },
@@ -386,6 +404,7 @@ dependencies = [
 [package.optional-dependencies]
 multimodal = [
     { name = "faster-whisper" },
+    { name = "laya" },
     { name = "pillow" },
     { name = "protobuf" },
     { name = "sentencepiece" },
@@ -403,8 +422,10 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "duckdb", specifier = ">=1.5.6" },
+    { name = "fastapi", specifier = ">=0.156.2" },
     { name = "faster-whisper", marker = "extra == 'multimodal'", specifier = ">=1.2.1" },
     { name = "httpx", specifier = ">=0.28.1" },
+    { name = "laya", marker = "extra == 'multimodal'", specifier = ">=0.1" },
     { name = "lightgbm", specifier = ">=4.7.0" },
     { name = "mcp", specifier = ">=1.10" },
     { name = "numpy", specifier = ">=2.5.4" },
@@ -616,6 +637,23 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/19/74/a633ee74eb36c44aa6d1095e7cc5569bebf04342ee146178e2d36600708b/jsonschema_specifications-2025.9.1.tar.gz", hash = "sha256:b540987f239e745613c7a9176f3edb72b832a4ac465cf02712288397832b5e8d", size = 32855, upload-time = "2025-09-08T01:34:59.186Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/41/45/1a4ed80516f02155c51f51e8cedb3c1902296743db0bbc66608a0db2814f/jsonschema_specifications-2025.9.1-py3-none-any.whl", hash = "sha256:98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe", size = 18437, upload-time = "2025-09-08T01:34:57.871Z" },
+]
+
+[[package]]
+name = "laya"
+version = "0.4.12"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "numpy" },
+    { name = "safetensors" },
+    { name = "torch", version = "2.14.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
+    { name = "torch", version = "2.14.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/74/0a/3f5e6705046c57272a2bd660d66177261d2791cb1e6e496880986ecde092/laya-0.4.12.tar.gz", hash = "sha256:62bdc74f31f0195119cb0a572da65765f22e70cd989e879a0ee11346bbc4d6f7", size = 1311091, upload-time = "2026-10-19T09:45:48.502Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/63/9e/3d6bcd05485b1902ffc7466c1b8529e365fb92b3552893284d7002f42172/laya-0.4.12-py3-none-any.whl", hash = "sha256:485625629bf14003e947ce13e5f901cc1ba8d298a152e52917b19017914baf80", size = 436585, upload-time = "2026-10-19T09:45:46.758Z" },
 ]
 
 [[package]]

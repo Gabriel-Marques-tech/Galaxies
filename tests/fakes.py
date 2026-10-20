@@ -117,6 +117,8 @@ class EmbedderFalso:
 class JevFalso:
     """Responde de forma determinística: choice na 1ª opção, score no nível do meio, noul 0.8."""
 
+    identificador = "falso"
+
     def __init__(self):
         self.perguntas_feitas: list[str] = []
 
@@ -148,6 +150,9 @@ class JevFalso:
         return respostas
 
 
+PREFIXOS = ["", "Novo: ", "Gente, olha só ", "Hoje no canal, com muito carinho: "]
+
+
 def base_com_sinal(canais=5, por_canal=120, seed=0):
     """Canais de tamanhos diferentes; títulos com pergunta têm 4x mais likes e views.
 
@@ -170,7 +175,8 @@ def base_com_sinal(canais=5, por_canal=120, seed=0):
             videos.append(
                 video(
                     canal_id,
-                    titulo=("Você sabia disso?" if pergunta else "Meu look do dia"),
+                    titulo=rng.choice(PREFIXOS)
+                    + ("Você sabia disso?" if pergunta else "Meu look do dia"),
                     likes=int(tamanho * fator),
                     views=int(tamanho * fator * 12),
                     publicado_em=data.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -178,3 +184,14 @@ def base_com_sinal(canais=5, por_canal=120, seed=0):
             )
         base[canal_id] = videos
     return base
+
+
+class TextoFalso:
+    """Vetor simples com o sinal da base de teste: pergunta no título."""
+
+    def __init__(self):
+        self.lotes = 0
+
+    def embutir_textos(self, textos):
+        self.lotes += 1
+        return [[float("?" in t), len(t) / 100, float(any(c.isdigit() for c in t))] for t in textos]

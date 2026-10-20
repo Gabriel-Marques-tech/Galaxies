@@ -9,3 +9,5 @@ data/
 mlruns/
 # documentos do cliente ficam fora do repositório público
 *.pdf
+node_modules/
+ui/dist/

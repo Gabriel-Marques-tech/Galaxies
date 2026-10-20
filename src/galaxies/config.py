@@ -30,3 +30,6 @@ class ConfigProjeto(BaseModel):
     coletar_desde: date | None = None
     # Viral = alvo em 7 dias acima deste múltiplo da mediana do canal.
     limite_viral: float = Field(default=3.0, gt=1.0)
+    # automatico: o agente promove sozinho o melhor modelo que supera o baseline.
+    # cientista: o humano aprova cada promoção e participa da criação.
+    modo: Literal["automatico", "cientista"] = "automatico"

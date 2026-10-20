@@ -1,11 +1,14 @@
-"""Respostas tipadas no formato do Jev: o Jev real (pago) ou um LLM grátis do Workers AI."""
+"""Respostas tipadas no formato do Jev: Laya (local), LLM grátis do Workers AI ou Jev (pago)."""
 
 import json
+from functools import cached_property
 
 import httpx
 
 
 class JevCloudflare:
+    identificador = "typesafe/jev"
+
     def __init__(self, conta: str, token: str, cliente: httpx.Client | None = None):
         self._url = f"https://api.cloudflare.com/client/v4/accounts/{conta}/ai/run"
         self._token = token
@@ -39,6 +42,7 @@ class JevWorkersAI:
         modelo: str = "@cf/meta/llama-3.1-8b-instruct-fast",
         cliente: httpx.Client | None = None,
     ):
+        self.identificador = modelo
         self._url = f"https://api.cloudflare.com/client/v4/accounts/{conta}/ai/run/{modelo}"
         self._token = token
         self._http = cliente or httpx.Client(timeout=90)
@@ -64,6 +68,29 @@ class JevWorkersAI:
         conteudo = _conteudo(corpo["result"])
         bruto = json.loads(conteudo) if isinstance(conteudo, str) else conteudo
         return {nome: _no_formato_jev(q, bruto.get(nome)) for nome, q in perguntas.items()}
+
+
+class JevLaya:
+    """Laya (Apache-2.0): encoder aberto que responde perguntas choice/score/noul no mesmo
+    formato do Jev, local e grátis. Escolhe sozinho o checkpoint multilíngue para português."""
+
+    identificador = "laya"
+
+    def __init__(self, device: str | None = None):
+        self._device = device
+
+    @cached_property
+    def _router(self):
+        from laya import Router
+
+        return Router(device=self._device) if self._device else Router()
+
+    def perguntar(self, estado: str, perguntas: dict) -> dict:
+        respostas = self._router.predict({"body": estado}, perguntas)["answers"]
+        faltando = set(perguntas) - set(respostas)
+        if faltando:
+            raise RuntimeError(f"Laya não respondeu: {sorted(faltando)}")
+        return respostas
 
 
 INSTRUCAO = (

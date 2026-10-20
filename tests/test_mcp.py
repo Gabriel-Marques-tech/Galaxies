@@ -47,7 +47,14 @@ def test_expoe_as_tools_do_framework(tmp_path):
         "erros",
         "reprocessar",
         "analisar",
+        "experimentar",
+        "experimentos",
+        "promover",
+        "ciclo_automatico",
     } <= nomes
+    assert {"concordancia", "notas"} <= nomes
+    # aprovar, revisar e anotar são do humano, na UI
+    assert not {"decidir", "revisar", "anotar_erro"} & nomes
 
 
 def test_loop_criar_coletar_treinar_avaliar_analisar(tmp_path):
@@ -56,13 +63,14 @@ def test_loop_criar_coletar_treinar_avaliar_analisar(tmp_path):
     assert chamar(mcp, "criar_projeto", config=CONFIG)["nome"] == "moda-beleza"
     job = chamar(mcp, "coletar", projeto="moda-beleza")["job_id"]
     mcp.jobs.esperar(job)
-    job = chamar(mcp, "treinar", projeto="moda-beleza")["job_id"]
-    mcp.jobs.esperar(job)
+    job = chamar(mcp, "experimentar", projeto="moda-beleza", receita={"camadas": ["metadados"]})
+    mcp.jobs.esperar(job["job_id"])
 
-    status = chamar(mcp, "status", job_id=job)
+    status = chamar(mcp, "status", job_id=job["job_id"])
     assert status["status"] == "ok"
-    avaliacao = chamar(mcp, "avaliar", projeto="moda-beleza")
-    assert avaliacao["camadas"]["metadados"]["mae"] < avaliacao["baseline"]["mae"]
+    exp = status["resultado"]
+    assert exp["resultado"]["modelo"]["mae"] < exp["resultado"]["baseline"]["mae"]
+    assert chamar(mcp, "promover", projeto="moda-beleza", exp_id=exp["id"])["status"] == "ativo"
     analise = chamar(
         mcp,
         "analisar",

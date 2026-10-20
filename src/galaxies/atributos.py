@@ -87,40 +87,51 @@ def estado_do_video(titulo: str, descricao: str, tags: list[str], bruta) -> str:
 
 
 def faltantes(
-    banco: duckdb.DuckDBPyConnection, video_id: str, atributos: list[Atributo]
+    banco: duckdb.DuckDBPyConnection, video_id: str, atributos: list[Atributo], extrator: str
 ) -> list[Atributo]:
     feitas = {
         (a, s)
         for a, s in banco.execute(
-            "SELECT atributo_id, assinatura FROM respostas WHERE video_id = ?", [video_id]
+            "SELECT atributo_id, assinatura FROM respostas WHERE video_id = ? AND extrator = ?",
+            [video_id, extrator],
         ).fetchall()
     }
     return [a for a in atributos if (a.id, a.assinatura) not in feitas]
 
 
 def salvar_respostas(
-    banco: duckdb.DuckDBPyConnection, video_id: str, atributos: list[Atributo], respostas: dict
+    banco: duckdb.DuckDBPyConnection,
+    video_id: str,
+    atributos: list[Atributo],
+    respostas: dict,
+    extrator: str,
 ):
     agora = datetime.now(UTC)
-    for atributo in atributos:
+    for a in atributos:
         banco.execute(
-            "INSERT OR REPLACE INTO respostas VALUES (?, ?, ?, ?, ?)",
-            [video_id, atributo.id, atributo.assinatura, json.dumps(respostas[atributo.id]), agora],
+            "INSERT OR REPLACE INTO respostas VALUES (?, ?, ?, ?, ?, ?)",
+            [video_id, a.id, extrator, a.assinatura, json.dumps(respostas[a.id]), agora],
         )
 
 
-def features(banco: duckdb.DuckDBPyConnection, atributos: list[Atributo]) -> list[dict]:
-    """Uma linha por vídeo com resposta para todos os atributos atuais."""
+def features(
+    banco: duckdb.DuckDBPyConnection, atributos: list[Atributo], extrator: str | None = None
+) -> list[dict]:
+    """Uma linha por vídeo com resposta para todos os atributos atuais. Sem extrator, usa a
+    resposta mais recente de cada atributo, venha de quem vier."""
     por_id = {a.id: a for a in atributos}
     linhas: dict[str, dict] = {}
     for video_id, atributo_id, assinatura, resposta in banco.execute(
         "SELECT video_id, atributo_id, assinatura, resposta FROM respostas"
+        " WHERE ?::VARCHAR IS NULL OR extrator = ?"
+        " QUALIFY ROW_NUMBER() OVER (PARTITION BY video_id, atributo_id ORDER BY quando DESC) = 1",
+        [extrator, extrator],
     ).fetchall():
         atributo = por_id.get(atributo_id)
         if atributo is None or atributo.assinatura != assinatura:
             continue
         linhas.setdefault(video_id, {"video_id": video_id}).update(
-            _para_features(atributo, json.loads(resposta))
+            para_features(atributo, json.loads(resposta))
         )
     completas = len(atributos)
     return [
@@ -130,7 +141,7 @@ def features(banco: duckdb.DuckDBPyConnection, atributos: list[Atributo]) -> lis
     ]
 
 
-def _para_features(atributo: Atributo, resposta: dict) -> dict[str, float]:
+def para_features(atributo: Atributo, resposta: dict) -> dict[str, float]:
     if atributo.tipo == "choice":
         probs = resposta["probabilities"]
         return {

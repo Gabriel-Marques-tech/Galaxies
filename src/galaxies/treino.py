@@ -1,6 +1,6 @@
-"""Orquestra um treino: avaliação por camadas no split temporal + modelo final em toda a base."""
+"""Diagnóstico da base: avaliação por camadas no split temporal fixo (ablação).
 
-from pathlib import Path
+Não gera modelo para análise: isso é papel dos experimentos (galaxies.experimentos)."""
 
 import duckdb
 import numpy as np
@@ -15,7 +15,6 @@ def treinar(
     banco: duckdb.DuckDBPyConnection,
     alvo: str,
     definicoes: list[atrib.Atributo],
-    pasta_modelos: Path,
     ex: Execucao,
 ) -> m.Avaliacao:
     with ex.etapa("montar_base", {"alvo": alvo}) as r:
@@ -59,8 +58,6 @@ def treinar(
         _ablacao(banco, definicoes, treino, teste, x_tr, x_te, y_tr, canais, avaliacao)
         r["saida"] = {k: v.model_dump() for k, v in avaliacao.camadas.items()}
 
-    with ex.etapa("modelo_final") as r:
-        r["saida"] = _modelo_final(banco, base, definicoes, alvo, pasta_modelos)
     return avaliacao
 
 
@@ -118,20 +115,3 @@ def _ganho_por_permutacao(modelos, x_te, teste, canais, definicoes, mae_base) ->
         mae = m.medir(m.prever_log(modelos, embaralhado, teste, canais), teste).mae
         ganhos[atributo.id] = round(mae - mae_base, 5)
     return dict(sorted(ganhos.items(), key=lambda kv: -kv[1]))
-
-
-def _modelo_final(banco, base, definicoes, alvo, pasta_modelos: Path) -> dict:
-    """Treina em toda a base (só metadados por ora) e salva o que a análise (#7) precisa."""
-    canais = m.estatisticas_dos_canais(base)
-    setores = sorted(base["setor"].unique())
-    x = m.features_de_metadados(base, canais, setores)
-    modelos = m.treinar_quantis(x, m.alvo_relativo(base, canais))
-    meta = {
-        "alvo": alvo,
-        "colunas": list(x.columns),
-        "canais": canais.reset_index().to_dict(orient="records"),
-        "setores": setores,
-        "n": len(base),
-    }
-    m.salvar_modelos(pasta_modelos / alvo, modelos, meta)
-    return {"n": len(base), "colunas": len(x.columns)}

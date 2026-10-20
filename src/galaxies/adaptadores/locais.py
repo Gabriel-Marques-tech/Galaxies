@@ -57,3 +57,31 @@ class EmbedderSigLIP:
                 vetores = vetores.pooler_output
             media = torch.nn.functional.normalize(vetores.mean(dim=0), dim=0)
         return media.tolist()
+
+
+class EmbedderDeTextoMiniLM:
+    """Embedding multilíngue de frases (português incluso), local na CPU, ~1k títulos/min."""
+
+    def __init__(self, modelo: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"):
+        self._nome = modelo
+
+    @cached_property
+    def _carregado(self):
+        from transformers import AutoModel, AutoTokenizer
+
+        return AutoModel.from_pretrained(self._nome).eval(), AutoTokenizer.from_pretrained(
+            self._nome
+        )
+
+    def embutir_textos(self, textos: list[str]) -> list[list[float]]:
+        import torch
+
+        modelo, tokenizador = self._carregado
+        with torch.no_grad():
+            entradas = tokenizador(
+                textos, padding=True, truncation=True, max_length=128, return_tensors="pt"
+            )
+            saida = modelo(**entradas).last_hidden_state
+            mascara = entradas["attention_mask"].unsqueeze(-1).float()
+            medias = (saida * mascara).sum(1) / mascara.sum(1).clamp(min=1e-9)
+            return torch.nn.functional.normalize(medias, dim=1).tolist()

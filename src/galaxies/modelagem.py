@@ -49,6 +49,9 @@ class Metricas(BaseModel):
     mae: float
     spearman_no_canal: float
     n: int
+    # A vs B: dos pares de vídeos do mesmo canal no teste, a fração que o modelo ordena
+    # certo (empates contam meio). 0.5 = não ordena nada, como a média do canal.
+    acerto_pares: float = 0.5
 
 
 class Erro(BaseModel):
@@ -85,6 +88,8 @@ class RelatorioErros(BaseModel):
     falhas_por_etapa: dict[str, int]
     piores: list[Erro]
     segmentos: dict[str, list[Segmento]]
+    origem: str = ""  # experimento ativo ou diagnóstico de onde vêm piores e segmentos
+    notas_padrao: list[str] = []  # padrões apontados pelo humano: pistas para novos atributos
 
 
 # ---------------------------------------------------------------- base e split
@@ -186,18 +191,19 @@ def alvo_relativo(df: pd.DataFrame, canais: pd.DataFrame) -> pd.Series:
 # ---------------------------------------------------------------- modelo e métricas
 
 
-def treinar_quantis(x: pd.DataFrame, y: pd.Series) -> dict[float, lgb.Booster]:
+def treinar_quantis(
+    x: pd.DataFrame, y: pd.Series, params: dict | None = None, rodadas: int = RODADAS
+) -> dict[float, lgb.Booster]:
+    base = {**PARAMS_LGB, **(params or {})}
     return {
-        q: lgb.train(
-            {**PARAMS_LGB, "objective": "quantile", "alpha": q}, lgb.Dataset(x, y), RODADAS
-        )
+        q: lgb.train({**base, "objective": "quantile", "alpha": q}, lgb.Dataset(x, y), rodadas)
         for q in QUANTIS
     }
 
 
 def medir(pred_log: np.ndarray, teste: pd.DataFrame) -> Metricas:
     mae = float(np.mean(np.abs(pred_log - teste["log_y"].to_numpy())))
-    correlacoes = []
+    correlacoes, acertos, pares = [], 0.0, 0
     for _, grupo in pd.DataFrame(
         {"canal": teste["canal_id"].to_numpy(), "p": pred_log, "y": teste["log_y"].to_numpy()}
     ).groupby("canal"):
@@ -205,10 +211,16 @@ def medir(pred_log: np.ndarray, teste: pd.DataFrame) -> Metricas:
             continue
         rho = spearmanr(grupo["p"], grupo["y"]).statistic if grupo["p"].nunique() > 1 else 0.0
         correlacoes.append(0.0 if np.isnan(rho) else float(rho))
+        p, y = grupo["p"].to_numpy(), grupo["y"].to_numpy()
+        dp, dy = np.sign(p[:, None] - p[None, :]), np.sign(y[:, None] - y[None, :])
+        validos = np.triu(dy != 0, k=1)  # pares em que um vídeo foi de fato melhor
+        acertos += float(np.sum((dp == dy) & validos) + 0.5 * np.sum((dp == 0) & validos))
+        pares += int(validos.sum())
     return Metricas(
         mae=mae,
         spearman_no_canal=float(np.mean(correlacoes)) if correlacoes else 0.0,
         n=len(teste),
+        acerto_pares=acertos / pares if pares else 0.5,
     )
 
 
@@ -254,6 +266,61 @@ def diagnosticar(
         for nome, chaves in (("canal", df["canal_id"]), ("setor", df["setor"]), ("idade", idade))
     }
     return piores, segmentos
+
+
+# ---------------------------------------------------------------- histórico do canal
+
+DEFASAGEM_HISTORICO_DIAS = 7  # só vídeos com 7+ dias: os números deles já estavam visíveis
+
+
+def historico(videos: pd.DataFrame) -> pd.DataFrame:
+    """Momento do canal antes de cada vídeo, sem olhar o futuro.
+
+    videos: video_id, canal_id, publicado_em, y (todos os vídeos do canal, sem teto).
+    Médias usam só vídeos publicados DEFASAGEM_HISTORICO_DIAS antes; ritmo de postagem usa
+    todos os anteriores (a data de publicação é conhecida na hora)."""
+    partes = []
+    for _, g in videos.sort_values("publicado_em").groupby("canal_id", sort=False):
+        t = g["publicado_em"].to_numpy(dtype="datetime64[s]").astype("int64") / 86400.0
+        logy = np.log1p(g["y"].astype(float).to_numpy())
+        soma = np.concatenate([[0.0], np.cumsum(logy)])
+        quad = np.concatenate([[0.0], np.cumsum(logy**2)])
+        elegiveis = np.searchsorted(t, t - DEFASAGEM_HISTORICO_DIAS, side="right")
+        m10, q10, n10 = _janela(soma, quad, elegiveis, 10)
+        m30, _, _ = _janela(soma, quad, elegiveis, 30)
+        anteriores = np.arange(len(t))
+        partes.append(
+            pd.DataFrame(
+                {
+                    "video_id": g["video_id"].to_numpy(),
+                    "hist_media_10": m10,
+                    "hist_media_30": m30,
+                    "hist_desvio_10": np.sqrt(np.clip(q10 - m10**2, 0, None)),
+                    "hist_tendencia": m10 - m30,
+                    "hist_n": n10,
+                    "hist_dias_desde_ultimo": np.concatenate([[np.nan], np.diff(t)]),
+                    "hist_posts_7d": anteriores - np.searchsorted(t, t - 7, side="left"),
+                }
+            )
+        )
+    return pd.concat(partes, ignore_index=True)
+
+
+def _janela(soma, quad, elegiveis, tamanho):
+    """Média e média dos quadrados dos últimos `tamanho` vídeos elegíveis (somas acumuladas)."""
+    ini = np.maximum(elegiveis - tamanho, 0)
+    n = elegiveis - ini
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return (soma[elegiveis] - soma[ini]) / n, (quad[elegiveis] - quad[ini]) / n, n
+
+
+def historico_do_banco(banco: duckdb.DuckDBPyConnection, alvo: str) -> pd.DataFrame:
+    df = banco.execute(
+        f"SELECT id AS video_id, canal_id, publicado_em, {alvo} AS y FROM videos "
+        f"WHERE {alvo} IS NOT NULL"
+    ).df()
+    df["publicado_em"] = pd.to_datetime(df["publicado_em"], utc=True)
+    return historico(df).set_index("video_id")
 
 
 # ---------------------------------------------------------------- camadas extras

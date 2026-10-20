@@ -6,16 +6,22 @@ com a idade fixada em cada dia. Quantis são ordenados e a timeline nunca decres
 
 import json
 from datetime import UTC, datetime
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field
 from scipy.stats import norm
 
+from galaxies import atributos as atrib
 from galaxies import modelagem as m
 
 DIAS_DA_TIMELINE = (1, 3, 7, 14, 30)
-DIAS_DO_VIRAL = 7
+DIAS_DA_PREVISAO = 7
+# A mediana do canal vem de vídeos maduros (semanas ou meses de vida). Comparar com ela a
+# previsão de 7 dias subestima a chance de viralizar; o ponto de 30 dias é comparável.
+DIAS_DO_VIRAL = 30
+FORA_DOS_FATORES = {"log_idade_dias"}  # é o eixo da timeline, não algo que o criador controla
 N_FATORES = 8
 _Z90 = norm.ppf(0.9) - norm.ppf(0.1)  # largura q10–q90 de uma normal padrão
 
@@ -47,21 +53,46 @@ class Fator(BaseModel):
     impacto: float  # contribuição SHAP no log relativo ao canal (positivo = ajuda)
 
 
+class Sugestao(BaseModel):
+    mudanca: str
+    previsto_7d: float  # mediana prevista com a mudança
+    ganho: float  # variação relativa da mediana em 7 dias
+    p_viral: float = 0.0  # chance de viralizar com a mudança
+    delta_p_viral: float = 0.0  # pontos de chance de viralizar ganhos
+
+
+class Chance(BaseModel):
+    evento: str
+    multiplo: float  # × a mediana do canal, em DIAS_DO_VIRAL dias
+    prob: float
+
+
 class GanchoAnalisado(BaseModel):
     descricao: str
     transcricao: str
 
 
+class Comparacao(BaseModel):
+    a: "Analise"
+    b: "Analise"
+    vencedor: Literal["a", "b"]
+    diferenca: float  # (mediana 7d de b / de a) - 1
+
+
 class Analise(BaseModel):
     run_id: str
+    experimento_id: str
     canal_id: str
     alvo: str
     mediana_canal: float
     previsao_7d: Faixa
     timeline: list[PontoTimeline]
     limite_viral: float
-    p_viral: float
+    p_viral: float  # chance de passar limite_viral × a mediana do canal em dias_viral dias
+    dias_viral: int = DIAS_DO_VIRAL
+    chances: list[Chance] = []
     fatores: list[Fator]
+    sugestoes: list[Sugestao] = []
     gancho: GanchoAnalisado | None = None
     atributos: dict | None = None
 
@@ -80,46 +111,178 @@ def linha_do_video(video: VideoNovo, canal: dict, setor: str, inscritos: int) ->
             "tags": [json.dumps(video.tags)],
             "publicado_em": [pd.Timestamp(publicar_em)],
             "duracao_s": [video.duracao_s],
-            "idade_dias": [float(DIAS_DO_VIRAL)],
+            "idade_dias": [float(DIAS_DA_PREVISAO)],
         }
     )
 
 
-def prever(modelos, meta: dict, linha: pd.DataFrame, limite_viral: float) -> dict:
-    """Timeline em valores absolutos, P(viral) e fatores SHAP aos 7 dias."""
+def features(
+    meta: dict,
+    linhas: pd.DataFrame,
+    embedding=None,
+    respostas=None,
+    historico: dict | None = None,
+    texto=None,
+) -> pd.DataFrame:
+    """As mesmas colunas do modelo da receita, para um ou mais cenários do vídeo."""
+    canais = pd.DataFrame(meta["canais"]).set_index("canal_id")
+    x = m.features_de_metadados(linhas.reset_index(drop=True), canais, meta["setores"])
+    if historico is not None:
+        for coluna, valor in historico.items():
+            x[coluna] = valor
+        x["hist_rel_10"] = x["hist_media_10"] - x["log_mediana_canal"]
+    for camada, vetor in (("multimodal", embedding), ("texto", texto)):
+        pca = meta.get(f"pca_{camada}")
+        if pca is None:
+            continue
+        reduzido = (np.asarray(vetor) - np.asarray(pca["media"])) @ np.asarray(pca["componentes"]).T
+        for i, v in enumerate(reduzido):
+            x[f"{pca['prefixo']}_{i}"] = v
+    if "atributos" in meta:
+        for definicao in meta["atributos"]:
+            a = atrib.Atributo.model_validate(definicao)
+            for coluna, valor in atrib.para_features(a, respostas[a.id]).items():
+                x[coluna] = valor
+    return x[meta["colunas"]]
+
+
+MULTIPLOS_DAS_CHANCES = ((1.0, "passar a mediana do canal"), (2.0, "dobrar a mediana do canal"))
+
+
+def _quantis_relativos(modelos, x: pd.DataFrame) -> np.ndarray:
+    return np.sort(np.column_stack([modelos[q].predict(x) for q in m.QUANTIS]), axis=1)
+
+
+def _prob_acima(q: np.ndarray, calibracao: float, mediana: float, multiplo: float) -> np.ndarray:
+    """Chance de passar `multiplo` × a mediana do canal, numa normal no log relativo com
+    centro na mediana prevista e largura da faixa calibrada (q10–q90 cobrindo 80%)."""
+    q10, q50, q90 = q[:, 0], q[:, 1], q[:, 2]
+    sigma = np.maximum(calibracao * (q90 - q10) / _Z90, 1e-6)
+    limite = np.log((multiplo * mediana + 1) / (mediana + 1))
+    return 1 - norm.cdf((limite - q50) / sigma)
+
+
+def prever(
+    modelos,
+    meta: dict,
+    linha: pd.DataFrame,
+    limite_viral: float,
+    embedding=None,
+    respostas=None,
+    historico: dict | None = None,
+    texto=None,
+) -> dict:
+    """Timeline, chances (mediana, dobro, viral), fatores SHAP e sugestões."""
     canais = pd.DataFrame(meta["canais"]).set_index("canal_id")
     mediana = float(canais.loc[linha["canal_id"].iloc[0], "mediana"])
+    k = float(meta.get("calibracao", 1.0))
     por_dia = pd.concat([linha.assign(idade_dias=float(d)) for d in DIAS_DA_TIMELINE])
-    x = m.features_de_metadados(por_dia.reset_index(drop=True), canais, meta["setores"])
-    x = x[meta["colunas"]]
-    relativo = np.sort(np.column_stack([modelos[q].predict(x) for q in m.QUANTIS]), axis=1)
-    relativo = np.maximum.accumulate(relativo, axis=0)  # mais dias nunca têm menos
+    x = features(meta, por_dia, embedding, respostas, historico, texto)
+    relativo = np.maximum.accumulate(_quantis_relativos(modelos, x), axis=0)  # nunca decresce
 
     def absoluto(r):
         return max(float(np.expm1(r + np.log1p(mediana))), 0.0)
 
-    timeline = [
-        PontoTimeline(dias=d, q10=absoluto(r[0]), q50=absoluto(r[1]), q90=absoluto(r[2]))
-        for d, r in zip(DIAS_DA_TIMELINE, relativo, strict=True)
+    timeline = []
+    for d, (q10, q50, q90) in zip(DIAS_DA_TIMELINE, relativo, strict=True):
+        lo, hi = q50 - k * (q50 - q10), q50 + k * (q90 - q50)  # faixa calibrada
+        timeline.append(
+            PontoTimeline(dias=d, q10=absoluto(lo), q50=absoluto(q50), q90=absoluto(hi))
+        )
+    i7 = DIAS_DA_TIMELINE.index(DIAS_DA_PREVISAO)
+    i30 = DIAS_DA_TIMELINE.index(DIAS_DO_VIRAL)
+    q30 = relativo[[i30]]
+    chances = [
+        Chance(evento=nome, multiplo=mult, prob=float(_prob_acima(q30, k, mediana, mult)[0]))
+        for mult, nome in (*MULTIPLOS_DAS_CHANCES, (limite_viral, "viralizar"))
     ]
-    i7 = DIAS_DA_TIMELINE.index(DIAS_DO_VIRAL)
-    q10, q50, q90 = relativo[i7]
-    limite = np.log((limite_viral * mediana + 1) / (mediana + 1))
-    sigma = max((q90 - q10) / _Z90, 1e-6)
-    p_viral = float(1 - norm.cdf((limite - q50) / sigma))
 
     x7 = x.iloc[[i7]]
     contrib = modelos[0.5].predict(x7, pred_contrib=True)[0][:-1]  # último = valor base
-    ordem = np.argsort(-np.abs(contrib))[:N_FATORES]
+    ordem = [i for i in np.argsort(-np.abs(contrib)) if x7.columns[i] not in FORA_DOS_FATORES]
     fatores = [
         Fator(feature=x7.columns[i], valor=float(x7.iloc[0, i]), impacto=float(contrib[i]))
-        for i in ordem
+        for i in ordem[:N_FATORES]
     ]
     return {
         "mediana_canal": mediana,
         "previsao_7d": Faixa(**timeline[i7].model_dump(exclude={"dias"})),
         "timeline": timeline,
         "limite_viral": limite_viral,
-        "p_viral": p_viral,
+        "p_viral": chances[-1].prob,
+        "chances": chances,
         "fatores": fatores,
+        "sugestoes": sugerir(modelos, x.iloc[[i7]], x.iloc[[i30]], mediana, k, limite_viral, meta),
     }
+
+
+# ---------------------------------------------------------------- sugestões (contrafactual)
+
+MIN_GANHO_SUGESTAO = 0.03  # sugere o que move a mediana em 3%+ ou a chance de viral em 1 ponto+
+MIN_DELTA_VIRAL = 0.01
+N_SUGESTOES = 5
+
+
+def _alavancas(meta: dict) -> dict[str, list[tuple[str, dict[str, float]]]]:
+    """O que o criador controla antes de publicar: nome → [(descrição, colunas novas)]."""
+    alavancas = {
+        "hora": [(f"publicar às {h}h", {"hora": h}) for h in range(24)],
+        "dia_semana": [
+            (f"publicar {d}", {"dia_semana": i})
+            for i, d in enumerate(["seg", "ter", "qua", "qui", "sex", "sáb", "dom"])
+        ],
+        "duracao_s": [(f"duração de {d}s", {"duracao_s": d}) for d in (15, 30, 45, 60, 90)],
+        "titulo_pergunta": [("título em forma de pergunta", {"titulo_pergunta": 1})],
+        "titulo_numero": [("número no título", {"titulo_numero": 1})],
+        "hashtags": [(f"{n} hashtags", {"hashtags": n}) for n in (0, 3, 5)],
+    }
+    for definicao in meta.get("atributos", []):
+        a = atrib.Atributo.model_validate(definicao)
+        if a.tipo == "noul":
+            alavancas[a.id] = [(f"{a.id}: sim", {a.id: 1.0}), (f"{a.id}: não", {a.id: 0.0})]
+        elif a.tipo == "score":
+            alavancas[a.id] = [
+                (f"{a.id}: {nivel}", {a.id: i / (len(a.criterios) - 1)})
+                for i, nivel in enumerate(a.criterios)
+            ]
+        else:
+            colunas = [f"{a.id}={r}" for r in a.criterios]
+            alavancas[a.id] = [
+                (f"{a.id}: {r}", {c: float(c == f"{a.id}={r}") for c in colunas})
+                for r in a.criterios
+            ]
+    return {
+        k: v for k, v in alavancas.items() if all(c in meta["colunas"] for _, d in v for c in d)
+    }
+
+
+def sugerir(modelos, x7, x30, mediana: float, k: float, limite_viral: float, meta: dict):
+    """Para cada alavanca, a alternativa que mais aumenta a chance de viralizar (e quanto
+    move a mediana em 7 dias). Associação aprendida na base, não causa: hipóteses a testar."""
+    atual_7d = float(np.expm1(modelos[0.5].predict(x7)[0] + np.log1p(mediana)))
+    atual_viral = float(_prob_acima(_quantis_relativos(modelos, x30), k, mediana, limite_viral)[0])
+    sugestoes = []
+    for opcoes in _alavancas(meta).values():
+        c7 = pd.concat([x7.assign(**mudanca) for _, mudanca in opcoes])
+        c30 = pd.concat([x30.assign(**mudanca) for _, mudanca in opcoes])
+        previstos = np.expm1(modelos[0.5].predict(c7) + np.log1p(mediana)).clip(min=0)
+        virais = _prob_acima(_quantis_relativos(modelos, c30), k, mediana, limite_viral)
+        i = int(np.argmax(virais + 1e-3 * previstos / max(atual_7d, 1.0)))  # desempate: mediana
+        if all(float(x7.iloc[0][c]) == v for c, v in opcoes[i][1].items()):
+            continue  # o vídeo já está na melhor opção
+        ganho = (previstos[i] - atual_7d) / max(atual_7d, 1.0)
+        delta = float(virais[i] - atual_viral)
+        if delta >= MIN_DELTA_VIRAL or ganho >= MIN_GANHO_SUGESTAO:
+            sugestoes.append(
+                Sugestao(
+                    mudanca=opcoes[i][0],
+                    previsto_7d=float(previstos[i]),
+                    ganho=float(ganho),
+                    p_viral=float(virais[i]),
+                    delta_p_viral=delta,
+                )
+            )
+    return sorted(sugestoes, key=lambda s: (-s.delta_p_viral, -s.ganho))[:N_SUGESTOES]
+
+
+Comparacao.model_rebuild()

@@ -57,6 +57,10 @@ class Embedder(Protocol):  # SigLIP
     def embutir(self, frames: list[Path]) -> list[float]: ...
 
 
+class EmbedderDeTexto(Protocol):  # título + descrição, para todos os vídeos
+    def embutir_textos(self, textos: list[str]) -> list[list[float]]: ...
+
+
 class Jev(Protocol):  # #5
     def perguntar(self, contexto: str, perguntas: list[dict]) -> list[dict]: ...
 
@@ -69,3 +73,9 @@ class Dependencias:
     transcritor: Transcritor | None = None
     embedder: Embedder | None = None
     jev: Jev | None = None
+    texto: EmbedderDeTexto | None = None
+
+
+def identificar(jev: Jev) -> str:
+    """Nome do extrator de atributos, gravado junto de cada resposta."""
+    return getattr(jev, "identificador", type(jev).__name__)
