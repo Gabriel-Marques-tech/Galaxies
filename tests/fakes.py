@@ -5,12 +5,21 @@ from itertools import count
 _seq = count()
 
 
-def video(canal_id, *, duracao_s=30, vertical=True, likes=100, views=1000, publicado_em=None):
+def video(
+    canal_id,
+    *,
+    duracao_s=30,
+    vertical=True,
+    likes=100,
+    views=1000,
+    publicado_em=None,
+    titulo=None,
+):
     n = next(_seq)
     return {
         "id": f"v{n}",
         "canal_id": canal_id,
-        "titulo": f"video {n}",
+        "titulo": titulo or f"video {n}",
         "descricao": "",
         "tags": [],
         "publicado_em": publicado_em or f"2026-09-{n % 28 + 1:02d}T12:00:00Z",
@@ -137,3 +146,35 @@ class JevFalso:
             else:
                 respostas[nome] = {"type": "noul", "noul": 0.8}
         return respostas
+
+
+def base_com_sinal(canais=5, por_canal=120, seed=0):
+    """Canais de tamanhos diferentes; títulos com pergunta têm 4x mais likes e views.
+
+    Datas espalhadas de jan/2025 a set/2026, todas com mais de 7 dias de vida.
+    """
+    import random
+    from datetime import UTC, datetime, timedelta
+
+    rng = random.Random(seed)
+    inicio = datetime(2025, 1, 1, tzinfo=UTC)
+    base = {}
+    for c in range(canais):
+        canal_id = f"canal{c}"
+        tamanho = 10 ** (2 + c * 0.5)
+        videos = []
+        for i in range(por_canal):
+            pergunta = rng.random() < 0.5
+            fator = (4 if pergunta else 1) * rng.lognormvariate(0, 0.3)
+            data = inicio + timedelta(days=600 * i / por_canal, hours=rng.randint(0, 23))
+            videos.append(
+                video(
+                    canal_id,
+                    titulo=("Você sabia disso?" if pergunta else "Meu look do dia"),
+                    likes=int(tamanho * fator),
+                    views=int(tamanho * fator * 12),
+                    publicado_em=data.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                )
+            )
+        base[canal_id] = videos
+    return base

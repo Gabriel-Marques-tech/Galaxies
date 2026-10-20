@@ -1,7 +1,7 @@
 """Camada bruta: o que é caro de calcular sobre o gancho, feito uma vez por vídeo e guardado."""
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import duckdb
@@ -16,6 +16,7 @@ SEGUNDOS_DO_GANCHO = 5
 class ResumoGanchos(BaseModel):
     processados: int = 0
     falhas: int = 0
+    interrompido_por_cota: bool = False
 
 
 class Falha(BaseModel):
@@ -32,30 +33,48 @@ def registrar_falha(banco: duckdb.DuckDBPyConnection, falha: Falha):
     )
 
 
+def apagar_falhas(banco: duckdb.DuckDBPyConnection, video_ids: list[str]):
+    banco.executemany("DELETE FROM falhas WHERE video_id = ?", [[v] for v in video_ids])
+
+
 def listar_falhas(banco: duckdb.DuckDBPyConnection) -> list[Falha]:
     linhas = banco.execute("SELECT video_id, etapa, erro, run_id FROM falhas").fetchall()
     return [Falha(video_id=v, etapa=e, erro=err, run_id=r) for v, e, err, r in linhas]
 
 
-def pendentes(banco: duckdb.DuckDBPyConnection, limite_por_canal: int | None = None) -> list[str]:
-    """Vídeos sem camada bruta e sem falha registrada (falhas só voltam via reprocessar).
+def pendentes(
+    banco: duckdb.DuckDBPyConnection,
+    limite_por_canal: int | None = None,
+    canais: list[str] | None = None,
+    desde: date | None = None,
+) -> list[str]:
+    """Vídeos sem camada bruta, sem falha registrada (falhas só voltam via reprocessar) e
+    fora da lista de excluídos.
 
     Com limite_por_canal, a amostra de cada canal é espaçada igualmente no tempo, sobre todos
-    os vídeos do canal, para que rodadas repetidas escolham sempre os mesmos.
+    os vídeos do canal, para que rodadas repetidas escolham sempre os mesmos. desde limita a
+    vídeos publicados a partir da data (ex.: a janela de teste, para a ablação ter tamanho).
     """
     feitos = {
         v
         for (v,) in banco.execute(
             "SELECT video_id FROM camada_bruta UNION SELECT video_id FROM falhas"
+            " UNION SELECT id FROM excluidos WHERE tipo = 'video'"
         ).fetchall()
     }
     por_canal: dict[str, list[str]] = {}
     for video_id, canal_id in banco.execute(
-        "SELECT id, canal_id FROM videos ORDER BY publicado_em, id"
+        "SELECT id, canal_id FROM videos"
+        " WHERE canal_id NOT IN (SELECT id FROM excluidos WHERE tipo = 'canal')"
+        "   AND (?::DATE IS NULL OR publicado_em >= ?::DATE)"
+        " ORDER BY publicado_em, id",
+        [desde, desde],
     ).fetchall():
         por_canal.setdefault(canal_id, []).append(video_id)
     escolhidos = []
-    for ids in por_canal.values():
+    for canal_id, ids in por_canal.items():
+        if canais is not None and canal_id not in canais:
+            continue
         if limite_por_canal is not None and len(ids) > limite_por_canal:
             ids = _espacados(ids, limite_por_canal)
         escolhidos += [v for v in ids if v not in feitos]
@@ -84,7 +103,9 @@ def processar(
     video_id: str,
     fonte: str,
     pasta: Path,
+    salvar: bool = True,
 ) -> CamadaBruta:
+    """salvar=False serve à análise de um vídeo novo, que não entra na base."""
     with execucao.etapa("extrair_gancho", {"video_id": video_id}) as registro:
         gancho = deps.extrator.extrair(fonte, pasta, SEGUNDOS_DO_GANCHO)
         registro["saida"] = {"frames": len(gancho.frames), "audio": gancho.audio is not None}
@@ -106,10 +127,18 @@ def processar(
         transcricao=transcricao,
         embedding=embedding,
     )
-    banco.execute(
-        "INSERT OR REPLACE INTO camada_bruta VALUES (?, ?, ?, ?, ?, ?)",
-        [video_id, json.dumps(bruta.frames), descricao, transcricao, embedding, datetime.now(UTC)],
-    )
+    if salvar:
+        banco.execute(
+            "INSERT OR REPLACE INTO camada_bruta VALUES (?, ?, ?, ?, ?, ?)",
+            [
+                video_id,
+                json.dumps(bruta.frames),
+                descricao,
+                transcricao,
+                embedding,
+                datetime.now(UTC),
+            ],
+        )
     return bruta
 
 

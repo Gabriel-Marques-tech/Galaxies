@@ -27,9 +27,10 @@ class ExtratorYtDlp:
     @staticmethod
     def _baixar(video_id: str, pasta: Path, segundos: int) -> Path:
         opcoes = {
-            "format": "best[height<=720][ext=mp4]/best[height<=720]/best",
+            # Shorts são verticais: filtrar por largura. Vídeo e áudio vêm separados no YouTube.
+            "format": "bv*[width<=480]+ba/b[width<=480]/bv*+ba/b",
+            "merge_output_format": "mkv",
             "download_ranges": download_range_func(None, [(0, segundos)]),
-            "force_keyframes_at_cuts": True,
             "outtmpl": str(pasta / "video.%(ext)s"),
             "quiet": True,
             "no_warnings": True,

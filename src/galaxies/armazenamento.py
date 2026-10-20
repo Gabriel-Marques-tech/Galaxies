@@ -47,9 +47,20 @@ CREATE TABLE IF NOT EXISTS falhas (
     run_id   VARCHAR NOT NULL,
     quando   TIMESTAMPTZ NOT NULL
 );
+CREATE TABLE IF NOT EXISTS avaliacoes (
+    run_id    VARCHAR NOT NULL,
+    alvo      VARCHAR NOT NULL,
+    criado_em TIMESTAMPTZ NOT NULL,
+    avaliacao JSON NOT NULL
+);
 CREATE TABLE IF NOT EXISTS cota (
     run_id   VARCHAR NOT NULL,
     unidades INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS excluidos (
+    id     VARCHAR PRIMARY KEY,  -- id de vídeo ou de canal
+    tipo   VARCHAR NOT NULL,     -- 'video' ou 'canal'
+    quando TIMESTAMPTZ NOT NULL
 );
 CREATE TABLE IF NOT EXISTS videos (
     id           VARCHAR PRIMARY KEY,

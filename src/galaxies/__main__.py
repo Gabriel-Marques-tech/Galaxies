@@ -2,39 +2,10 @@
 
 import argparse
 import json
-import os
+from datetime import date
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-from galaxies import Framework
-from galaxies.adaptadores.youtube_api import YouTubeAPI
-from galaxies.portas import Dependencias
-
-
-def framework(multimodal: bool = False) -> Framework:
-    load_dotenv()
-    deps = Dependencias()
-    if chave := os.environ.get("YOUTUBE_API_KEY"):
-        deps.youtube = YouTubeAPI(chave)
-    if multimodal:
-        from galaxies.adaptadores.gancho import ExtratorYtDlp
-        from galaxies.adaptadores.gemini import DescritorOpenRouter
-        from galaxies.adaptadores.locais import EmbedderSigLIP, TranscritorWhisper
-
-        deps.extrator = ExtratorYtDlp()
-        deps.transcritor = TranscritorWhisper()
-        deps.embedder = EmbedderSigLIP()
-        if chave := os.environ.get("OPENROUTER_API_KEY"):
-            modelo = os.environ.get("OPENROUTER_MODELO", "google/gemini-2.5-flash-lite")
-            deps.descritor = DescritorOpenRouter(chave, modelo)
-    conta, token = os.environ.get("CLOUDFLARE_ACCOUNT_ID"), os.environ.get("CLOUDFLARE_API_TOKEN")
-    if conta and token:
-        from galaxies.adaptadores.jev import JevCloudflare
-
-        deps.jev = JevCloudflare(conta, token)
-    raiz = os.environ.get("GALAXIES_DADOS", "data")
-    return Framework(raiz=raiz, dependencias=deps)
+from galaxies.ambiente import framework
 
 
 def main():
@@ -50,16 +21,31 @@ def main():
     ganchos = comandos.add_parser("processar-ganchos", help="camada bruta do gancho")
     ganchos.add_argument("projeto")
     ganchos.add_argument("--limite-por-canal", type=int, default=None)
+    ganchos.add_argument("--canais", nargs="*", default=None, help="ids de canal (UC...)")
+    ganchos.add_argument("--desde", type=date.fromisoformat, default=None, help="AAAA-MM-DD")
     calcular = comandos.add_parser("calcular-atributos", help="pergunta os atributos ao Jev")
     calcular.add_argument("projeto")
     definir = comandos.add_parser("definir-atributos", help="substitui atributos (JSON)")
     definir.add_argument("projeto")
     definir.add_argument("arquivo", type=Path)
+    treinar = comandos.add_parser("treinar", help="treina e avalia (split temporal fixo)")
+    treinar.add_argument("projeto")
+    treinar.add_argument("--alvo", choices=["likes", "views"], default=None)
     falhas = comandos.add_parser("falhas", help="vídeos que falharam no pipeline")
     falhas.add_argument("projeto")
+    repro = comandos.add_parser("reprocessar", help="limpa falhas e refaz os vídeos")
+    repro.add_argument("projeto")
+    repro.add_argument("video_ids", nargs="*", help="vazio = todas as falhas")
+    excluir = comandos.add_parser("excluir", help="tira vídeos ou canais da base")
+    excluir.add_argument("projeto")
+    excluir.add_argument("--videos", nargs="*", default=[])
+    excluir.add_argument("--canais", nargs="*", default=[])
+    erros = comandos.add_parser("erros", help="falhas do pipeline e onde o modelo erra")
+    erros.add_argument("projeto")
+    erros.add_argument("--alvo", choices=["likes", "views"], default=None)
     args = cli.parse_args()
 
-    fw = framework(multimodal=args.comando == "processar-ganchos")
+    fw = framework(multimodal=args.comando in ("processar-ganchos", "reprocessar"))
     if args.comando == "criar-projeto":
         print(fw.criar_projeto(json.loads(args.config.read_text())).model_dump_json(indent=2))
     elif args.comando == "coletar":
@@ -67,16 +53,29 @@ def main():
     elif args.comando == "cota":
         print(fw.cota(args.projeto))
     elif args.comando == "processar-ganchos":
-        resumo = fw.processar_ganchos(args.projeto, limite_por_canal=args.limite_por_canal)
+        resumo = fw.processar_ganchos(
+            args.projeto,
+            limite_por_canal=args.limite_por_canal,
+            canais=args.canais,
+            desde=args.desde,
+        )
         print(resumo.model_dump_json(indent=2))
     elif args.comando == "calcular-atributos":
         print(fw.calcular_atributos(args.projeto).model_dump_json(indent=2))
     elif args.comando == "definir-atributos":
         definidos = fw.definir_atributos(args.projeto, json.loads(args.arquivo.read_text()))
         print(f"{len(definidos)} atributos definidos")
+    elif args.comando == "treinar":
+        print(fw.treinar(args.projeto, alvo=args.alvo).model_dump_json(indent=2))
     elif args.comando == "falhas":
         for falha in fw.falhas(args.projeto):
             print(falha.model_dump_json())
+    elif args.comando == "reprocessar":
+        print(fw.reprocessar(args.projeto, args.video_ids or None).model_dump_json(indent=2))
+    elif args.comando == "excluir":
+        fw.excluir(args.projeto, video_ids=args.videos, canais=args.canais)
+    elif args.comando == "erros":
+        print(fw.erros(args.projeto, alvo=args.alvo).model_dump_json(indent=2))
 
 
 if __name__ == "__main__":

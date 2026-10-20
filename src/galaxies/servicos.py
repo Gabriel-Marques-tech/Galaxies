@@ -1,13 +1,16 @@
 """Camada de serviços: o único seam do núcleo. MCP e FastAPI só chamam isto."""
 
+from datetime import date
 from pathlib import Path
 
 from pydantic import ValidationError
 
-from galaxies import armazenamento, camada_bruta, coleta
+from galaxies import armazenamento, camada_bruta, coleta, erros, modelagem, treino
 from galaxies import atributos as atrib
+from galaxies.analise import Analise, GanchoAnalisado, VideoNovo, linha_do_video, prever
 from galaxies.config import CanalSemente, ConfigProjeto, nome_valido
 from galaxies.erros import (
+    CanalForaDaBase,
     ConfigInvalida,
     DependenciaAusente,
     ProjetoJaExiste,
@@ -176,31 +179,89 @@ class Framework:
             return coleta.cota_total(banco)
 
     def processar_ganchos(
-        self, projeto: str, limite_por_canal: int | None = None
+        self,
+        projeto: str,
+        limite_por_canal: int | None = None,
+        canais: list[str] | None = None,
+        desde: date | None = None,
     ) -> camada_bruta.ResumoGanchos:
         """Calcula a camada bruta dos vídeos que ainda não a têm. limite_por_canal restringe a
         um subconjunto espaçado no tempo (a camada é cara)."""
         deps = self.dependencias
         for nome in ("extrator", "descritor", "transcritor", "embedder"):
             self._exigir(getattr(deps, nome), nome)
-        resumo = camada_bruta.ResumoGanchos()
         with self._abrir_existente(projeto) as banco, executar(banco, "processar_ganchos") as ex:
-            for video_id in camada_bruta.pendentes(banco, limite_por_canal):
-                pasta = self._pasta_do_projeto(projeto) / "ganchos" / video_id
-                ex.ultima_falha = None
-                try:
-                    camada_bruta.processar(banco, deps, ex, video_id, video_id, pasta)
-                    resumo.processados += 1
-                except Exception as e:
-                    etapa, erro = ex.ultima_falha or ("salvar", f"{type(e).__name__}: {e}")
-                    camada_bruta.registrar_falha(
-                        banco,
-                        camada_bruta.Falha(
-                            video_id=video_id, etapa=etapa, erro=erro, run_id=ex.run_id
-                        ),
-                    )
-                    resumo.falhas += 1
+            ids = camada_bruta.pendentes(banco, limite_por_canal, canais, desde)
+            return self._processar_lista(projeto, banco, ex, ids)
+
+    def _processar_lista(self, projeto, banco, ex, video_ids) -> camada_bruta.ResumoGanchos:
+        resumo = camada_bruta.ResumoGanchos()
+        for video_id in video_ids:
+            pasta = self._pasta_do_projeto(projeto) / "ganchos" / video_id
+            ex.ultima_falha = None
+            try:
+                camada_bruta.processar(banco, self.dependencias, ex, video_id, video_id, pasta)
+                resumo.processados += 1
+            except erros.CotaEsgotada:
+                resumo.interrompido_por_cota = True  # retoma amanhã de onde parou
+                break
+            except Exception as e:
+                etapa, erro = ex.ultima_falha or ("salvar", f"{type(e).__name__}: {e}")
+                camada_bruta.registrar_falha(
+                    banco,
+                    camada_bruta.Falha(video_id=video_id, etapa=etapa, erro=erro, run_id=ex.run_id),
+                )
+                resumo.falhas += 1
         return resumo
+
+    def reprocessar(
+        self, projeto: str, video_ids: list[str] | None = None
+    ) -> camada_bruta.ResumoGanchos:
+        """Limpa as falhas (todas, ou só as dos vídeos pedidos) e refaz esses vídeos.
+        Vídeos que já têm camada bruta só voltam a perguntar os atributos."""
+        with self._abrir_existente(projeto) as banco, executar(banco, "reprocessar") as ex:
+            falhos = {f.video_id for f in camada_bruta.listar_falhas(banco)}
+            alvo = (
+                [v for v in video_ids if v in falhos] if video_ids is not None else sorted(falhos)
+            )
+            camada_bruta.apagar_falhas(banco, alvo)
+            feitos = {b.video_id for b in camada_bruta.listar(banco)}
+            sem_bruta = [v for v in alvo if v not in feitos]
+            if sem_bruta:
+                for nome in ("extrator", "descritor", "transcritor", "embedder"):
+                    self._exigir(getattr(self.dependencias, nome), nome)
+            resumo = (
+                self._processar_lista(projeto, banco, ex, sem_bruta)
+                if sem_bruta
+                else camada_bruta.ResumoGanchos()
+            )
+        if self.dependencias.jev is not None and len(sem_bruta) < len(alvo):
+            self.calcular_atributos(projeto)
+        return resumo
+
+    def excluir(self, projeto: str, video_ids: list[str] = (), canais: list[str] = ()):
+        """Tira vídeos ou canais inteiros do processamento e dos próximos treinos."""
+        with self._abrir_existente(projeto) as banco:
+            agora = modelagem.agora()
+            banco.executemany(
+                "INSERT OR REPLACE INTO excluidos VALUES (?, ?, ?)",
+                [[v, "video", agora] for v in video_ids] + [[c, "canal", agora] for c in canais],
+            )
+
+    def erros(self, projeto: str, alvo: str | None = None) -> modelagem.RelatorioErros:
+        """Falhas do pipeline por etapa + onde o último treino mais erra."""
+        alvo = alvo or self.obter_projeto(projeto).alvo
+        with self._abrir_existente(projeto) as banco:
+            falhas = camada_bruta.listar_falhas(banco)
+            avaliacao = modelagem.ultima_avaliacao(banco, alvo)
+        por_etapa: dict[str, int] = {}
+        for f in falhas:
+            por_etapa[f.etapa] = por_etapa.get(f.etapa, 0) + 1
+        return modelagem.RelatorioErros(
+            falhas_por_etapa=por_etapa,
+            piores=avaliacao.piores if avaliacao else [],
+            segmentos=avaliacao.segmentos if avaliacao else {},
+        )
 
     def falhas(self, projeto: str) -> list[camada_bruta.Falha]:
         with self._abrir_existente(projeto) as banco:
@@ -214,23 +275,85 @@ class Framework:
         with self._abrir_existente(projeto) as banco:
             return coleta.listar_videos(banco)
 
-    def treinar(self, projeto: str):  # #6
-        raise NotImplementedError("#6")
+    def treinar(self, projeto: str, alvo: str | None = None) -> modelagem.Avaliacao:
+        """Avalia por camadas no split temporal fixo e salva o modelo final do alvo."""
+        config = self.obter_projeto(projeto)
+        alvo = alvo or config.alvo
+        if alvo not in ("likes", "views"):
+            raise ConfigInvalida(f"alvo '{alvo}' inválido: use likes ou views")
+        with self._abrir_existente(projeto) as banco, executar(banco, "treinar") as ex:
+            avaliacao = treino.treinar(
+                banco,
+                alvo,
+                atrib.ler_definicoes(banco),
+                self._pasta_do_projeto(projeto) / "modelos",
+                ex,
+            )
+            modelagem.salvar_avaliacao(banco, ex.run_id, avaliacao)
+        return avaliacao
 
-    def status(self, projeto: str, job_id: str):  # #6
-        raise NotImplementedError("#6")
+    def avaliar(self, projeto: str, alvo: str | None = None) -> modelagem.Avaliacao:
+        """Última avaliação do alvo. Treine antes."""
+        alvo = alvo or self.obter_projeto(projeto).alvo
+        with self._abrir_existente(projeto) as banco:
+            avaliacao = modelagem.ultima_avaliacao(banco, alvo)
+        if avaliacao is None:
+            raise erros.ErroGalaxies(f"Nenhum treino para o alvo '{alvo}'. Rode treinar primeiro.")
+        return avaliacao
 
-    def avaliar(self, projeto: str):  # #6
-        raise NotImplementedError("#6")
-
-    def erros(self, projeto: str):  # #8
-        raise NotImplementedError("#8")
-
-    def reprocessar(self, projeto: str, video_ids: list[str]):  # #8
-        raise NotImplementedError("#8")
-
-    def analisar(self, projeto: str, video, canal_id: str):  # #7
-        raise NotImplementedError("#7")
+    def analisar(self, projeto: str, video: VideoNovo | dict, canal_id: str) -> Analise:
+        """Previsão de um Short ainda não publicado, para um canal que já está na base."""
+        config = self.obter_projeto(projeto)
+        video = VideoNovo.model_validate(video)
+        carregado = modelagem.carregar_modelos(
+            self._pasta_do_projeto(projeto) / "modelos" / config.alvo
+        )
+        if carregado is None:
+            raise erros.ErroGalaxies(f"Nenhum modelo para '{config.alvo}'. Rode treinar primeiro.")
+        modelos, meta = carregado
+        if canal_id not in {c["canal_id"] for c in meta["canais"]}:
+            raise CanalForaDaBase(canal_id)
+        with self._abrir_existente(projeto) as banco, executar(banco, "analisar") as ex:
+            setor, inscritos = banco.execute(
+                "SELECT setor, inscritos FROM canais WHERE id = ?", [canal_id]
+            ).fetchone()
+            gancho = atributos = None
+            if video.fonte:
+                bruta = camada_bruta.processar(
+                    banco,
+                    self.dependencias,
+                    ex,
+                    "novo",
+                    video.fonte,
+                    self._pasta_do_projeto(projeto) / "analises" / ex.run_id,
+                    salvar=False,
+                )
+                gancho = GanchoAnalisado(descricao=bruta.descricao, transcricao=bruta.transcricao)
+                if self.dependencias.jev is not None:
+                    definicoes = atrib.ler_definicoes(banco)
+                    estado = atrib.estado_do_video(video.titulo, video.descricao, video.tags, bruta)
+                    with ex.etapa("perguntar_atributos", {"estado": estado}) as registro:
+                        atributos = self.dependencias.jev.perguntar(
+                            estado, {a.id: a.como_pergunta_jev() for a in definicoes}
+                        )
+                        registro["saida"] = atributos
+            linha = linha_do_video(video, {"canal_id": canal_id}, setor, inscritos)
+            with ex.etapa("prever", video.model_dump(mode="json")) as registro:
+                resultado = prever(modelos, meta, linha, config.limite_viral)
+                registro["saida"] = {
+                    "timeline": [p.model_dump() for p in resultado["timeline"]],
+                    "p_viral": resultado["p_viral"],
+                }
+            with ex.etapa("explicar") as registro:
+                registro["saida"] = [f.model_dump() for f in resultado["fatores"]]
+            return Analise(
+                run_id=ex.run_id,
+                canal_id=canal_id,
+                alvo=config.alvo,
+                gancho=gancho,
+                atributos=atributos,
+                **resultado,
+            )
 
     def comparar(self, projeto: str, video_a, video_b):  # #10
         raise NotImplementedError("#10")
