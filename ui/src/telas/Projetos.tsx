@@ -21,7 +21,6 @@ export default function Projetos({ projetos, abrir, aoCriar }: {
     ).then(setCartoes)
   }, [projetos])
 
-  const meio = Math.ceil(cartoes.length / 2)
   const ganhos = cartoes.filter((c) => c.ativo).map((c) => c.ativo!.resultado.ganho)
   const medio = ganhos.length ? ganhos.reduce((a, b) => a + b, 0) / ganhos.length : null
   const Novo = () => (
@@ -38,10 +37,10 @@ export default function Projetos({ projetos, abrir, aoCriar }: {
         <p>Qual projeto vamos melhorar hoje?</p>
       </div>
       <div className="projetos-grade">
-        <div className="carrossel">
-          {cartoes.slice(0, meio).map((c) => <CartaoProjeto key={c.nome} c={c} abrir={() => abrir(c.nome)} />)}
+        <div className="feed" aria-label="Projetos: role como num feed de Shorts">
+          {cartoes.map((c) => <CartaoProjeto key={c.nome} c={c} abrir={() => abrir(c.nome)} />)}
           <Novo />
-          {cartoes.slice(meio).map((c) => <CartaoProjeto key={c.nome} c={c} abrir={() => abrir(c.nome)} />)}
+          <div className="feed-fim" />
         </div>
         <aside className="alcance">
           <span className="rotulo">Alcance melhorado estimado</span>
@@ -74,6 +73,7 @@ function CartaoProjeto({ c, abrir }: { c: Cartao; abrir: () => void }) {
       <span className="sub">{c.total} experimento{c.total === 1 ? '' : 's'}</span>
       <span className="grande">{ganho === undefined ? '—' : `−${pct(ganho, false)}`}</span>
       <span className="sub">{ganho === undefined ? 'sem modelo ativo' : 'de erro vs baseline'}</span>
+      <span className="abrir-proj"><Icone nome="arrow_forward" /> abrir</span>
     </button>
   )
 }

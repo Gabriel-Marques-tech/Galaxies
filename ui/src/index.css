@@ -424,3 +424,17 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 .lista-projetos .sub-item.atual { color: var(--primaria); font-weight: 500; }
 .lista-projetos .icone.pequeno { font-size: 14px; }
 .projeto-select { display: none; }
+
+/* feed vertical de projetos (Shorts): um card por vez, snap, o próximo espiando embaixo */
+.feed { height: 560px; overflow-y: auto; scroll-snap-type: y mandatory; display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 10px 0 0; scrollbar-width: none; mask-image: linear-gradient(to bottom, #000 78%, transparent); -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent); }
+.feed::-webkit-scrollbar { display: none; }
+.feed .cartao-projeto { scroll-snap-align: start; scroll-snap-stop: always; flex-shrink: 0; width: 300px; height: 470px; padding: 26px; border-radius: 28px; background: linear-gradient(170deg, var(--superficie-3), var(--superficie-2) 60%); }
+.feed .cartao-projeto .icone-proj { width: 52px; height: 52px; border-radius: 16px; }
+.feed .cartao-projeto .icone-proj .icone { font-size: 26px; }
+.feed .cartao-projeto .nome-proj { margin-top: 22px; font-size: 22px; }
+.feed .cartao-projeto .grande { font-size: 44px; }
+.feed .cartao-projeto .abrir-proj { margin-top: 18px; display: inline-flex; align-items: center; gap: 6px; color: var(--primaria); font-size: 13px; font-weight: 500; opacity: 0; transform: translateX(-6px); transition: opacity .25s, transform .25s; }
+.feed .cartao-projeto:hover .abrir-proj { opacity: 1; transform: none; }
+.feed .cartao-projeto.novo .icone { font-size: 56px; }
+.feed-fim { flex-shrink: 0; height: 80px; }
+.projetos-grade { align-items: start; }
