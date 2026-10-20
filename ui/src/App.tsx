@@ -33,6 +33,7 @@ export default function App() {
   const [tela, setTela] = useState<Tela>(() => (TELAS.includes(location.hash.slice(1) as Tela) ? location.hash.slice(1) as Tela : 'projetos'))
   const [recolhida, setRecolhida] = useState(window.innerWidth < 860)
   const [tema, setTema] = useState(lerTema)
+  const [listaAberta, setListaAberta] = useState(false)
   const config = useCarga(() => (projeto ? api.projeto(projeto) : Promise.resolve(null)), [projeto])
   const experimentos = useCarga(() => (projeto ? api.experimentos(projeto) : Promise.resolve([])), [projeto, tela])
 
@@ -58,13 +59,23 @@ export default function App() {
           <button className="btn-icone" onClick={() => setRecolhida(!recolhida)} aria-label="Alternar menu"><Icone nome="menu" /></button>
           <span className="marca so-aberta"><img src="/logo.svg" alt="" className="logo-img" />Galaxies</span>
         </div>
-        <button className={`item-nav ${tela === 'projetos' ? 'ativo' : ''}`} onClick={() => ir('projetos')} title="Projetos">
-          <Icone nome="grid_view" cheio={tela === 'projetos'} />
-          <span className="rotulo-nav">Projetos</span>
-        </button>
-        <select className="campo projeto-select so-aberta" value={projeto} onChange={(e) => setProjeto(e.target.value)} aria-label="Projeto">
-          {projetos.dados?.map((p) => <option key={p}>{p}</option>)}
-        </select>
+        <div className={`item-nav projetos-nav ${tela === 'projetos' ? 'ativo' : ''}`}>
+          <button className="abrir" onClick={() => (tela === 'projetos' ? setListaAberta(!listaAberta) : ir('projetos'))} title="Projetos">
+            <Icone nome="grid_view" cheio={tela === 'projetos'} />
+            <span className="rotulo-nav">Projetos{projeto && <small> · {projeto}</small>}</span>
+          </button>
+          <button className={`seta ${listaAberta ? 'aberta' : ''}`} onClick={() => setListaAberta(!listaAberta)} aria-label="Escolher projeto" aria-expanded={listaAberta}>
+            <Icone nome="expand_more" />
+          </button>
+        </div>
+        <div className={`lista-projetos so-aberta ${listaAberta ? 'aberta' : ''}`}>
+          {projetos.dados?.map((p) => (
+            <button key={p} className={`item-nav sub-item ${p === projeto ? 'atual' : ''}`} onClick={() => { setProjeto(p); setListaAberta(false); if (tela === 'projetos') ir('inicio') }}>
+              <Icone nome={p === projeto ? 'radio_button_checked' : 'radio_button_unchecked'} className="pequeno" />
+              <span className="rotulo-nav">{p}</span>
+            </button>
+          ))}
+        </div>
         {NAV.map((n) => (
           <button key={n.id} className={`item-nav ${tela === n.id ? 'ativo' : ''}`} onClick={() => ir(n.id)} title={n.nome}>
             <Icone nome={n.icone} cheio={tela === n.id} />

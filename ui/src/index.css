@@ -409,3 +409,18 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 .campo-config .escala i { font-style: normal; }
 .short-drop video { object-fit: contain; background: #000; }
 @media (max-width: 720px) { .palco { flex-direction: column; align-items: center; } .config { width: 100%; } }
+
+/* Projetos na barra lateral: clique vai para a tela; a seta (ou clicar já estando nela) abre a lista */
+.projetos-nav { padding: 0 4px 0 0; gap: 0; }
+.projetos-nav .abrir { flex: 1; display: flex; align-items: center; gap: 10px; height: 100%; padding: 0 12px; border: 0; background: none; color: inherit; cursor: pointer; border-radius: var(--pilula); text-align: left; }
+.projetos-nav .abrir small { color: var(--texto-3); font-size: 12px; font-weight: 400; }
+.projetos-nav .seta { width: 30px; height: 30px; border-radius: 50%; border: 0; background: none; color: var(--texto-3); display: grid; place-items: center; cursor: pointer; transition: transform .25s, background .2s; }
+.projetos-nav .seta:hover { background: var(--superficie-4); color: var(--texto); }
+.projetos-nav .seta.aberta { transform: rotate(180deg); }
+.lista-projetos { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s cubic-bezier(.2,.8,.2,1); }
+.lista-projetos.aberta { grid-template-rows: 1fr; }
+.lista-projetos > * { min-height: 0; }
+.lista-projetos .sub-item { height: 34px; padding-left: 26px; font-size: 13px; color: var(--texto-2); overflow: hidden; }
+.lista-projetos .sub-item.atual { color: var(--primaria); font-weight: 500; }
+.lista-projetos .icone.pequeno { font-size: 14px; }
+.projeto-select { display: none; }
