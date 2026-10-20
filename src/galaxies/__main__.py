@@ -55,6 +55,8 @@ def main():
     promover = comandos.add_parser("promover", help="promove um experimento")
     promover.add_argument("projeto")
     promover.add_argument("exp_id")
+    rel = comandos.add_parser("relatorio", help="relatório de avaliação em Markdown")
+    rel.add_argument("projeto")
     otimizar = comandos.add_parser("otimizar", help="busca a melhor receita na validação")
     otimizar.add_argument("projeto")
     otimizar.add_argument("--alvo", choices=["likes", "views"], default=None)
@@ -112,6 +114,8 @@ def main():
             )
     elif args.comando == "promover":
         print(fw.promover(args.projeto, args.exp_id).status)
+    elif args.comando == "relatorio":
+        print(fw.relatorio(args.projeto))
     elif args.comando == "otimizar":
         ciclo = fw.otimizar(args.projeto, args.alvo, args.orcamento, args.paciencia)
         for t in ciclo.tentativas:

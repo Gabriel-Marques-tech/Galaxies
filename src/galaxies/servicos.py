@@ -1,6 +1,6 @@
 """Camada de serviços: o único seam do núcleo. MCP e FastAPI só chamam isto."""
 
-from datetime import date
+from datetime import UTC, date
 from pathlib import Path
 
 import numpy as np
@@ -19,6 +19,7 @@ from galaxies import (
     treino,
 )
 from galaxies import atributos as atrib
+from galaxies import relatorio as relatorio_md
 from galaxies.analise import (
     Analise,
     Comparacao,
@@ -530,6 +531,26 @@ class Framework:
             tentativas=[t.model_dump() for t in busca.tentativas],
             objetivo_validacao=busca.objetivo_validacao,
         )
+
+    def relatorio(self, projeto: str) -> str:
+        """Relatório de avaliação em Markdown, reproduzível a partir do banco."""
+        config = self.obter_projeto(projeto)
+        exps = self.experimentos(projeto)
+        otimizacoes = []
+        with self._abrir_existente(projeto) as banco:
+            for run in reversed(listar_runs(banco)):
+                if run.operacao != "otimizar" or run.status != "ok":
+                    continue
+                tentativas = [
+                    {**e.entrada, **(e.saida or {})}
+                    for e in ler_trace(banco, run.id)
+                    if e.nome == "tentativa"
+                ]
+                inicio = run.inicio if run.inicio.tzinfo else run.inicio.replace(tzinfo=UTC)
+                alvo = next((x.alvo for x in exps if x.criado_em >= inicio), config.alvo)
+                if tentativas and alvo not in {a for a, _ in otimizacoes}:
+                    otimizacoes.append((alvo, tentativas))
+        return relatorio_md.gerar(projeto, config, self.resumo(projeto), exps, otimizacoes)
 
     def ciclo_automatico(self, projeto: str, alvo: str | None = None) -> Ciclo:
         """Modo automático: otimiza e promove sozinho."""

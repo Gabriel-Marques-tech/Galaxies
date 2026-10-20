@@ -17,6 +17,23 @@ mesmas linhas de teste, com o baseline do canal e com um controle só de metadad
 Tudo roda em serviços gratuitos: YouTube Data API, Gemini pelo AI Studio (descrição do
 gancho), Laya local (atributos no formato do Jev), Whisper e SigLIP locais.
 
+## Resultados (moda e beleza, 46.393 Shorts de 113 canais)
+
+Modelos encontrados pelo agente com `otimizar`, medidos uma vez no teste (os 20% de vídeos
+mais recentes). Baseline = média do canal.
+
+| Alvo | Receita escolhida pelo agente | Erro vs baseline | Acerto A vs B no canal | Faixa de 80% cobre |
+|---|---|---|---|---|
+| likes | metadados + histórico do canal | **−19,0%** (MAE 0,699 vs 0,863) | 58% (acaso: 50%) | 76% |
+| views | metadados + histórico + texto | **−18,5%** (MAE 0,697 vs 0,856) | 57% | 72% |
+
+O que isso quer dizer na prática: o erro típico cai de ~2,4× para ~2,0×; de dois vídeos
+do mesmo canal, o modelo aponta o melhor em ~58% dos casos; a faixa prometida de 80% contém
+~75% dos resultados reais. Serve para expectativa, triagem e priorizar testes, não para
+cravar números. Relatório completo, com todas as tentativas do agente:
+[`docs/avaliacao.md`](docs/avaliacao.md), gerado por
+`uv run python -m galaxies relatorio moda-beleza`.
+
 ## Setup
 
 ```bash
@@ -58,8 +75,9 @@ Fluxo típico pedido ao agente:
 1. `criar_projeto` com setores, canais-semente, alvo (`likes` ou `views`) e `modo`.
 2. Dados: `coletar` → `processar_ganchos` (amostra) → `calcular_atributos`. São jobs: o
    agente acompanha com `status`.
-3. Modelo: `experimentar` com uma receita (camadas, atributos, extrator, hiperparâmetros) e
-   uma hipótese; `experimentos` para comparar; `promover` o melhor. No modo automático,
+3. Modelo: `otimizar` busca a melhor receita (camadas, atributos, extrator, hiperparâmetros)
+   na validação e mede só a escolhida no teste. `experimentar` testa uma ideia específica com
+   uma hipótese; `experimentos` compara; `promover` ativa. No modo automático,
    `ciclo_automatico` faz tudo.
 4. Adaptar: ler `erros`, `notas` e `concordancia`, ajustar com `definir_atributos` e
    experimentar de novo.

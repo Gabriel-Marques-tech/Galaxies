@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 112" width="160" height="112">
+  <!-- Galaxies (projeto): quatro quartos de círculo deixam uma estrela em negativo no centro;
+       estrelas menores se dispersam para o canto superior direito. Azul → roxo. -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#0065ff"/>
+      <stop offset="0.55" stop-color="#5b5bf6"/>
+      <stop offset="1" stop-color="#9b5cf6"/>
+    </linearGradient>
+    <linearGradient id="d" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#6d5cf6"/>
+      <stop offset="1" stop-color="#b48cff"/>
+    </linearGradient>
+    <path id="petala" d="M4,47 L4,18 Q4,4 18,4 L47,4 A43,43 0 0 1 4,47 Z"/>
+    <path id="estrela" d="M0,-1 C0.08,-0.4 0.4,-0.08 1,0 C0.4,0.08 0.08,0.4 0,1 C-0.08,0.4 -0.4,0.08 -1,0 C-0.4,-0.08 -0.08,-0.4 0,-1 Z"/>
+  </defs>
+  <g id="tudo"><g id="marca" transform="translate(0,12)" fill="url(#g)">
+    <use href="#petala"/>
+    <use href="#petala" transform="rotate(90 50 50)"/>
+    <use href="#petala" transform="rotate(180 50 50)"/>
+    <use href="#petala" transform="rotate(270 50 50)"/>
+  </g>
+  <!-- dispersão: estrelas que escapam pelo ponto superior direito -->
+  <g fill="url(#d)">
+    <use href="#estrela" transform="translate(108,30) scale(11)" opacity="0.95"/>
+    <use href="#estrela" transform="translate(126,16) scale(7)" opacity="0.8"/>
+    <use href="#estrela" transform="translate(140,30) scale(4.5)" opacity="0.65"/>
+    <use href="#estrela" transform="translate(150,10) scale(3)" opacity="0.5"/>
+    <use href="#estrela" transform="translate(120,46) scale(2.5)" opacity="0.45"/>
+  </g></g>
+</svg>

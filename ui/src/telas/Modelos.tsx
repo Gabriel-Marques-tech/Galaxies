@@ -49,7 +49,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
                 <tr key={e.id} className={`clicavel ${aberto === e.id ? 'selecionada' : ''}`} onClick={() => setAberto(e.id)}>
                   <td>
                     <b>{e.receita.camadas.join(' + ')}</b>
-                    <div className="sub mono">{e.id}{e.receita.extrator ? ` · ${e.receita.extrator.replace('@cf/meta/', '')}` : ''}</div>
+                    <div className="sub mono">{e.alvo} · {e.id}{e.receita.extrator ? ` · ${e.receita.extrator.replace('@cf/meta/', '')}` : ''}</div>
                   </td>
                   <td className="sub" style={{ maxWidth: 260 }}>{e.hipotese || '—'}</td>
                   <td className="n">{e.resultado.n_teste}</td>

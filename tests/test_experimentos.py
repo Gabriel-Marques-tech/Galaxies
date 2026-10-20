@@ -289,3 +289,15 @@ def test_otimizar_respeita_orcamento_e_registra_cada_tentativa_no_trace(tmp_path
     assert len([e for e in framework.trace("moda-beleza", run.id) if e.nome == "tentativa"]) == len(
         ciclo.tentativas
     )
+
+
+def test_relatorio_reproduz_os_numeros_do_banco(tmp_path):
+    framework = projeto(tmp_path)
+    framework.calcular_texto("moda-beleza")
+    framework.otimizar("moda-beleza", orcamento=4, paciencia=2)
+
+    md = framework.relatorio("moda-beleza")
+
+    assert "# Relatório de avaliação: moda-beleza" in md
+    assert "**Modelo ativo" in md
+    assert "Busca do agente (likes, validação)" in md
