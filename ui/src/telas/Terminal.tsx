@@ -54,13 +54,13 @@ const COMANDOS: Record<string, Comando> = {
     },
   },
   '/modelos': {
-    uso: '/modelos', desc: 'experimentos contra baseline e controle',
+    uso: '/modelos', desc: 'experimentos contra a média do canal e o controle',
     rodar: async (_a, p, out) => {
       const exps = await api.experimentos(p)
       if (!exps.length) return out([l(dim('nenhum experimento. o agente roda: experimentar / ciclo_automatico'))])
       out([
         ...tabela(
-          ['id', 'receita', 'teste', 'MAE', 'só meta', 'baseline', 'pares', 'faixa 80%', 'ganho', 'status'],
+          ['id', 'receita', 'teste', 'MAE', 'só meta', 'média', 'pares', 'faixa 80%', 'ganho', 'status'],
           [...exps].reverse().map((e) => {
             const r = e.resultado
             return [e.id, e.receita.camadas.join('+').replace('metadados', 'meta'), String(r.n_teste), num(r.modelo.mae),
@@ -81,7 +81,7 @@ const COMANDOS: Record<string, Comando> = {
       out([
         l(negrito(`${e.id} · ${e.receita.camadas.join(' + ')}`), dim(` · ${e.status}`)),
         e.hipotese ? l(dim('hipótese  '), e.hipotese) : l(),
-        l(dim('vs base   '), r.ganho > 0 ? ok(pct(r.ganho)) : ruim(pct(r.ganho)), dim(`  vs só meta `), r.melhora_sobre_controle > 0 ? ok(pct(r.melhora_sobre_controle)) : ruim(pct(r.melhora_sobre_controle)), dim(`  n=${r.n_teste}`)),
+        l(dim('vs média  '), r.ganho > 0 ? ok(pct(r.ganho)) : ruim(pct(r.ganho)), dim(`  vs só meta `), r.melhora_sobre_controle > 0 ? ok(pct(r.melhora_sobre_controle)) : ruim(pct(r.melhora_sobre_controle)), dim(`  n=${r.n_teste}`)),
         ...r.sugestoes.map((s) => l(info('  › '), s)),
         ...Object.entries(r.ganho_por_atributo).slice(0, 15).map(([a, g]) =>
           l('  ', a.padEnd(22), g > 0 ? ok(('+' + g.toFixed(4)).padStart(8)) : dim(g.toFixed(4).padStart(8)), dim(' ' + '█'.repeat(Math.min(Math.round(Math.abs(g) * 2000), 30))))),

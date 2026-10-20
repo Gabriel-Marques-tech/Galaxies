@@ -63,10 +63,10 @@ export function BarrasMae({ r }: { r: Experimento['resultado'] }) {
   const linhas: [string, string, number][] = [
     ['modelo', 'modelo', r.modelo.mae],
     ['controle', 'só meta', r.controle_metadados.mae],
-    ['baseline', 'baseline', r.baseline.mae],
+    ['baseline', 'média', r.baseline.mae],
   ]
   return (
-    <div className="mae" role="img" aria-label={`MAE modelo ${num(r.modelo.mae)}, só metadados ${num(r.controle_metadados.mae)}, baseline ${num(r.baseline.mae)}`}>
+    <div className="mae" role="img" aria-label={`MAE modelo ${num(r.modelo.mae)}, só metadados ${num(r.controle_metadados.mae)}, média do canal ${num(r.baseline.mae)}`}>
       {linhas.map(([cls, nome, v]) => (
         <div key={cls} style={{ display: 'contents' }} title={`${nome}: ${num(v)}`}>
           <span className="nome">{nome}</span>

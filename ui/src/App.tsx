@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import { Aviso, Icone, useCarga } from './componentes'
 import Analisar from './telas/Analisar'
@@ -34,13 +34,25 @@ export default function App() {
   const [recolhida, setRecolhida] = useState(window.innerWidth < 860)
   const [tema, setTema] = useState(lerTema)
   const [listaAberta, setListaAberta] = useState(false)
+  // Onda que atravessa a tela quando o modo muda (sai do botão do topo)
+  const [onda, setOnda] = useState<'automatico' | 'cientista' | null>(null)
+  const modoAnterior = useRef<string | undefined>(undefined)
   const config = useCarga(() => (projeto ? api.projeto(projeto) : Promise.resolve(null)), [projeto])
   const experimentos = useCarga(() => (projeto ? api.experimentos(projeto) : Promise.resolve([])), [projeto, tela])
 
   useEffect(() => {
     if (!projeto && projetos.dados?.length) setProjeto(projetos.dados[0])
   }, [projetos.dados, projeto])
-  useEffect(() => { document.documentElement.dataset.modo = config.dados?.modo ?? 'automatico' }, [config.dados?.modo])
+  useEffect(() => {
+    const modo = config.dados?.modo ?? 'automatico'
+    document.documentElement.dataset.modo = modo
+    const mudou = modoAnterior.current !== undefined && modoAnterior.current !== modo
+    modoAnterior.current = config.dados?.modo
+    if (!mudou) return
+    setOnda(modo)
+    const t = setTimeout(() => setOnda(null), 1300)
+    return () => clearTimeout(t)
+  }, [config.dados?.modo])
   useEffect(() => {
     document.documentElement.dataset.theme = tema
     try { localStorage.setItem('tema', tema) } catch { /* sem storage: só não lembra */ }
@@ -98,7 +110,8 @@ export default function App() {
         </div>
       </aside>
 
-      <div className="principal">
+      <div className={`principal ${onda ? 'ressoando' : ''}`}>
+        {onda && <div className={`onda ${onda}`} aria-hidden />}
         <div className="barra-topo">
           {recolhida && <button className="btn-icone" onClick={() => setRecolhida(false)} aria-label="Abrir menu"><Icone nome="menu" /></button>}
           <h1>{titulo}</h1>
@@ -112,7 +125,7 @@ export default function App() {
           )}
         </div>
         <div className="conteudo">
-          <div className="largura">
+          <div className="largura tela-anim" key={`${tela}-${projeto}`}>
             {projetos.erro && <Aviso texto={`API indisponível (${projetos.erro}). Rode: uv run --extra multimodal galaxies-api`} />}
             {tela === 'projetos' && projetos.dados && (
               <Projetos projetos={projetos.dados} abrir={abrirProjeto} aoCriar={projetos.recarregar} />

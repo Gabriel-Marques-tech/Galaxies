@@ -463,3 +463,39 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 .cartao-projeto .grande, .cartao-projeto .nome-proj { max-width: 100%; }
 /* no desktop a barra recolhida já tem o seu botão de menu: o do topo só aparece no celular */
 @media (min-width: 861px) { .barra-topo > .btn-icone { display: none; } }
+
+/* ---------------------------------------------------------------- ressonância ao trocar o modo */
+.principal { position: relative; }
+.onda { position: absolute; top: 44px; right: 120px; width: 10px; height: 10px; border-radius: 50%; pointer-events: none; z-index: 5;
+  background: radial-gradient(circle, color-mix(in srgb, var(--primaria) 55%, transparent) 0%, color-mix(in srgb, var(--primaria) 18%, transparent) 40%, transparent 70%);
+  animation: ondular 1.2s cubic-bezier(.2,.7,.2,1) forwards; }
+.onda::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--primaria); opacity: .9; animation: anel 1.2s cubic-bezier(.2,.7,.2,1) forwards; }
+@keyframes ondular { from { transform: translate(-50%, -50%) scale(1); opacity: 1; } to { transform: translate(-50%, -50%) scale(420); opacity: 0; } }
+@keyframes anel { from { opacity: .9; } 60% { opacity: .35; } to { opacity: 0; } }
+.principal.ressoando { animation: ressoar 1.2s ease-out; }
+@keyframes ressoar { 0% { box-shadow: 0 0 0 1px var(--primaria), 0 0 0 var(--brilho); } 35% { box-shadow: 0 0 0 3px var(--primaria), 0 0 70px var(--brilho); } 100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--primaria) 45%, transparent), 0 0 14px color-mix(in srgb, var(--primaria) 18%, transparent); } }
+.ressoando .cartao, .ressoando .metrica, .ressoando .cartao-projeto, .ressoando .compositor, .ressoando .short-drop, .ressoando .insights, .ressoando .tabela tbody tr { animation: vibrar .9s cubic-bezier(.2,.8,.2,1) both; }
+.ressoando .cartao:nth-child(2), .ressoando .metrica:nth-child(2) { animation-delay: .07s; }
+.ressoando .cartao:nth-child(3), .ressoando .metrica:nth-child(3) { animation-delay: .14s; }
+.ressoando .cartao:nth-child(4), .ressoando .metrica:nth-child(4) { animation-delay: .21s; }
+@keyframes vibrar { 0% { transform: scale(1); } 30% { transform: scale(1.015); box-shadow: 0 0 0 1px var(--primaria), 0 0 28px var(--brilho); } 100% { transform: scale(1); } }
+.ressoando .item-nav.ativo, .ressoando .chip.alternar { animation: brilhar .9s ease-out; }
+@keyframes brilhar { 0% { box-shadow: 0 0 0 0 var(--brilho); } 40% { box-shadow: 0 0 0 6px transparent, 0 0 24px var(--brilho); } 100% { box-shadow: none; } }
+
+/* transição entre telas */
+.tela-anim { animation: entrar-tela .35s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes entrar-tela { from { opacity: 0; transform: translateY(8px) scale(.995); } to { opacity: 1; transform: none; } }
+
+/* números "pulam" ao aparecer; logo gira no hover; itens do menu deslizam */
+.metrica .valor, .cartao-projeto .grande, .alcance .enorme { animation: pular .7s cubic-bezier(.2,.9,.2,1.2) both; animation-delay: .15s; }
+@keyframes pular { from { opacity: 0; transform: translateY(8px) scale(.92); } to { opacity: 1; transform: none; } }
+.marca .logo-img { transition: transform .7s cubic-bezier(.2,.8,.2,1); }
+.marca:hover .logo-img { transform: rotate(180deg) scale(1.1); }
+.item-nav:hover { transform: translateX(2px); }
+.item-nav { transition: transform .2s, background .2s, color .2s; }
+.chip.alternar:active { transform: scale(.96); }
+
+/* cards com brilho que acompanha o mouse (leve) */
+.cartao, .metrica { background-image: radial-gradient(circle at var(--mx, 50%) var(--my, 0%), color-mix(in srgb, var(--primaria) 10%, transparent), transparent 45%); }
+
+@media (prefers-reduced-motion: reduce) { .onda, .principal.ressoando, .ressoando *, .tela-anim, .metrica .valor { animation: none !important; } }

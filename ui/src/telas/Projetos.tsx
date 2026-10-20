@@ -78,7 +78,7 @@ function CartaoProjeto({ c, emFoco, abrir, criar }: { c: Cartao; emFoco: boolean
       <span className="nome-proj">{c.nome}</span>
       <span className="sub">{c.total} experimento{c.total === 1 ? '' : 's'}</span>
       <span className="grande">{ganho === undefined ? '—' : `−${pct(ganho, false)}`}</span>
-      <span className="sub">{ganho === undefined ? 'sem modelo ativo' : 'de erro vs baseline'}</span>
+      <span className="sub">{ganho === undefined ? 'sem modelo ativo' : 'mais preciso que a média do canal'}</span>
       <span className="abrir-proj"><Icone nome="arrow_forward" /> abrir</span>
       {Math.abs(dx) > ARRASTO_PARA_CRIAR / 2 && <span className="dica-criar"><Icone nome="add" /> solte para criar um projeto</span>}
     </button>
@@ -126,7 +126,7 @@ function PainelInsights({ projeto, ativo }: { projeto: string; ativo?: Experimen
             <span className="rotulo">Modelo</span>
             {ativo ? (
               <>
-                <div className="linha-ins"><span>erro vs baseline</span><b className="bom-t">−{pct(ativo.resultado.ganho, false)}</b></div>
+                <div className="linha-ins"><span>erro vs média do canal</span><b className="bom-t">−{pct(ativo.resultado.ganho, false)}</b></div>
                 <div className="linha-ins"><span>acerto A vs B</span><b>{pct(ativo.resultado.modelo.acerto_pares, false)}</b></div>
                 <div className="linha-ins"><span>receita</span><span className="sub">{ativo.receita.camadas.join(' + ')}</span></div>
               </>

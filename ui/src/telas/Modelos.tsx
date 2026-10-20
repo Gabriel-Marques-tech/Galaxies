@@ -22,8 +22,8 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
   return (
     <div className="pilha">
       <div className="grade-cartoes">
-        <Metrica icone="check_circle" rotulo="Mais preciso que o baseline" valor={ativo ? pct(ativo.resultado.ganho) : '—'}
-          detalhe={ativo ? `erro típico ${Math.exp(ativo.resultado.modelo.mae).toFixed(1)}× contra ${Math.exp(ativo.resultado.baseline.mae).toFixed(1)}× da média do canal` : 'nenhum promovido'} />
+        <Metrica icone="check_circle" rotulo="Mais preciso que a média do canal" valor={ativo ? pct(ativo.resultado.ganho) : '—'}
+          detalhe={ativo ? `erro típico ${Math.exp(ativo.resultado.modelo.mae).toFixed(1)}× contra ${Math.exp(ativo.resultado.baseline.mae).toFixed(1)}× se chutasse a média do canal` : 'nenhum promovido'} />
         <Metrica icone="swap_vert" rotulo="Acerto A vs B no canal" valor={ativo ? pct(ativo.resultado.modelo.acerto_pares, false) : '—'}
           detalhe="pares de vídeos do mesmo canal (acaso = 50%)" />
         <Metrica icone="pending" rotulo="Aguardando você" valor={String(pendentes.length)}
@@ -34,8 +34,8 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
       <div className="linha" style={{ justifyContent: 'space-between' }}>
         <Dica>
           {vista === 'simples'
-            ? <><b>Mais preciso que o baseline</b>: quanto o modelo reduz o erro em relação a prever só a média do canal. Acerto A vs B: de dois vídeos do mesmo canal, quantas vezes o modelo aponta o melhor (acaso = 50%).</>
-            : <>Cada modelo é comparado <b>nas mesmas linhas de teste</b> com o baseline do canal e com um controle só de metadados. MAE no log: menor é melhor. Receitas com gancho ou atributos só vencem se baterem o próprio controle.</>}
+            ? <><b>Mais preciso que a média do canal</b>: quanto o modelo erra menos do que simplesmente chutar a média do canal. Acerto A vs B: de dois vídeos do mesmo canal, quantas vezes o modelo aponta o melhor (acaso = 50%).</>
+            : <>Cada modelo é comparado <b>nas mesmas linhas de teste</b> com a média do canal e com um controle só de metadados. MAE no log: menor é melhor. Receitas com gancho ou atributos só vencem se baterem o próprio controle.</>}
         </Dica>
         <div className="segmentado" role="radiogroup" aria-label="Vista">
           <button className={vista === 'simples' ? 'ativo' : ''} onClick={() => setVista('simples')} role="radio" aria-checked={vista === 'simples'}><Icone nome="visibility" /> Simplificada</button>
@@ -48,7 +48,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
           {vista === 'simples' ? (
             <table className="tabela">
               <thead>
-                <tr><th>Modelo</th><th>Mais preciso que o baseline</th><th className="n">Acerto A vs B</th><th>Status</th></tr>
+                <tr><th>Modelo</th><th>Mais preciso que a média do canal</th><th className="n">Acerto A vs B</th><th>Status</th></tr>
               </thead>
               <tbody>
                 {ordenados.map((e) => {
@@ -65,7 +65,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
                           <span className="trilho"><div className={g > 0 ? 'pos' : 'neg'} style={{ width: `${(Math.max(g, 0) / maior) * 100}%` }} /></span>
                           <b className={g > 0 ? 'bom-t' : 'ruim-t'}>{pct(g)}</b>
                         </div>
-                        <div className="sub">erro típico {Math.exp(e.resultado.modelo.mae).toFixed(1)}× · baseline {Math.exp(e.resultado.baseline.mae).toFixed(1)}×</div>
+                        <div className="sub">erro típico {Math.exp(e.resultado.modelo.mae).toFixed(1)}× · média do canal {Math.exp(e.resultado.baseline.mae).toFixed(1)}×</div>
                       </td>
                       <td className="n">{pct(e.resultado.modelo.acerto_pares, false)}</td>
                       <td><ChipStatus status={e.status} /></td>
@@ -79,7 +79,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
               <thead>
                 <tr>
                   <th>Receita</th><th>Hipótese do agente</th><th className="n">Teste</th>
-                  <th>MAE nas mesmas linhas</th><th className="n">Acerto A vs B</th><th className="n">Faixa 80%</th><th className="n">vs baseline</th><th>Status</th>
+                  <th>MAE nas mesmas linhas</th><th className="n">Acerto A vs B</th><th className="n">Faixa 80%</th><th className="n">vs média do canal</th><th>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -131,7 +131,7 @@ function Painel({ e, fechar, promover, decidir }: {
         {e.hipotese && <div className="dica"><Icone nome="lightbulb" /><div><b>Hipótese do agente</b><br />{e.hipotese}</div></div>}
 
         <div className="grade-cartoes">
-          <Metrica icone="trending_down" rotulo="vs baseline" valor={pct(r.ganho)} detalhe={`MAE ${num(r.modelo.mae)} vs ${num(r.baseline.mae)}`} />
+          <Metrica icone="trending_down" rotulo="vs média do canal" valor={pct(r.ganho)} detalhe={`MAE ${num(r.modelo.mae)} vs ${num(r.baseline.mae)}`} />
           <Metrica icone="compare_arrows" rotulo="vs só metadados" valor={pct(r.melhora_sobre_controle)} detalhe={`${r.n_teste} vídeos de teste`} />
         </div>
 
