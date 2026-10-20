@@ -51,7 +51,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
                     <b>{e.receita.camadas.join(' + ')}</b>
                     <div className="sub mono">{e.alvo} · {e.id}{e.receita.extrator ? ` · ${e.receita.extrator.replace('@cf/meta/', '')}` : ''}</div>
                   </td>
-                  <td className="sub" style={{ maxWidth: 260 }}>{e.hipotese || '—'}</td>
+                  <td className="sub hipotese-curta" title={e.hipotese}>{e.hipotese || '—'}</td>
                   <td className="n">{e.resultado.n_teste}</td>
                   <td><BarrasMae r={e.resultado} /></td>
                   <td className="n">{pct(e.resultado.modelo.acerto_pares, false)}</td>
