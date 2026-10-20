@@ -87,7 +87,7 @@ export const api = {
   avaliacao: (pr: string) => pedir<Record<string, unknown>>(`${p(pr)}/avaliacao`),
   falhas: (pr: string) => pedir<{ video_id: string; etapa: string; erro: string; run_id: string }[]>(`${p(pr)}/falhas`),
   atributos: (pr: string) => pedir<Atributo[]>(`${p(pr)}/atributos`),
-  experimentos: (pr: string) => pedir<Experimento[]>(`${p(pr)}/experimentos`),
+  experimentos: (pr: string, alvo?: string) => pedir<Experimento[]>(`${p(pr)}/experimentos${alvo ? `?alvo=${alvo}` : ''}`),
   promover: (pr: string, id: string) => pedir<Experimento>(`${p(pr)}/experimentos/${id}/promover`, {}),
   decidir: (pr: string, id: string, aprovar: boolean, nota: string) =>
     pedir<Experimento>(`${p(pr)}/experimentos/${id}/decisao`, { aprovar, nota }),
