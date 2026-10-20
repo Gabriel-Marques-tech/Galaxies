@@ -56,18 +56,33 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
 
       <div style={{ flex: 1 }} />
       <div className="rodape-analise">
-        <ShortDrop projeto={projeto} short={short} setShort={setShort} />
+        <div className="palco">
+          <ShortDrop projeto={projeto} short={short} setShort={setShort} />
+          <div className="config">
+            <label className="campo-config">
+              <span>Canal</span>
+              <select value={canalEscolhido} onChange={(e) => setCanal(e.target.value)} aria-label="Canal">
+                {canais.dados?.map((c) => <option key={c.id} value={c.id}>{c.titulo} · {c.setor}</option>)}
+              </select>
+            </label>
+            <label className="campo-config">
+              <span>Publicar às <b>{hora}</b></span>
+              <input type="range" min={0} max={23} step={1} value={Number(hora.split(':')[0])}
+                onChange={(e) => setHora(`${String(e.target.value).padStart(2, '0')}:00`)} aria-label="Horário de publicação" />
+              <span className="escala"><i>0h</i><i>6h</i><i>12h</i><i>18h</i><i>23h</i></span>
+            </label>
+            <label className="campo-config">
+              <span>Duração <b>{duracao}s</b></span>
+              <input type="range" min={10} max={180} step={5} value={duracao} onChange={(e) => setDuracao(Number(e.target.value))} aria-label="Duração" />
+              <span className="escala"><i>10s</i><i>60s</i><i>120s</i><i>180s</i></span>
+            </label>
+          </div>
+        </div>
         <div className="compositor">
           <textarea rows={1} placeholder="Título do Short, ex.: 3 erros que deixam sua base craquelada" value={titulo}
             onChange={(e) => setTitulo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }} />
           <div className="opcoes">
-            <select value={canalEscolhido} onChange={(e) => setCanal(e.target.value)} aria-label="Canal">
-              {canais.dados?.map((c) => <option key={c.id} value={c.id}>{c.titulo} · {c.setor}</option>)}
-            </select>
-            <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} aria-label="Horário de publicação" />
-            <select value={duracao} onChange={(e) => setDuracao(Number(e.target.value))} aria-label="Duração">
-              {[15, 30, 45, 60, 90].map((d) => <option key={d} value={d}>{d}s</option>)}
-            </select>
+            <span className="sub">{short ? `vídeo: ${short.nome}` : 'sem vídeo: a análise usa só título, canal, horário e duração'}</span>
             <button className="enviar" onClick={enviar} disabled={rodando || !titulo.trim()} aria-label="Analisar"><Icone nome="arrow_upward" /></button>
           </div>
         </div>
@@ -105,7 +120,7 @@ function ShortDrop({ projeto, short, setShort }: { projeto: string; short: Short
   if (short) {
     return (
       <div className="short-drop pronto" title={short.fonte}>
-        {short.url ? <video src={short.url} muted playsInline loop autoPlay /> : <Icone nome="link" />}
+        {short.url ? <video src={short.url} controls playsInline loop autoPlay muted /> : <Icone nome="link" />}
         <span className="nome-arquivo">{short.nome}</span>
         <button className="remover" onClick={() => setShort(null)} aria-label="Remover vídeo"><Icone nome="close" /></button>
       </div>

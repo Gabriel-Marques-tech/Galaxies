@@ -354,7 +354,7 @@ button.chip:hover { background: var(--superficie-3); }
 
 /* compositor fixo no rodapé com o "Short" (9:16) em cima */
 .rodape-analise { position: sticky; bottom: 0; padding-top: 12px; background: linear-gradient(to top, var(--fundo) 70%, transparent); display: flex; flex-direction: column; gap: 10px; }
-.short-drop { align-self: flex-start; width: 92px; height: 164px; border-radius: 14px; border: 1.5px dashed color-mix(in srgb, var(--primaria) 55%, transparent); background: var(--superficie-2); display: grid; place-items: center; cursor: pointer; color: var(--texto-3); text-align: center; font-size: 11.5px; line-height: 1.25; padding: 8px; position: relative; overflow: hidden; transition: border-color .2s, box-shadow .2s, transform .2s; }
+.short-drop { width: 140px; height: 249px; border-radius: 14px; border: 1.5px dashed color-mix(in srgb, var(--primaria) 55%, transparent); background: var(--superficie-2); display: grid; place-items: center; cursor: pointer; color: var(--texto-3); text-align: center; font-size: 11.5px; line-height: 1.25; padding: 8px; position: relative; overflow: hidden; transition: border-color .2s, box-shadow .2s, transform .2s; }
 .short-drop:hover, .short-drop.sobre { border-color: var(--primaria); box-shadow: 0 0 20px var(--brilho); transform: translateY(-2px); color: var(--texto); }
 .short-drop .icone { font-size: 26px; color: var(--primaria); }
 .short-drop.pronto { border-style: solid; background: linear-gradient(160deg, color-mix(in srgb, var(--primaria) 35%, var(--superficie-2)), var(--superficie-3)); color: var(--texto); }
@@ -398,3 +398,14 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 .modal { width: 100%; max-width: 520px; background: var(--superficie); border-radius: var(--raio-xl); padding: 24px; display: flex; flex-direction: column; gap: 12px; animation: aparecer .3s both; box-shadow: 0 0 0 1px color-mix(in srgb, var(--primaria) 40%, transparent), 0 0 40px var(--brilho); }
 .modal h3 { margin: 0; font-size: 20px; font-weight: 500; }
 @media (max-width: 860px) { .projetos-grade { grid-template-columns: 1fr; } }
+
+/* palco da análise: Short centralizado + painel de configuração ao lado */
+.palco { display: flex; justify-content: center; align-items: stretch; gap: 16px; }
+.config { width: 320px; max-width: 100%; background: var(--superficie-2); border-radius: var(--raio-l); padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; border: 1px solid color-mix(in srgb, var(--primaria) 20%, transparent); }
+.campo-config { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--texto-2); }
+.campo-config select { background: var(--superficie-3); border: 0; border-radius: var(--pilula); height: 36px; padding: 0 12px; outline: none; max-width: 100%; }
+.campo-config input[type=range] { accent-color: var(--primaria); width: 100%; cursor: pointer; }
+.campo-config .escala { display: flex; justify-content: space-between; font-size: 11px; color: var(--texto-3); }
+.campo-config .escala i { font-style: normal; }
+.short-drop video { object-fit: contain; background: #000; }
+@media (max-width: 720px) { .palco { flex-direction: column; align-items: center; } .config { width: 100%; } }
