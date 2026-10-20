@@ -79,6 +79,7 @@ const p = (projeto: string) => `/projetos/${encodeURIComponent(projeto)}`
 export const api = {
   projetos: () => pedir<string[]>('/projetos'),
   projeto: (pr: string) => pedir<Projeto>(p(pr)),
+  criarProjeto: (config: Record<string, unknown>) => pedir<Projeto>('/projetos', config),
   resumo: (pr: string) => pedir<Resumo>(`${p(pr)}/resumo`),
   canais: (pr: string) => pedir<Canal[]>(`${p(pr)}/canais`),
   definirModo: (pr: string, modo: Projeto['modo']) => pedir<Projeto>(`${p(pr)}/modo`, { modo }),

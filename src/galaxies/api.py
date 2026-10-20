@@ -35,6 +35,11 @@ def criar_app(fw: Framework) -> FastAPI:
     def projetos() -> list[str]:
         return fw.listar_projetos()
 
+    @app.post("/projetos")
+    def criar_projeto(config: JSONLivre = Body()):
+        """Cria o projeto. Coleta, ganchos e otimização ficam com o agente (MCP)."""
+        return _json(fw.criar_projeto(config))
+
     @app.get("/projetos/{projeto}")
     def projeto(projeto: str):
         return _json(fw.obter_projeto(projeto))
