@@ -69,12 +69,14 @@ export default function App() {
           </button>
         </div>
         <div className={`lista-projetos so-aberta ${listaAberta ? 'aberta' : ''}`}>
+          <div>
           {projetos.dados?.map((p) => (
             <button key={p} className={`item-nav sub-item ${p === projeto ? 'atual' : ''}`} onClick={() => { setProjeto(p); setListaAberta(false); if (tela === 'projetos') ir('inicio') }}>
               <Icone nome={p === projeto ? 'radio_button_checked' : 'radio_button_unchecked'} className="pequeno" />
               <span className="rotulo-nav">{p}</span>
             </button>
           ))}
+          </div>
         </div>
         {NAV.map((n) => (
           <button key={n.id} className={`item-nav ${tela === n.id ? 'ativo' : ''}`} onClick={() => ir(n.id)} title={n.nome}>
