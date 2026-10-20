@@ -353,8 +353,8 @@ button.chip:hover { background: var(--superficie-3); }
 @keyframes pontinho { 0%, 80%, 100% { opacity: .25; transform: scale(.8); } 40% { opacity: 1; transform: scale(1.1); } }
 
 /* compositor fixo no rodapé com o "Short" (9:16) em cima */
-.rodape-analise { position: sticky; bottom: 0; padding-top: 12px; background: linear-gradient(to top, var(--fundo) 70%, transparent); display: flex; flex-direction: column; gap: 10px; }
-.short-drop { width: 236px; height: 420px; border-radius: 14px; border: 1.5px dashed color-mix(in srgb, var(--primaria) 55%, transparent); background: var(--superficie-2); display: grid; place-items: center; cursor: pointer; color: var(--texto-3); text-align: center; font-size: 11.5px; line-height: 1.25; padding: 8px; position: relative; overflow: hidden; transition: border-color .2s, box-shadow .2s, transform .2s; }
+.rodape-analise { padding-top: 8px; display: flex; flex-direction: column; gap: 12px; }
+.short-drop { width: 270px; height: 480px; border-radius: 14px; border: 1.5px dashed color-mix(in srgb, var(--primaria) 55%, transparent); background: var(--superficie-2); display: grid; place-items: center; cursor: pointer; color: var(--texto-3); text-align: center; font-size: 11.5px; line-height: 1.25; padding: 8px; position: relative; overflow: hidden; transition: border-color .2s, box-shadow .2s, transform .2s; }
 .short-drop:hover, .short-drop.sobre { border-color: var(--primaria); box-shadow: 0 0 20px var(--brilho); transform: translateY(-2px); color: var(--texto); }
 .short-drop .icone { font-size: 26px; color: var(--primaria); }
 .short-drop.pronto { border-style: solid; background: linear-gradient(160deg, color-mix(in srgb, var(--primaria) 35%, var(--superficie-2)), var(--superficie-3)); color: var(--texto); }
@@ -401,7 +401,7 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 
 /* palco da análise: Short centralizado + painel de configuração ao lado */
 .palco { display: flex; justify-content: center; align-items: stretch; gap: 16px; width: fit-content; margin: 0 auto; }
-.rodape-analise .compositor { width: 612px; max-width: 100%; margin: 0 auto; }
+.rodape-analise .compositor { width: 720px; max-width: 100%; margin: 0 auto; }
 .analise .saudacao { padding-top: 8px; }
 .analise .saudacao h2 { font-size: 30px; }
 .analise .saudacao p { font-size: 16px; }
@@ -458,3 +458,8 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 .linha-ins .mono { font-size: 12px; }
 .grade-ins { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .projetos-grade { grid-template-columns: minmax(0, 1fr) 340px; }
+
+.projetos-grade .feed, .analise .palco { overflow-x: visible; }
+.cartao-projeto .grande, .cartao-projeto .nome-proj { max-width: 100%; }
+/* no desktop a barra recolhida já tem o seu botão de menu: o do topo só aparece no celular */
+@media (min-width: 861px) { .barra-topo > .btn-icone { display: none; } }

@@ -22,8 +22,8 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
   return (
     <div className="pilha">
       <div className="grade-cartoes">
-        <Metrica icone="check_circle" rotulo="Erro a menos que o baseline" valor={ativo ? `−${pct(ativo.resultado.ganho, false)}` : '—'}
-          detalhe={ativo ? `modelo ativo: ${ativo.receita.camadas.join(' + ')}` : 'nenhum promovido'} />
+        <Metrica icone="check_circle" rotulo="Mais preciso que o baseline" valor={ativo ? pct(ativo.resultado.ganho) : '—'}
+          detalhe={ativo ? `erro típico ${Math.exp(ativo.resultado.modelo.mae).toFixed(1)}× contra ${Math.exp(ativo.resultado.baseline.mae).toFixed(1)}× da média do canal` : 'nenhum promovido'} />
         <Metrica icone="swap_vert" rotulo="Acerto A vs B no canal" valor={ativo ? pct(ativo.resultado.modelo.acerto_pares, false) : '—'}
           detalhe="pares de vídeos do mesmo canal (acaso = 50%)" />
         <Metrica icone="pending" rotulo="Aguardando você" valor={String(pendentes.length)}
@@ -34,7 +34,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
       <div className="linha" style={{ justifyContent: 'space-between' }}>
         <Dica>
           {vista === 'simples'
-            ? <>Quanto <b>menos erro que o baseline</b> (a média do canal), melhor. Acerto A vs B: de dois vídeos do mesmo canal, quantas vezes o modelo aponta o melhor (acaso = 50%).</>
+            ? <><b>Mais preciso que o baseline</b>: quanto o modelo reduz o erro em relação a prever só a média do canal. Acerto A vs B: de dois vídeos do mesmo canal, quantas vezes o modelo aponta o melhor (acaso = 50%).</>
             : <>Cada modelo é comparado <b>nas mesmas linhas de teste</b> com o baseline do canal e com um controle só de metadados. MAE no log: menor é melhor. Receitas com gancho ou atributos só vencem se baterem o próprio controle.</>}
         </Dica>
         <div className="segmentado" role="radiogroup" aria-label="Vista">
@@ -48,7 +48,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
           {vista === 'simples' ? (
             <table className="tabela">
               <thead>
-                <tr><th>Modelo</th><th>Erro a menos que o baseline</th><th className="n">Acerto A vs B</th><th>Status</th></tr>
+                <tr><th>Modelo</th><th>Mais preciso que o baseline</th><th className="n">Acerto A vs B</th><th>Status</th></tr>
               </thead>
               <tbody>
                 {ordenados.map((e) => {
@@ -63,8 +63,9 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
                       <td>
                         <div className="ganho-simples">
                           <span className="trilho"><div className={g > 0 ? 'pos' : 'neg'} style={{ width: `${(Math.max(g, 0) / maior) * 100}%` }} /></span>
-                          <b className={g > 0 ? 'bom-t' : 'ruim-t'}>{g > 0 ? `−${pct(g, false)}` : pct(-g)}</b>
+                          <b className={g > 0 ? 'bom-t' : 'ruim-t'}>{pct(g)}</b>
                         </div>
+                        <div className="sub">erro típico {Math.exp(e.resultado.modelo.mae).toFixed(1)}× · baseline {Math.exp(e.resultado.baseline.mae).toFixed(1)}×</div>
                       </td>
                       <td className="n">{pct(e.resultado.modelo.acerto_pares, false)}</td>
                       <td><ChipStatus status={e.status} /></td>
