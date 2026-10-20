@@ -8,6 +8,8 @@ export default function Metricas({ projeto, config }: { projeto: string; config:
   const [alvo, setAlvo] = useState(config.alvo)
   const exps = useCarga(() => api.experimentos(projeto, alvo), [projeto, alvo])
   const erros = useCarga(() => api.erros(projeto), [projeto])
+  const canais = useCarga(() => api.canais(projeto), [projeto])
+  const nomes = new Map((canais.dados ?? []).map((c) => [c.id, c.titulo]))
   if (exps.erro) return <Aviso texto={exps.erro} />
   if (!exps.dados) return <div className="carregando" />
   const lista = exps.dados
@@ -51,7 +53,7 @@ export default function Metricas({ projeto, config }: { projeto: string; config:
               <span className="text-[11px] uppercase tracking-wider text-texto-3">{nome}</span>
               {segs.slice(0, 4).map((s) => (
                 <div key={s.chave} className="flex items-center gap-3 py-1 text-[13px]">
-                  <span className="truncate flex-1 text-texto-2">{s.chave}</span>
+                  <span className="truncate flex-1 text-texto-2">{nome === 'canal' ? nomes.get(s.chave) ?? s.chave : s.chave}</span>
                   <span className="w-24 h-1.5 rounded bg-superficie-4 overflow-hidden"><span className="block h-full bg-acento" style={{ width: `${Math.min(s.mae / 2, 1) * 100}%` }} /></span>
                   <span className="w-12 text-right tabular-nums">{num(s.mae, 2)}</span>
                 </div>
