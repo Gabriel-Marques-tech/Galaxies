@@ -5,11 +5,12 @@ import Analisar from './telas/Analisar'
 import Erros from './telas/Erros'
 import Inicio from './telas/Inicio'
 import Modelos from './telas/Modelos'
+import Projetos from './telas/Projetos'
 import Revisao from './telas/Revisao'
 import Terminal from './telas/Terminal'
 import Trace from './telas/Trace'
 
-export type Tela = 'inicio' | 'modelos' | 'analisar' | 'revisao' | 'erros' | 'trace' | 'terminal'
+export type Tela = 'projetos' | 'inicio' | 'modelos' | 'analisar' | 'revisao' | 'erros' | 'trace' | 'terminal'
 
 const NAV: { id: Tela; nome: string; icone: string; titulo: string }[] = [
   { id: 'inicio', nome: 'Início', icone: 'home', titulo: 'Visão geral' },
@@ -20,7 +21,7 @@ const NAV: { id: Tela; nome: string; icone: string; titulo: string }[] = [
   { id: 'trace', nome: 'Trace', icone: 'account_tree', titulo: 'Trace' },
 ]
 
-const TELAS: Tela[] = ['inicio', 'modelos', 'analisar', 'revisao', 'erros', 'trace', 'terminal']
+const TELAS: Tela[] = ['projetos', 'inicio', 'modelos', 'analisar', 'revisao', 'erros', 'trace', 'terminal']
 
 function lerTema(): 'dark' | 'light' {
   try { return (localStorage.getItem('tema') as 'dark' | 'light') ?? 'dark' } catch { return 'dark' }
@@ -29,7 +30,7 @@ function lerTema(): 'dark' | 'light' {
 export default function App() {
   const projetos = useCarga(api.projetos, [])
   const [projeto, setProjeto] = useState('')
-  const [tela, setTela] = useState<Tela>(() => (TELAS.includes(location.hash.slice(1) as Tela) ? location.hash.slice(1) as Tela : 'inicio'))
+  const [tela, setTela] = useState<Tela>(() => (TELAS.includes(location.hash.slice(1) as Tela) ? location.hash.slice(1) as Tela : 'projetos'))
   const [recolhida, setRecolhida] = useState(window.innerWidth < 860)
   const [tema, setTema] = useState(lerTema)
   const config = useCarga(() => (projeto ? api.projeto(projeto) : Promise.resolve(null)), [projeto])
@@ -46,7 +47,9 @@ export default function App() {
 
   const ir = (t: Tela) => { setTela(t); history.replaceState(null, '', `#${t}`); if (window.innerWidth < 860) setRecolhida(true) }
   const pendentes = experimentos.dados?.filter((e) => e.status === 'aguardando_aprovacao').length ?? 0
-  const titulo = tela === 'terminal' ? 'Harness' : NAV.find((n) => n.id === tela)?.titulo
+  const titulo = tela === 'terminal' ? 'Harness' : tela === 'projetos' ? 'Projetos' : NAV.find((n) => n.id === tela)?.titulo
+  const abrirProjeto = (nome: string) => { setProjeto(nome); ir('inicio') }
+  const alternarModo = () => config.dados && api.definirModo(projeto, config.dados.modo === 'cientista' ? 'automatico' : 'cientista').then(config.recarregar)
 
   return (
     <div className="shell">
@@ -55,6 +58,10 @@ export default function App() {
           <button className="btn-icone" onClick={() => setRecolhida(!recolhida)} aria-label="Alternar menu"><Icone nome="menu" /></button>
           <span className="marca so-aberta"><img src="/logo.svg" alt="" className="logo-img" />Galaxies</span>
         </div>
+        <button className={`item-nav ${tela === 'projetos' ? 'ativo' : ''}`} onClick={() => ir('projetos')} title="Projetos">
+          <Icone nome="grid_view" cheio={tela === 'projetos'} />
+          <span className="rotulo-nav">Projetos</span>
+        </button>
         <select className="campo projeto-select so-aberta" value={projeto} onChange={(e) => setProjeto(e.target.value)} aria-label="Projeto">
           {projetos.dados?.map((p) => <option key={p}>{p}</option>)}
         </select>
@@ -82,17 +89,22 @@ export default function App() {
         <div className="barra-topo">
           {recolhida && <button className="btn-icone" onClick={() => setRecolhida(false)} aria-label="Abrir menu"><Icone nome="menu" /></button>}
           <h1>{titulo}</h1>
-          {config.dados && (
-            <span className="chip"><Icone nome={config.dados.modo === 'cientista' ? 'person_search' : 'bolt'} />
+          {config.dados && tela !== 'projetos' && (
+            <button className="chip alternar" onClick={alternarModo}
+              title={`Clique para mudar para ${config.dados.modo === 'cientista' ? 'Automático' : 'Data Scientist'}`}>
+              <Icone nome={config.dados.modo === 'cientista' ? 'person_search' : 'bolt'} />
               {config.dados.modo === 'cientista' ? 'Data Scientist' : 'Automático'} · {config.dados.alvo}
-            </span>
+              <Icone nome="swap_horiz" className="seta" />
+            </button>
           )}
         </div>
         <div className="conteudo">
           <div className="largura">
             {projetos.erro && <Aviso texto={`API indisponível (${projetos.erro}). Rode: uv run --extra multimodal galaxies-api`} />}
-            {projetos.dados && !projetos.dados.length && <Aviso texto="Nenhum projeto ainda. Peça ao agente: criar_projeto." />}
-            {projeto && config.dados && (
+            {tela === 'projetos' && projetos.dados && (
+              <Projetos projetos={projetos.dados} abrir={abrirProjeto} aoCriar={projetos.recarregar} />
+            )}
+            {tela !== 'projetos' && projeto && config.dados && (
               <>
                 {tela === 'inicio' && <Inicio projeto={projeto} config={config.dados} ir={ir} aoMudarModo={config.recarregar} />}
                 {tela === 'analisar' && <Analisar projeto={projeto} config={config.dados} />}

@@ -5,6 +5,7 @@ import { Aviso, BarrasMae, ChipStatus, Dica, Icone, Metrica, num, pct, useCarga,
 export default function Modelos({ projeto, config, aoMudar }: { projeto: string; config: Projeto; aoMudar: () => void }) {
   const { dados, erro, recarregar } = useCarga(() => api.experimentos(projeto), [projeto])
   const [aberto, setAberto] = useState<string | null>(null)
+  const [vista, setVista] = useState<'simples' | 'avancada'>(config.modo === 'cientista' ? 'avancada' : 'simples')
   const [acaoErro, setAcaoErro] = useState<string | null>(null)
   const agir = (p: Promise<unknown>) =>
     p.then(() => { recarregar(); aoMudar(); setAcaoErro(null) }).catch((e: Error) => setAcaoErro(e.message))
@@ -21,8 +22,8 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
   return (
     <div className="pilha">
       <div className="grade-cartoes">
-        <Metrica icone="check_circle" rotulo="Modelo ativo" valor={ativo ? pct(ativo.resultado.ganho) : '—'}
-          detalhe={ativo ? `menos erro que o baseline · ${ativo.receita.camadas.join(' + ')}` : 'nenhum promovido'} />
+        <Metrica icone="check_circle" rotulo="Erro a menos que o baseline" valor={ativo ? `−${pct(ativo.resultado.ganho, false)}` : '—'}
+          detalhe={ativo ? `modelo ativo: ${ativo.receita.camadas.join(' + ')}` : 'nenhum promovido'} />
         <Metrica icone="swap_vert" rotulo="Acerto A vs B no canal" valor={ativo ? pct(ativo.resultado.modelo.acerto_pares, false) : '—'}
           detalhe="pares de vídeos do mesmo canal (acaso = 50%)" />
         <Metrica icone="pending" rotulo="Aguardando você" valor={String(pendentes.length)}
@@ -30,38 +31,75 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
       </div>
 
       {acaoErro && <Aviso texto={acaoErro} />}
-      <Dica>
-        Cada modelo é comparado <b>nas mesmas linhas de teste</b> com o baseline do canal e com um controle só de metadados.
-        MAE no log: menor é melhor. Receitas com gancho ou atributos só vencem se baterem o próprio controle.
-      </Dica>
+      <div className="linha" style={{ justifyContent: 'space-between' }}>
+        <Dica>
+          {vista === 'simples'
+            ? <>Quanto <b>menos erro que o baseline</b> (a média do canal), melhor. Acerto A vs B: de dois vídeos do mesmo canal, quantas vezes o modelo aponta o melhor (acaso = 50%).</>
+            : <>Cada modelo é comparado <b>nas mesmas linhas de teste</b> com o baseline do canal e com um controle só de metadados. MAE no log: menor é melhor. Receitas com gancho ou atributos só vencem se baterem o próprio controle.</>}
+        </Dica>
+        <div className="segmentado" role="radiogroup" aria-label="Vista">
+          <button className={vista === 'simples' ? 'ativo' : ''} onClick={() => setVista('simples')} role="radio" aria-checked={vista === 'simples'}><Icone nome="visibility" /> Simplificada</button>
+          <button className={vista === 'avancada' ? 'ativo' : ''} onClick={() => setVista('avancada')} role="radio" aria-checked={vista === 'avancada'}><Icone nome="query_stats" /> Avançada</button>
+        </div>
+      </div>
 
       <div className="cartao" style={{ padding: '8px 8px' }}>
         <div className="rolagem-x">
-          <table className="tabela">
-            <thead>
-              <tr>
-                <th>Receita</th><th>Hipótese do agente</th><th className="n">Teste</th>
-                <th>MAE nas mesmas linhas</th><th className="n">Acerto A vs B</th><th className="n">Faixa 80%</th><th className="n">vs baseline</th><th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ordenados.map((e) => (
-                <tr key={e.id} className={`clicavel ${aberto === e.id ? 'selecionada' : ''}`} onClick={() => setAberto(e.id)}>
-                  <td>
-                    <b>{e.receita.camadas.join(' + ')}</b>
-                    <div className="sub mono">{e.alvo} · {e.id}{e.receita.extrator ? ` · ${e.receita.extrator.replace('@cf/meta/', '')}` : ''}</div>
-                  </td>
-                  <td className="sub hipotese-curta" title={e.hipotese}>{e.hipotese || '—'}</td>
-                  <td className="n">{e.resultado.n_teste}</td>
-                  <td><BarrasMae r={e.resultado} /></td>
-                  <td className="n">{pct(e.resultado.modelo.acerto_pares, false)}</td>
-                  <td className="n" title="fração do teste dentro da faixa calibrada">{e.resultado.cobertura_80 ? pct(e.resultado.cobertura_80, false) : '—'}</td>
-                  <td className={`n ${e.resultado.ganho > 0 ? 'bom-t' : 'ruim-t'}`}>{pct(e.resultado.ganho)}</td>
-                  <td><ChipStatus status={e.status} /></td>
+          {vista === 'simples' ? (
+            <table className="tabela">
+              <thead>
+                <tr><th>Modelo</th><th>Erro a menos que o baseline</th><th className="n">Acerto A vs B</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {ordenados.map((e) => {
+                  const g = e.resultado.ganho
+                  const maior = Math.max(...ordenados.map((x) => Math.max(x.resultado.ganho, 0)), 0.01)
+                  return (
+                    <tr key={e.id} className={`clicavel ${aberto === e.id ? 'selecionada' : ''}`} onClick={() => setAberto(e.id)}>
+                      <td>
+                        <b>{e.receita.camadas.join(' + ')}</b>
+                        <div className="sub">{e.alvo} · {e.resultado.n_teste} vídeos de teste</div>
+                      </td>
+                      <td>
+                        <div className="ganho-simples">
+                          <span className="trilho"><div className={g > 0 ? 'pos' : 'neg'} style={{ width: `${(Math.max(g, 0) / maior) * 100}%` }} /></span>
+                          <b className={g > 0 ? 'bom-t' : 'ruim-t'}>{g > 0 ? `−${pct(g, false)}` : pct(-g)}</b>
+                        </div>
+                      </td>
+                      <td className="n">{pct(e.resultado.modelo.acerto_pares, false)}</td>
+                      <td><ChipStatus status={e.status} /></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <table className="tabela">
+              <thead>
+                <tr>
+                  <th>Receita</th><th>Hipótese do agente</th><th className="n">Teste</th>
+                  <th>MAE nas mesmas linhas</th><th className="n">Acerto A vs B</th><th className="n">Faixa 80%</th><th className="n">vs baseline</th><th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {ordenados.map((e) => (
+                  <tr key={e.id} className={`clicavel ${aberto === e.id ? 'selecionada' : ''}`} onClick={() => setAberto(e.id)}>
+                    <td>
+                      <b>{e.receita.camadas.join(' + ')}</b>
+                      <div className="sub mono">{e.alvo} · {e.id}{e.receita.extrator ? ` · ${e.receita.extrator.replace('@cf/meta/', '')}` : ''}</div>
+                    </td>
+                    <td className="sub hipotese-curta" title={e.hipotese}>{e.hipotese || '—'}</td>
+                    <td className="n">{e.resultado.n_teste}</td>
+                    <td><BarrasMae r={e.resultado} /></td>
+                    <td className="n">{pct(e.resultado.modelo.acerto_pares, false)}</td>
+                    <td className="n" title="fração do teste dentro da faixa calibrada">{e.resultado.cobertura_80 ? pct(e.resultado.cobertura_80, false) : '—'}</td>
+                    <td className={`n ${e.resultado.ganho > 0 ? 'bom-t' : 'ruim-t'}`}>{pct(e.resultado.ganho)}</td>
+                    <td><ChipStatus status={e.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 

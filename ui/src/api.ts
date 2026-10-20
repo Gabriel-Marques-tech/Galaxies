@@ -84,6 +84,14 @@ export const api = {
   canais: (pr: string) => pedir<Canal[]>(`${p(pr)}/canais`),
   definirModo: (pr: string, modo: Projeto['modo']) => pedir<Projeto>(`${p(pr)}/modo`, { modo }),
   analisar: (pr: string, video: VideoNovo, canal_id: string) => pedir<Analise>(`${p(pr)}/analisar`, { video, canal_id }),
+  upload: async (pr: string, arquivo: File) => {
+    const corpo = new FormData()
+    corpo.append('arquivo', arquivo)
+    const r = await fetch(`/api${p(pr)}/upload`, { method: 'POST', body: corpo })
+    const dados = await r.json()
+    if (!r.ok) throw new Error(dados.erro ?? r.statusText)
+    return dados as { fonte: string; nome: string }
+  },
   avaliacao: (pr: string) => pedir<Record<string, unknown>>(`${p(pr)}/avaliacao`),
   falhas: (pr: string) => pedir<{ video_id: string; etapa: string; erro: string; run_id: string }[]>(`${p(pr)}/falhas`),
   atributos: (pr: string) => pedir<Atributo[]>(`${p(pr)}/atributos`),

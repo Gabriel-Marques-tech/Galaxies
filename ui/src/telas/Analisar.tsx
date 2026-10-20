@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { api, type Analise, type Projeto } from '../api'
 import { Aviso, compacto, GraficoTimeline, Icone, pct, TextoRico, useCarga } from '../componentes'
 
 type Conversa = { pergunta: string; canal: string; analise?: Analise; erro?: string }
+type Short = { fonte: string; nome: string; url?: string }
 
 export default function Analisar({ projeto, config }: { projeto: string; config: Projeto }) {
   const canais = useCarga(() => api.canais(projeto), [projeto])
@@ -10,30 +11,30 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
   const [canal, setCanal] = useState('')
   const [duracao, setDuracao] = useState(30)
   const [hora, setHora] = useState('18:00')
-  const [fonte, setFonte] = useState('')
+  const [short, setShort] = useState<Short | null>(null)
   const [conversas, setConversas] = useState<Conversa[]>([])
   const [rodando, setRodando] = useState(false)
   const canalEscolhido = canal || canais.dados?.[0]?.id || ''
   const nomeCanal = (id: string) => canais.dados?.find((c) => c.id === id)?.titulo ?? id
 
   const enviar = () => {
-    if (!titulo.trim() || !canalEscolhido) return
+    if (!titulo.trim() || !canalEscolhido || rodando) return
     const publicar = new Date(); const [h, m] = hora.split(':').map(Number)
     publicar.setHours(h, m, 0, 0)
     const pergunta = titulo
     setRodando(true); setTitulo('')
-    api.analisar(projeto, { titulo: pergunta, duracao_s: duracao, publicar_em: publicar.toISOString(), fonte: fonte || undefined }, canalEscolhido)
+    api.analisar(projeto, { titulo: pergunta, duracao_s: duracao, publicar_em: publicar.toISOString(), fonte: short?.fonte }, canalEscolhido)
       .then((analise) => setConversas((c) => [...c, { pergunta, canal: canalEscolhido, analise }]))
       .catch((e: Error) => setConversas((c) => [...c, { pergunta, canal: canalEscolhido, erro: e.message }]))
       .finally(() => setRodando(false))
   }
 
   return (
-    <div className="pilha" style={{ maxWidth: 860, margin: '0 auto' }}>
-      {!conversas.length && (
+    <div className="pilha analise" style={{ maxWidth: 860, margin: '0 auto', minHeight: 'calc(100vh - 120px)' }}>
+      {!conversas.length && !rodando && (
         <div className="saudacao">
           <h2>Antes de publicar</h2>
-          <p>Escreva o título do Short, escolha o canal e veja como ele deve performar.</p>
+          <p>Suba o Short (ou só o título), escolha o canal e veja como ele deve performar.</p>
         </div>
       )}
 
@@ -41,31 +42,94 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
         <div key={i} className="pilha">
           <div className="pergunta-usuario">{c.pergunta}<div className="sub">{nomeCanal(c.canal)}</div></div>
           <div className="resposta">
-            <span className="avatar"><Icone nome="blur_on" /></span>
+            <span className="avatar"><img src="/logo.svg" alt="" style={{ width: 20, height: 20 }} /></span>
             {c.erro ? <Aviso texto={c.erro} /> : c.analise && <Resultado a={c.analise} alvo={config.alvo} />}
           </div>
         </div>
       ))}
-      {rodando && <div className="resposta"><span className="avatar"><Icone nome="blur_on" /></span><div className="carregando" style={{ marginTop: 14 }} /></div>}
-
-      <div className="compositor" style={{ position: 'sticky', bottom: 0 }}>
-        <textarea rows={1} placeholder="Título do Short, ex.: 3 erros que deixam sua base craquelada" value={titulo}
-          onChange={(e) => setTitulo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }} />
-        <div className="opcoes">
-          <select value={canalEscolhido} onChange={(e) => setCanal(e.target.value)} aria-label="Canal">
-            {canais.dados?.map((c) => <option key={c.id} value={c.id}>{c.titulo} · {c.setor}</option>)}
-          </select>
-          <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} aria-label="Horário de publicação" />
-          <select value={duracao} onChange={(e) => setDuracao(Number(e.target.value))} aria-label="Duração">
-            {[15, 30, 45, 60, 90].map((d) => <option key={d} value={d}>{d}s</option>)}
-          </select>
-          <input placeholder="arquivo ou link (opcional)" value={fonte} onChange={(e) => setFonte(e.target.value)} style={{ flex: 1, minWidth: 160 }} />
-          <button className="enviar" onClick={enviar} disabled={rodando || !titulo.trim()} aria-label="Analisar"><Icone nome="arrow_upward" /></button>
+      {rodando && (
+        <div className="resposta">
+          <span className="avatar pensando"><img src="/logo.svg" alt="" style={{ width: 20, height: 20 }} /></span>
+          <div className="pontos" aria-label="Analisando"><i /><i /><i /></div>
         </div>
+      )}
+
+      <div style={{ flex: 1 }} />
+      <div className="rodape-analise">
+        <ShortDrop projeto={projeto} short={short} setShort={setShort} />
+        <div className="compositor">
+          <textarea rows={1} placeholder="Título do Short, ex.: 3 erros que deixam sua base craquelada" value={titulo}
+            onChange={(e) => setTitulo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }} />
+          <div className="opcoes">
+            <select value={canalEscolhido} onChange={(e) => setCanal(e.target.value)} aria-label="Canal">
+              {canais.dados?.map((c) => <option key={c.id} value={c.id}>{c.titulo} · {c.setor}</option>)}
+            </select>
+            <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} aria-label="Horário de publicação" />
+            <select value={duracao} onChange={(e) => setDuracao(Number(e.target.value))} aria-label="Duração">
+              {[15, 30, 45, 60, 90].map((d) => <option key={d} value={d}>{d}s</option>)}
+            </select>
+            <button className="enviar" onClick={enviar} disabled={rodando || !titulo.trim()} aria-label="Analisar"><Icone nome="arrow_upward" /></button>
+          </div>
+        </div>
+        <p className="sub" style={{ textAlign: 'center', margin: 0 }}>
+          Previsões e sugestões vêm de padrões da base (correlação, não causa). Use para priorizar testes.
+        </p>
       </div>
-      <p className="sub" style={{ textAlign: 'center', margin: 0 }}>
-        Previsões e sugestões vêm de padrões da base (correlação, não causa). Use para priorizar testes.
-      </p>
+    </div>
+  )
+}
+
+// O "Short": retângulo 9:16 acima da barra. Arraste o vídeo, clique para escolher, ou cole um link.
+function ShortDrop({ projeto, short, setShort }: { projeto: string; short: Short | null; setShort: (s: Short | null) => void }) {
+  const entrada = useRef<HTMLInputElement>(null)
+  const [sobre, setSobre] = useState(false)
+  const [subindo, setSubindo] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  const receber = (arquivo: File) => {
+    setSubindo(true); setErro(null)
+    api.upload(projeto, arquivo)
+      .then((r) => setShort({ ...r, url: URL.createObjectURL(arquivo) }))
+      .catch((e: Error) => setErro(e.message))
+      .finally(() => setSubindo(false))
+  }
+  const colar = (e: React.ClipboardEvent) => {
+    const texto = e.clipboardData.getData('text').trim()
+    if (/^https?:\/\//.test(texto)) { e.preventDefault(); setShort({ fonte: texto, nome: texto.replace(/^https?:\/\//, '') }) }
+  }
+  const pedirLink = () => {
+    const link = window.prompt('Link do Short (YouTube) ou caminho do arquivo:')
+    if (link?.trim()) setShort({ fonte: link.trim(), nome: link.trim().replace(/^https?:\/\//, '') })
+  }
+
+  if (short) {
+    return (
+      <div className="short-drop pronto" title={short.fonte}>
+        {short.url ? <video src={short.url} muted playsInline loop autoPlay /> : <Icone nome="link" />}
+        <span className="nome-arquivo">{short.nome}</span>
+        <button className="remover" onClick={() => setShort(null)} aria-label="Remover vídeo"><Icone nome="close" /></button>
+      </div>
+    )
+  }
+  return (
+    <div
+      className={`short-drop ${sobre ? 'sobre' : ''}`}
+      role="button" tabIndex={0} aria-label="Subir o Short"
+      onClick={() => entrada.current?.click()}
+      onContextMenu={(e) => { e.preventDefault(); pedirLink() }}
+      onKeyDown={(e) => { if (e.key === 'Enter') entrada.current?.click() }}
+      onPaste={colar}
+      onDragOver={(e) => { e.preventDefault(); setSobre(true) }}
+      onDragLeave={() => setSobre(false)}
+      onDrop={(e) => { e.preventDefault(); setSobre(false); const f = e.dataTransfer.files[0]; if (f) receber(f) }}
+    >
+      <input ref={entrada} type="file" accept="video/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) receber(f) }} />
+      {subindo ? <div className="pontos"><i /><i /><i /></div> : (
+        <div>
+          <Icone nome="add" />
+          <div>{erro ? <span className="ruim-t">{erro}</span> : <>Subir o Short<br /><span style={{ opacity: .7 }}>ou botão direito p/ link</span></>}</div>
+        </div>
+      )}
     </div>
   )
 }

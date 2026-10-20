@@ -72,9 +72,9 @@
 
 /* Modo do projeto (data-modo no <html>): Automático = azul; Data Analyst = roxo tipo Claude. */
 :root[data-modo='cientista'] {
-  --primaria: #b49cff; --sobre-primaria: #1e1140; --primaria-container: #3b2a6b;
-  --sobre-primaria-container: #e9ddff; --secundaria-container: #3b2a6b;
-  --serie-1: #a78bfa; --serie-banda: rgba(139, 92, 246, 0.25);
+  --primaria: #b388ff; --sobre-primaria: #1a0b3d; --primaria-container: #3d2a7a;
+  --sobre-primaria-container: #efe6ff; --secundaria-container: #3d2a7a;
+  --serie-1: #a06bff; --serie-banda: rgba(160, 107, 255, 0.28); --brilho: rgba(160, 107, 255, 0.55);
   --gradiente: linear-gradient(90deg, #6d5cf6 0%, #9b5cf6 55%, #c084fc 100%);
 }
 :root[data-theme='light'][data-modo='cientista'] {
@@ -83,11 +83,12 @@
   --serie-1: #8b5cf6; --serie-banda: rgba(124, 58, 237, 0.18);
 }
 /* Contorno da área principal segue o modo; no Data Analyst pulsa devagar (Astra "high effort"). */
-.principal { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--primaria) 35%, transparent); transition: box-shadow .6s; }
+.principal { border-radius: 16px; margin: 8px 8px 8px 0; box-shadow: 0 0 0 1px color-mix(in srgb, var(--primaria) 45%, transparent), 0 0 14px color-mix(in srgb, var(--primaria) 18%, transparent); transition: box-shadow .6s; }
+:root { --brilho: rgba(66, 133, 244, 0.45); }
 :root[data-modo='cientista'] .principal { animation: pulso 3.2s ease-in-out infinite; }
 @keyframes pulso {
-  0%, 100% { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--primaria) 35%, transparent), inset 0 0 18px rgba(139, 92, 246, 0.10); }
-  50% { box-shadow: inset 0 0 0 2px var(--primaria), inset 0 0 44px rgba(139, 92, 246, 0.30); }
+  0%, 100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--primaria) 55%, transparent), 0 0 16px color-mix(in srgb, var(--primaria) 20%, transparent), inset 0 0 24px rgba(160, 107, 255, 0.05); }
+  50% { box-shadow: 0 0 0 1.5px var(--primaria), 0 0 42px var(--brilho), inset 0 0 60px rgba(160, 107, 255, 0.16); }
 }
 @media (prefers-reduced-motion: reduce) { :root[data-modo='cientista'] .principal { animation: none; } }
 
@@ -106,16 +107,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* ---------------------------------------------------------------- shell */
 
 .shell { display: grid; grid-template-columns: auto 1fr; height: 100%; }
-.sidebar { width: 272px; background: var(--superficie); display: flex; flex-direction: column; padding: 12px; gap: 4px; transition: width .2s; overflow: hidden; }
-.sidebar.recolhida { width: 72px; }
+.sidebar { width: 228px; background: var(--superficie); display: flex; flex-direction: column; padding: 12px; gap: 4px; transition: width .2s; overflow: hidden; }
+.sidebar.recolhida { width: 64px; }
 .sidebar.recolhida .rotulo-nav, .sidebar.recolhida .so-aberta { display: none; }
 .topo-sidebar { display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 4px; }
-.marca { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 500; letter-spacing: -0.01em; }
+.marca { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 500; letter-spacing: -0.01em; }
 .marca .logo { width: 28px; height: 28px; border-radius: 50%; background: var(--gradiente); display: grid; place-items: center; color: #fff; }
 .marca .logo .icone { font-size: 18px; }
 .marca .logo-img { width: 30px; height: 30px; }
 .sidebar .projeto-select { margin: 8px 0 12px; }
-.item-nav { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border: 0; border-radius: var(--pilula); background: none; cursor: pointer; color: var(--texto-2); white-space: nowrap; text-align: left; }
+.item-nav { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; font-size: 13.5px; border: 0; border-radius: var(--pilula); background: none; cursor: pointer; color: var(--texto-2); white-space: nowrap; text-align: left; }
 .item-nav:hover { background: var(--superficie-3); }
 .item-nav.ativo { background: var(--secundaria-container); color: var(--texto); font-weight: 500; }
 .item-nav .contador { margin-left: auto; font-size: 12px; background: var(--primaria); color: var(--sobre-primaria); border-radius: var(--pilula); padding: 0 7px; }
@@ -311,3 +312,89 @@ button.chip:hover { background: var(--superficie-3); }
 
 /* hipótese na tabela: 3 linhas; o painel lateral mostra o texto inteiro */
 .hipotese-curta { max-width: 280px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ---------------------------------------------------------------- roxo em mais lugares (Data Scientist) */
+:root[data-modo='cientista'] .cartao, :root[data-modo='cientista'] .metrica, :root[data-modo='cientista'] .compositor,
+:root[data-modo='cientista'] .cartao-revisao, :root[data-modo='cientista'] .painel {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primaria) 28%, transparent);
+}
+:root[data-modo='cientista'] .metrica .valor, :root[data-modo='cientista'] .saudacao h2 { background: var(--gradiente); -webkit-background-clip: text; background-clip: text; color: transparent; width: fit-content; }
+:root[data-modo='cientista'] .badge, :root[data-modo='cientista'] .chip.primario { border-color: var(--primaria); box-shadow: 0 0 12px color-mix(in srgb, var(--primaria) 30%, transparent); }
+
+/* ---------------------------------------------------------------- animações */
+@keyframes aparecer { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.conteudo > .largura > * { animation: aparecer .45s cubic-bezier(.2,.8,.2,1) both; }
+.cartoes > *, .grade-cartoes > *, .grade-2 > * { animation: aparecer .5s cubic-bezier(.2,.8,.2,1) both; }
+.cartoes > :nth-child(2), .grade-cartoes > :nth-child(2) { animation-delay: .06s; }
+.cartoes > :nth-child(3), .grade-cartoes > :nth-child(3) { animation-delay: .12s; }
+.cartoes > :nth-child(4), .grade-cartoes > :nth-child(4) { animation-delay: .18s; }
+.tabela tbody tr { animation: aparecer .4s both; }
+.tabela tbody tr:nth-child(n+2) { animation-delay: .04s; } .tabela tbody tr:nth-child(n+4) { animation-delay: .08s; } .tabela tbody tr:nth-child(n+6) { animation-delay: .12s; }
+.painel { animation: deslizar .35s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes deslizar { from { transform: translateX(32px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.cartao, .metrica, .cartao-revisao, .cartao.contorno { transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s; }
+.cartao:hover, .metrica:hover, .cartao-revisao:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px color-mix(in srgb, var(--primaria) 45%, transparent), 0 8px 24px rgba(0,0,0,.25); }
+.btn, .btn-icone, .item-nav, .chip, .segmentado button { transition: background .2s, color .2s, transform .15s, box-shadow .2s; }
+.btn.preenchido:hover { box-shadow: 0 0 18px var(--brilho); transform: translateY(-1px); }
+.btn:active { transform: scale(.97); }
+
+/* saudação: degradê que respira */
+.saudacao h2 { background-size: 200% 100%; animation: respirar 6s ease-in-out infinite; }
+@keyframes respirar { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+/* pensando: anel que gira no avatar + três pontos que pulsam (ChatGPT) */
+.avatar.pensando { position: relative; }
+.avatar.pensando::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0 60%, var(--primaria) 85%, transparent 100%); animation: girar 1.1s linear infinite; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); }
+@keyframes girar { to { transform: rotate(360deg); } }
+.pontos { display: inline-flex; gap: 5px; align-items: center; height: 32px; }
+.pontos i { width: 7px; height: 7px; border-radius: 50%; background: var(--primaria); animation: pontinho 1.2s ease-in-out infinite; }
+.pontos i:nth-child(2) { animation-delay: .15s; } .pontos i:nth-child(3) { animation-delay: .3s; }
+@keyframes pontinho { 0%, 80%, 100% { opacity: .25; transform: scale(.8); } 40% { opacity: 1; transform: scale(1.1); } }
+
+/* compositor fixo no rodapé com o "Short" (9:16) em cima */
+.rodape-analise { position: sticky; bottom: 0; padding-top: 12px; background: linear-gradient(to top, var(--fundo) 70%, transparent); display: flex; flex-direction: column; gap: 10px; }
+.short-drop { align-self: flex-start; width: 92px; height: 164px; border-radius: 14px; border: 1.5px dashed color-mix(in srgb, var(--primaria) 55%, transparent); background: var(--superficie-2); display: grid; place-items: center; cursor: pointer; color: var(--texto-3); text-align: center; font-size: 11.5px; line-height: 1.25; padding: 8px; position: relative; overflow: hidden; transition: border-color .2s, box-shadow .2s, transform .2s; }
+.short-drop:hover, .short-drop.sobre { border-color: var(--primaria); box-shadow: 0 0 20px var(--brilho); transform: translateY(-2px); color: var(--texto); }
+.short-drop .icone { font-size: 26px; color: var(--primaria); }
+.short-drop.pronto { border-style: solid; background: linear-gradient(160deg, color-mix(in srgb, var(--primaria) 35%, var(--superficie-2)), var(--superficie-3)); color: var(--texto); }
+.short-drop video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.short-drop .nome-arquivo { position: absolute; bottom: 6px; left: 6px; right: 6px; font-size: 10.5px; background: rgba(0,0,0,.5); color: #fff; border-radius: 6px; padding: 3px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.short-drop .remover { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; border: 0; display: grid; place-items: center; cursor: pointer; }
+.short-drop .remover .icone { font-size: 14px; color: #fff; }
+.compositor { border: 1px solid color-mix(in srgb, var(--primaria) 30%, transparent); transition: box-shadow .25s, border-color .25s; }
+.compositor:focus-within { border-color: var(--primaria); box-shadow: 0 0 22px var(--brilho); }
+.compositor .enviar { transition: transform .15s, box-shadow .2s; }
+.compositor .enviar:not(:disabled):hover { transform: scale(1.06); box-shadow: 0 0 16px var(--brilho); }
+
+.ganho-simples { display: flex; align-items: center; gap: 10px; min-width: 220px; }
+.ganho-simples .trilho { flex: 1; height: 10px; background: var(--superficie-3); border-radius: 5px; overflow: hidden; }
+.ganho-simples .trilho div { height: 100%; border-radius: 5px; }
+.ganho-simples .pos { background: linear-gradient(90deg, var(--serie-1), var(--primaria)); }
+.ganho-simples .neg { background: var(--ruim); }
+
+/* chip de modo no topo: clicável, alterna na hora */
+button.chip.alternar { cursor: pointer; height: 34px; font-size: 13px; background: var(--superficie-2); }
+button.chip.alternar .seta { color: var(--texto-3); transition: transform .3s, color .3s; }
+button.chip.alternar:hover { border-color: var(--primaria); box-shadow: 0 0 14px var(--brilho); }
+button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--primaria); }
+
+/* projetos: carrossel com o "+" no meio e o alcance estimado ao lado */
+.projetos-grade { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: stretch; }
+.carrossel { display: flex; align-items: center; gap: 16px; overflow-x: auto; padding: 16px 4px 20px; min-height: 300px; }
+.cartao-projeto { flex-shrink: 0; width: 200px; height: 250px; border-radius: var(--raio-l); background: var(--superficie-2); padding: 20px; display: flex; flex-direction: column; text-align: left; border: 0; cursor: pointer; color: inherit; transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s; }
+.cartao-projeto:hover { transform: translateY(-4px); box-shadow: 0 0 0 1px color-mix(in srgb, var(--primaria) 55%, transparent), 0 0 26px var(--brilho); }
+.cartao-projeto .icone-proj { width: 40px; height: 40px; border-radius: var(--raio-s); background: var(--primaria-container); color: var(--sobre-primaria-container); display: grid; place-items: center; }
+.cartao-projeto .nome-proj { margin-top: 16px; font-size: 16px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cartao-projeto .grande { margin-top: auto; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; }
+.cartao-projeto.novo { border: 2px dashed var(--contorno); background: transparent; align-items: center; justify-content: center; color: var(--texto-3); }
+.cartao-projeto.novo:hover { border-color: var(--primaria); color: var(--primaria); }
+.cartao-projeto.novo .icone { font-size: 44px; }
+.alcance { background: var(--superficie-2); border-radius: var(--raio-l); padding: 22px 24px; display: flex; flex-direction: column; gap: 8px; }
+.alcance .enorme { font-size: 46px; line-height: 1; font-weight: 500; letter-spacing: -0.02em; background: var(--gradiente); -webkit-background-clip: text; background-clip: text; color: transparent; width: fit-content; }
+.alcance ul { list-style: none; margin: auto 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.alcance li { display: flex; justify-content: space-between; gap: 12px; }
+.modal-fundo { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.5); display: grid; place-items: center; padding: 16px; }
+.modal { width: 100%; max-width: 520px; background: var(--superficie); border-radius: var(--raio-xl); padding: 24px; display: flex; flex-direction: column; gap: 12px; animation: aparecer .3s both; box-shadow: 0 0 0 1px color-mix(in srgb, var(--primaria) 40%, transparent), 0 0 40px var(--brilho); }
+.modal h3 { margin: 0; font-size: 20px; font-weight: 500; }
+@media (max-width: 860px) { .projetos-grade { grid-template-columns: 1fr; } }

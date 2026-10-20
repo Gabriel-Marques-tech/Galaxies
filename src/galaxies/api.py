@@ -4,9 +4,11 @@ Espelha as tools do MCP e acrescenta as ações que só o humano faz: aprovar ou
 promoções, revisar atributos e anotar erros.
 """
 
+import uuid
+from pathlib import Path
 from typing import Any
 
-from fastapi import Body, FastAPI, Request
+from fastapi import Body, FastAPI, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -88,6 +90,17 @@ def criar_app(fw: Framework) -> FastAPI:
     @app.get("/projetos/{projeto}/avaliacao")
     def avaliar(projeto: str, alvo: str | None = None):
         return _json(fw.avaliar(projeto, alvo))
+
+    @app.post("/projetos/{projeto}/upload")
+    async def upload(projeto: str, arquivo: UploadFile):
+        """Guarda o Short enviado pela UI e devolve o caminho para usar como video.fonte."""
+        fw.obter_projeto(projeto)  # valida o nome e a existência
+        pasta = Path(fw.raiz) / "projetos" / projeto / "uploads"
+        pasta.mkdir(parents=True, exist_ok=True)
+        nome = Path(arquivo.filename or "video.mp4").name
+        destino = pasta / f"{uuid.uuid4().hex[:8]}-{nome}"
+        destino.write_bytes(await arquivo.read())
+        return {"fonte": str(destino), "nome": nome}
 
     @app.post("/projetos/{projeto}/analisar")
     def analisar(projeto: str, video: JSONLivre = Body(), canal_id: str = Body()):

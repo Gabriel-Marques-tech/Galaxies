@@ -16,6 +16,7 @@ dependencies = [
     "pandas>=3.0.6",
     "pydantic>=2.14.1",
     "python-dotenv>=1.2.4",
+    "python-multipart>=0.0.32",
     "pytz>=2026.5",
     "scikit-learn>=1.9.1",
     "scipy>=1.18.1",
