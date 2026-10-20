@@ -50,6 +50,10 @@ def criar_app(fw: Framework) -> FastAPI:
     def resumo(projeto: str):
         return fw.resumo(projeto)
 
+    @app.get("/projetos/{projeto}/insights")
+    def insights(projeto: str, alvo: str | None = None):
+        return fw.insights(projeto, alvo)
+
     @app.get("/projetos/{projeto}/canais")
     def canais(projeto: str):
         return fw.canais(projeto)

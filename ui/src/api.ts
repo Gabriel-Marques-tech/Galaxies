@@ -47,6 +47,15 @@ export type Resumo = {
   atributos_por_extrator: Record<string, number>; experimentos: number; runs: number
   revisoes: number; cota_youtube: number
 }
+export type Insights = {
+  alvo: string
+  setores: { setor: string; canais: number; shorts: number; mediana: number }[]
+  horarios: { grupo: string; efeito: number; n: number }[]
+  dias: { grupo: string; efeito: number; n: number }[]
+  duracao: { grupo: string; efeito: number; n: number }[]
+  fatores: { fator: string; efeito: number; n: number }[]
+  piores_fatores: { fator: string; efeito: number; n: number }[]
+}
 export type Canal = { id: string; titulo: string; handle: string | null; setor: string; inscritos: number; videos: number; ganchos: number }
 export type Faixa = { q10: number; q50: number; q90: number }
 export type Analise = {
@@ -81,6 +90,7 @@ export const api = {
   projeto: (pr: string) => pedir<Projeto>(p(pr)),
   criarProjeto: (config: Record<string, unknown>) => pedir<Projeto>('/projetos', config),
   resumo: (pr: string) => pedir<Resumo>(`${p(pr)}/resumo`),
+  insights: (pr: string) => pedir<Insights>(`${p(pr)}/insights`),
   canais: (pr: string) => pedir<Canal[]>(`${p(pr)}/canais`),
   definirModo: (pr: string, modo: Projeto['modo']) => pedir<Projeto>(`${p(pr)}/modo`, { modo }),
   analisar: (pr: string, video: VideoNovo, canal_id: string) => pedir<Analise>(`${p(pr)}/analisar`, { video, canal_id }),

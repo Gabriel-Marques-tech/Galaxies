@@ -354,7 +354,7 @@ button.chip:hover { background: var(--superficie-3); }
 
 /* compositor fixo no rodapé com o "Short" (9:16) em cima */
 .rodape-analise { position: sticky; bottom: 0; padding-top: 12px; background: linear-gradient(to top, var(--fundo) 70%, transparent); display: flex; flex-direction: column; gap: 10px; }
-.short-drop { width: 140px; height: 249px; border-radius: 14px; border: 1.5px dashed color-mix(in srgb, var(--primaria) 55%, transparent); background: var(--superficie-2); display: grid; place-items: center; cursor: pointer; color: var(--texto-3); text-align: center; font-size: 11.5px; line-height: 1.25; padding: 8px; position: relative; overflow: hidden; transition: border-color .2s, box-shadow .2s, transform .2s; }
+.short-drop { width: 236px; height: 420px; border-radius: 14px; border: 1.5px dashed color-mix(in srgb, var(--primaria) 55%, transparent); background: var(--superficie-2); display: grid; place-items: center; cursor: pointer; color: var(--texto-3); text-align: center; font-size: 11.5px; line-height: 1.25; padding: 8px; position: relative; overflow: hidden; transition: border-color .2s, box-shadow .2s, transform .2s; }
 .short-drop:hover, .short-drop.sobre { border-color: var(--primaria); box-shadow: 0 0 20px var(--brilho); transform: translateY(-2px); color: var(--texto); }
 .short-drop .icone { font-size: 26px; color: var(--primaria); }
 .short-drop.pronto { border-style: solid; background: linear-gradient(160deg, color-mix(in srgb, var(--primaria) 35%, var(--superficie-2)), var(--superficie-3)); color: var(--texto); }
@@ -400,8 +400,12 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 @media (max-width: 860px) { .projetos-grade { grid-template-columns: 1fr; } }
 
 /* palco da análise: Short centralizado + painel de configuração ao lado */
-.palco { display: flex; justify-content: center; align-items: stretch; gap: 16px; }
-.config { width: 320px; max-width: 100%; background: var(--superficie-2); border-radius: var(--raio-l); padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; border: 1px solid color-mix(in srgb, var(--primaria) 20%, transparent); }
+.palco { display: flex; justify-content: center; align-items: stretch; gap: 16px; width: fit-content; margin: 0 auto; }
+.rodape-analise .compositor { width: 612px; max-width: 100%; margin: 0 auto; }
+.analise .saudacao { padding-top: 8px; }
+.analise .saudacao h2 { font-size: 30px; }
+.analise .saudacao p { font-size: 16px; }
+.config { width: 360px; max-width: 100%; justify-content: center; background: var(--superficie-2); border-radius: var(--raio-l); padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; border: 1px solid color-mix(in srgb, var(--primaria) 20%, transparent); }
 .campo-config { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--texto-2); }
 .campo-config select { background: var(--superficie-3); border: 0; border-radius: var(--pilula); height: 36px; padding: 0 12px; outline: none; max-width: 100%; }
 .campo-config input[type=range] { accent-color: var(--primaria); width: 100%; cursor: pointer; }
@@ -411,10 +415,11 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 @media (max-width: 720px) { .palco { flex-direction: column; align-items: center; } .config { width: 100%; } }
 
 /* Projetos na barra lateral: clique vai para a tela; a seta (ou clicar já estando nela) abre a lista */
-.projetos-nav { padding: 0 4px 0 0; gap: 0; }
-.projetos-nav .abrir { flex: 1; display: flex; align-items: center; gap: 10px; height: 100%; padding: 0 12px; border: 0; background: none; color: inherit; cursor: pointer; border-radius: var(--pilula); text-align: left; }
-.projetos-nav .abrir small { color: var(--texto-3); font-size: 12px; font-weight: 400; }
-.projetos-nav .seta { width: 30px; height: 30px; border-radius: 50%; border: 0; background: none; color: var(--texto-3); display: grid; place-items: center; cursor: pointer; transition: transform .25s, background .2s; }
+.projetos-nav { padding: 0 6px 0 0; gap: 0; overflow: hidden; width: 100%; }
+.projetos-nav .abrir { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 100%; padding: 0 12px; border: 0; background: none; color: inherit; cursor: pointer; border-radius: var(--pilula); text-align: left; }
+.projetos-nav .abrir small { color: var(--texto-3); font-size: 12px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.projetos-nav .abrir .rotulo-nav { display: flex; gap: 4px; min-width: 0; overflow: hidden; }
+.projetos-nav .seta { width: 28px; height: 28px; flex-shrink: 0; margin-left: 2px; border-radius: 50%; border: 0; background: none; color: var(--texto-3); display: grid; place-items: center; cursor: pointer; transition: transform .25s, background .2s; }
 .projetos-nav .seta:hover { background: var(--superficie-4); color: var(--texto); }
 .projetos-nav .seta.aberta { transform: rotate(180deg); }
 .lista-projetos { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s cubic-bezier(.2,.8,.2,1); }
@@ -426,7 +431,7 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 .projeto-select { display: none; }
 
 /* feed vertical de projetos (Shorts): um card por vez, snap, o próximo espiando embaixo */
-.feed { height: 560px; overflow-y: auto; scroll-snap-type: y mandatory; display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 10px 0 0; scrollbar-width: none; mask-image: linear-gradient(to bottom, #000 78%, transparent); -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent); }
+.feed { height: 560px; overflow-y: auto; overflow-anchor: none; scroll-snap-type: y mandatory; display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 10px 0 0; scrollbar-width: none; mask-image: linear-gradient(to bottom, #000 78%, transparent); -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent); }
 .feed::-webkit-scrollbar { display: none; }
 .feed .cartao-projeto { scroll-snap-align: start; scroll-snap-stop: always; flex-shrink: 0; width: 300px; height: 470px; padding: 26px; border-radius: 28px; background: linear-gradient(170deg, var(--superficie-3), var(--superficie-2) 60%); }
 .feed .cartao-projeto .icone-proj { width: 52px; height: 52px; border-radius: 16px; }
@@ -438,3 +443,18 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 .feed .cartao-projeto.novo .icone { font-size: 56px; }
 .feed-fim { flex-shrink: 0; height: 80px; }
 .projetos-grade { align-items: start; }
+
+/* feed: card em foco e arrasto lateral para criar */
+.feed .cartao-projeto { transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s, opacity .25s; touch-action: pan-y; user-select: none; position: relative; }
+.feed .cartao-projeto.foco { box-shadow: 0 0 0 1px color-mix(in srgb, var(--primaria) 55%, transparent), 0 0 30px var(--brilho); }
+.feed .cartao-projeto.arrastando { transition: none; cursor: grabbing; }
+.feed .cartao-projeto .dica-criar { position: absolute; inset: auto 16px 18px 16px; display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--primaria); color: var(--sobre-primaria); border-radius: var(--pilula); padding: 8px 12px; font-size: 12.5px; font-weight: 500; animation: aparecer .2s both; }
+/* insights do projeto em foco */
+.insights { background: var(--superficie-2); border-radius: var(--raio-l); padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; max-height: 560px; overflow-y: auto; scrollbar-width: thin; }
+.insights .cabecalho-ins h3 { margin: 2px 0 2px; font-size: 18px; font-weight: 500; }
+.insights .rotulo { font-size: 11px; }
+.bloco-ins { display: flex; flex-direction: column; gap: 4px; }
+.linha-ins { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; padding: 3px 0; border-bottom: 1px dashed var(--contorno-suave); }
+.linha-ins .mono { font-size: 12px; }
+.grade-ins { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.projetos-grade { grid-template-columns: minmax(0, 1fr) 340px; }

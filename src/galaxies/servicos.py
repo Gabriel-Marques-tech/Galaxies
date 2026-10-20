@@ -532,6 +532,86 @@ class Framework:
             objetivo_validacao=busca.objetivo_validacao,
         )
 
+    def insights(self, projeto: str, alvo: str | None = None) -> dict:
+        """Analytics rápidas do projeto: o que funciona no setor, medido na base (não no modelo).
+        Efeitos são a mediana do alvo relativo ao canal, em %, por grupo."""
+        alvo = self._alvo(projeto, alvo)
+        with self._abrir_existente(projeto) as banco:
+            base = banco.execute(
+                f"""
+                WITH v AS (
+                  SELECT v.id, c.setor, v.duracao_s, v.{alvo} AS y,
+                         hour(v.publicado_em AT TIME ZONE 'America/Sao_Paulo') AS hora,
+                         dayofweek(v.publicado_em AT TIME ZONE 'America/Sao_Paulo') AS dia,
+                         median(v.{alvo}) OVER (PARTITION BY v.canal_id) AS mediana_canal
+                  FROM videos v JOIN canais c ON c.id = v.canal_id
+                  WHERE v.{alvo} IS NOT NULL
+                    AND v.canal_id NOT IN (SELECT id FROM excluidos WHERE tipo = 'canal')
+                )
+                SELECT id, setor, duracao_s, hora, dia, y,
+                       ln(y + 1) - ln(mediana_canal + 1) AS rel
+                FROM v
+                """
+            ).df()
+            respostas = banco.execute(
+                "SELECT video_id, atributo_id, resposta FROM respostas QUALIFY ROW_NUMBER() "
+                "OVER (PARTITION BY video_id, atributo_id ORDER BY quando DESC) = 1"
+            ).fetchall()
+            setores = banco.execute(
+                f"SELECT c.setor, count(DISTINCT c.id), count(v.id), median(v.{alvo}) "
+                "FROM canais c LEFT JOIN videos v ON v.canal_id = c.id GROUP BY 1 ORDER BY 3 DESC"
+            ).fetchall()
+            definicoes = {a.id: a for a in atrib.ler_definicoes(banco)}
+        if base.empty:
+            return {"alvo": alvo, "setores": [], "horarios": [], "duracao": [], "fatores": []}
+
+        def efeito(grupo) -> float:
+            return float(np.expm1(grupo["rel"].median()))
+
+        def ranking(coluna, rotulo, minimo=30):
+            grupos = [(k, g) for k, g in base.groupby(coluna) if len(g) >= minimo]
+            grupos.sort(key=lambda kg: -kg[1]["rel"].median())
+            return [{"grupo": rotulo(k), "efeito": efeito(g), "n": len(g)} for k, g in grupos]
+
+        base["faixa"] = pd.cut(
+            base["duracao_s"], [0, 15, 30, 60, 180], labels=["até 15s", "15–30s", "30–60s", "60s+"]
+        )
+        fatores = []
+        if respostas:
+            import json as _json
+
+            df = pd.DataFrame(respostas, columns=["video_id", "atributo_id", "resposta"])
+            df = df.merge(base[["id", "rel"]], left_on="video_id", right_on="id")
+            for atributo_id, g in df.groupby("atributo_id"):
+                a = definicoes.get(atributo_id)
+                if a is None or len(g) < 30:
+                    continue
+                rot = g["resposta"].map(_json.loads).map(lambda r, a=a: _rotulo(a, r))
+                todos = g["rel"].median()
+                for rotulo, gg in g.assign(rotulo=rot).groupby("rotulo"):
+                    if len(gg) >= 20:
+                        fatores.append(
+                            {
+                                "fator": f"{atributo_id}: {rotulo}",
+                                "efeito": float(np.expm1(gg["rel"].median() - todos)),
+                                "n": len(gg),
+                            }
+                        )
+        fatores.sort(key=lambda f: -f["efeito"])
+        return {
+            "alvo": alvo,
+            "setores": [
+                {"setor": s, "canais": c, "shorts": n, "mediana": m} for s, c, n, m in setores
+            ],
+            "horarios": ranking("hora", lambda h: f"{int(h)}h")[:5],
+            "dias": ranking(
+                "dia", lambda d: ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"][int(d)]
+            )[:3],
+            "duracao": ranking("faixa", str, 50),
+            "fatores": fatores[:6],
+            "piores_fatores": fatores[-3:][::-1] if len(fatores) > 6 else [],
+        }
+
     def relatorio(self, projeto: str) -> str:
         """Relatório de avaliação em Markdown, reproduzível a partir do banco."""
         config = self.obter_projeto(projeto)
@@ -743,3 +823,13 @@ class Framework:
 
 def _texto_do_video(titulo: str | None, descricao: str | None) -> str:
     return f"{titulo or ''}\n{(descricao or '')[:300]}"
+
+
+def _rotulo(a: atrib.Atributo, r: dict) -> str:
+    """Rótulo legível de uma resposta de atributo, para agrupar nos insights."""
+    if a.tipo == "choice":
+        return r.get("choice") or max(r["probabilities"], key=r["probabilities"].get)
+    if a.tipo == "noul":
+        return "sim" if float(r["noul"]) >= 0.5 else "não"
+    niveis = a.criterios
+    return niveis[min(int(round(float(r["score"]))), len(niveis) - 1)]
