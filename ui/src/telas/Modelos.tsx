@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { api, type Experimento, type Projeto, receitaTexto } from '../api'
-import { Aviso, BarrasMae, ChipStatus, Dica, Icone, Metrica, num, pct, useCarga, Vazio } from '../componentes'
+import { Aviso, BarrasMae, ChipStatus, Dica, Icone, Metrica, num, pct, useCarga, Vazio, pctOu } from '../componentes'
 
 export default function Modelos({ projeto, config, aoMudar }: { projeto: string; config: Projeto; aoMudar: () => void }) {
   const { dados, erro, recarregar } = useCarga(() => api.experimentos(projeto), [projeto])
@@ -24,7 +24,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
       <div className="grade-cartoes">
         <Metrica icone="check_circle" rotulo="Mais preciso que a média do canal" valor={ativo ? pct(ativo.resultado.ganho) : '—'}
           detalhe={ativo ? `erro típico ${Math.exp(ativo.resultado.modelo.mae).toFixed(1)}× contra ${Math.exp(ativo.resultado.baseline.mae).toFixed(1)}× se chutasse a média do canal` : 'nenhum promovido'} />
-        <Metrica icone="swap_vert" rotulo="Acerto A vs B no canal" valor={ativo ? pct(ativo.resultado.modelo.acerto_pares, false) : '—'}
+        <Metrica icone="swap_vert" rotulo="Acerto A vs B no canal" valor={ativo ? pctOu(ativo.resultado.modelo.acerto_pares) : '—'}
           detalhe="pares de vídeos do mesmo canal (acaso = 50%)" />
         <Metrica icone="pending" rotulo="Aguardando você" valor={String(pendentes.length)}
           detalhe={config.modo === 'cientista' ? 'promoções esperam aprovação' : 'modo automático: o agente promove'} />
@@ -67,7 +67,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
                         </div>
                         <div className="sub">erro típico {Math.exp(e.resultado.modelo.mae).toFixed(1)}× · média do canal {Math.exp(e.resultado.baseline.mae).toFixed(1)}×</div>
                       </td>
-                      <td className="n">{pct(e.resultado.modelo.acerto_pares, false)}</td>
+                      <td className="n">{pctOu(e.resultado.modelo.acerto_pares)}</td>
                       <td><ChipStatus status={e.status} /></td>
                     </tr>
                   )
@@ -92,7 +92,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
                     <td className="sub hipotese-curta" title={e.hipotese}>{e.hipotese || '—'}</td>
                     <td className="n">{e.resultado.n_teste}</td>
                     <td><BarrasMae r={e.resultado} /></td>
-                    <td className="n">{pct(e.resultado.modelo.acerto_pares, false)}</td>
+                    <td className="n">{pctOu(e.resultado.modelo.acerto_pares)}</td>
                     <td className="n" title="fração do teste dentro da faixa calibrada">{e.resultado.cobertura_80 ? pct(e.resultado.cobertura_80, false) : '—'}</td>
                     <td className={`n ${e.resultado.ganho > 0 ? 'bom-t' : 'ruim-t'}`}>{pct(e.resultado.ganho)}</td>
                     <td><ChipStatus status={e.status} /></td>

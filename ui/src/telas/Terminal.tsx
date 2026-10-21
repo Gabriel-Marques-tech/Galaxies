@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
-import { compacto, num, pct } from '../componentes'
+import { compacto, num, pct, pctOu } from '../componentes'
 
 // Harness: terminal no navegador para quem trabalha com dados. Mesma API da UI.
 
@@ -64,7 +64,7 @@ const COMANDOS: Record<string, Comando> = {
           [...exps].reverse().map((e) => {
             const r = e.resultado
             return [e.id, e.receita.camadas.join('+').replace('metadados', 'meta'), String(r.n_teste), num(r.modelo.mae),
-              num(r.controle_metadados.mae), num(r.baseline.mae), pct(r.modelo.acerto_pares, false), pct(r.cobertura_80 ?? 0, false), pct(r.ganho), e.status]
+              num(r.controle_metadados.mae), num(r.baseline.mae), pctOu(r.modelo.acerto_pares), pct(r.cobertura_80 ?? 0, false), pct(r.ganho), e.status]
           }),
           ['e', 'e', 'd', 'd', 'd', 'd', 'd', 'd', 'd', 'e'],
         ),

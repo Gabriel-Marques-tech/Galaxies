@@ -922,7 +922,8 @@ class Framework:
         """Momento do canal na data planejada do vídeo novo (mesmas regras do treino)."""
         videos = banco.execute(
             f"SELECT id AS video_id, canal_id, publicado_em, {alvo} AS y FROM videos "
-            f"WHERE canal_id = ? AND {alvo} IS NOT NULL",
+            f"WHERE canal_id = ? AND {alvo} IS NOT NULL"
+            " AND id NOT IN (SELECT id FROM excluidos WHERE tipo = 'video')",
             [canal_id],
         ).df()
         videos["publicado_em"] = pd.to_datetime(videos["publicado_em"], utc=True)

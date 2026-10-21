@@ -202,6 +202,7 @@ def prever(
         if recente is not None and not np.isnan(recente):
             deslocamento = float(recente - np.log1p(mediana))
     relativo = _quantis_relativos(modelos, x) + deslocamento
+    recuo = np.zeros(len(DIAS_DA_TIMELINE))
     if curva is not None:
         pares = zip(idades, DIAS_DA_TIMELINE, strict=True)
         recuo = np.array([np.log(curva.fator(i, float(d))) for i, d in pares])
@@ -249,7 +250,15 @@ def prever(
         "chances": chances,
         "fatores": fatores,
         "sugestoes": sugerir(
-            modelos, x.iloc[[i7]], x.iloc[[i30]], mediana, k, limite_viral, meta, deslocamento
+            modelos,
+            x.iloc[[i7]],
+            x.iloc[[i30]],
+            mediana,
+            k,
+            limite_viral,
+            meta,
+            deslocamento + float(recuo[i7]),  # mesma referência da timeline em 7 dias
+            deslocamento + float(recuo[i30]),
         ),
     }
 
@@ -295,21 +304,30 @@ def _alavancas(meta: dict) -> dict[str, list[tuple[str, dict[str, float]]]]:
 
 
 def sugerir(
-    modelos, x7, x30, mediana: float, k: float, limite_viral: float, meta: dict, desloc: float = 0.0
+    modelos,
+    x7,
+    x30,
+    mediana: float,
+    k: float,
+    limite_viral: float,
+    meta: dict,
+    desloc: float = 0.0,
+    desloc30: float | None = None,
 ):
     """Para cada alavanca, a alternativa que mais aumenta a chance de viralizar (e quanto
     move a mediana em 7 dias). Associação aprendida na base, não causa: hipóteses a testar."""
+    desloc30 = desloc if desloc30 is None else desloc30
     base_log = desloc + np.log1p(mediana)
     atual_7d = float(np.expm1(modelos[0.5].predict(x7)[0] + base_log))
     atual_viral = float(
-        _prob_acima(_quantis_relativos(modelos, x30) + desloc, k, mediana, limite_viral)[0]
+        _prob_acima(_quantis_relativos(modelos, x30) + desloc30, k, mediana, limite_viral)[0]
     )
     sugestoes = []
     for opcoes in _alavancas(meta).values():
         c7 = pd.concat([x7.assign(**mudanca) for _, mudanca in opcoes])
         c30 = pd.concat([x30.assign(**mudanca) for _, mudanca in opcoes])
         previstos = np.expm1(modelos[0.5].predict(c7) + base_log).clip(min=0)
-        virais = _prob_acima(_quantis_relativos(modelos, c30) + desloc, k, mediana, limite_viral)
+        virais = _prob_acima(_quantis_relativos(modelos, c30) + desloc30, k, mediana, limite_viral)
         i = int(np.argmax(virais + 1e-3 * previstos / max(atual_7d, 1.0)))  # desempate: mediana
         if all(float(x7.iloc[0][c]) == v for c, v in opcoes[i][1].items()):
             continue  # o vídeo já está na melhor opção

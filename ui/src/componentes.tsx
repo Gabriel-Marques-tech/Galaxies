@@ -3,6 +3,7 @@ import type { Experimento, Faixa } from './api'
 
 export const num = (v: number, casas = 3) => v.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas })
 export const pct = (v: number, sinal = true) => `${sinal && v >= 0 ? '+' : ''}${num(v * 100, 1)}%`
+export const pctOu = (v: number | null | undefined) => (v == null ? '—' : pct(v, false))
 export const compacto = (v: number) => new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 }).format(v)
 
 // Carrega dados de forma assíncrona e expõe erro e recarga.

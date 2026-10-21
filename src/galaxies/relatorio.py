@@ -8,7 +8,9 @@ import math
 from galaxies.experimentos import Experimento
 
 
-def _pct(v: float, sinal: bool = True) -> str:
+def _pct(v: float | None, sinal: bool = True) -> str:
+    if v is None:
+        return "—"
     return f"{v:+.1%}" if sinal else f"{v:.1%}"
 
 

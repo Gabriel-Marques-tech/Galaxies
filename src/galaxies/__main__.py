@@ -8,6 +8,10 @@ from pathlib import Path
 from galaxies.ambiente import framework
 
 
+def _pct(v):
+    return "—" if v is None else f"{v:.1%}"
+
+
 def main():
     cli = argparse.ArgumentParser(prog="galaxies")
     comandos = cli.add_subparsers(dest="comando", required=True)
@@ -143,7 +147,8 @@ def main():
             r = e.resultado
             print(
                 f"\nescolhida {e.id}: teste ganho {r.ganho:+.1%} vs baseline, "
-                f"{r.melhora_sobre_controle:+.1%} vs controle, pares {r.modelo.acerto_pares:.1%}, "
+                f"{r.melhora_sobre_controle:+.1%} vs controle, "
+                f"pares {_pct(r.modelo.acerto_pares)}, "
                 f"faixa 80% cobre {r.cobertura_80:.0%} · promovido={ciclo.promovido}"
             )
     elif args.comando == "ciclo-automatico":

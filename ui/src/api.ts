@@ -1,6 +1,6 @@
 // Tipos espelham os modelos Pydantic do núcleo (galaxies/*.py).
 
-export type Metricas = { mae: number; spearman_no_canal: number; n: number; acerto_pares: number }
+export type Metricas = { mae: number; spearman_no_canal: number; n: number; acerto_pares: number | null }
 export type Erro = { video_id: string; canal_id: string; previsto: number; real: number; erro_log: number }
 export type Segmento = { chave: string; mae: number; n: number }
 

@@ -61,7 +61,8 @@ class Metricas(BaseModel):
     n: int
     # A vs B: dos pares de vídeos do mesmo canal no teste, a fração que o modelo ordena
     # certo (empates contam meio). 0.5 = não ordena nada, como a média do canal.
-    acerto_pares: float = 0.5
+    # None = não medido (experimentos antigos ou sem pares no teste).
+    acerto_pares: float | None = None
 
 
 class Erro(BaseModel):
@@ -254,7 +255,7 @@ def medir(pred_log: np.ndarray, teste: pd.DataFrame) -> Metricas:
         mae=mae,
         spearman_no_canal=float(np.mean(correlacoes)) if correlacoes else 0.0,
         n=len(teste),
-        acerto_pares=acertos / pares if pares else 0.5,
+        acerto_pares=acertos / pares if pares else None,
     )
 
 
@@ -352,6 +353,8 @@ def historico_do_banco(banco: duckdb.DuckDBPyConnection, alvo: str) -> pd.DataFr
     df = banco.execute(
         f"SELECT id AS video_id, canal_id, publicado_em, {alvo} AS y FROM videos "
         f"WHERE {alvo} IS NOT NULL"
+        " AND id NOT IN (SELECT id FROM excluidos WHERE tipo = 'video')"
+        " AND canal_id NOT IN (SELECT id FROM excluidos WHERE tipo = 'canal')"
     ).df()
     df["publicado_em"] = pd.to_datetime(df["publicado_em"], utc=True)
     return historico(df).set_index("video_id")
