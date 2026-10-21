@@ -402,9 +402,7 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 /* palco da análise: Short centralizado + painel de configuração ao lado */
 .palco { display: flex; justify-content: center; align-items: stretch; gap: 16px; width: fit-content; margin: 0 auto; }
 .rodape-analise .compositor { width: 720px; max-width: 100%; margin: 0 auto; }
-.analise .saudacao { padding-top: 8px; }
-.analise .saudacao h2 { font-size: 30px; }
-.analise .saudacao p { font-size: 16px; }
+
 .config { width: 360px; max-width: 100%; justify-content: center; background: var(--superficie-2); border-radius: var(--raio-l); padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; border: 1px solid color-mix(in srgb, var(--primaria) 20%, transparent); }
 .campo-config { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--texto-2); }
 .campo-config select { background: var(--superficie-3); border: 0; border-radius: var(--pilula); height: 36px; padding: 0 12px; outline: none; max-width: 100%; }
@@ -518,3 +516,18 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 .cartao:hover, .metrica:hover { background-image: radial-gradient(circle at var(--mx, 50%) var(--my, 0%), color-mix(in srgb, var(--primaria) 10%, transparent), transparent 45%); }
 
 @media (prefers-reduced-motion: reduce) { .onda, .principal.ressoando, .ressoando *, .tela-anim, .metrica .valor { animation: none !important; } }
+
+/* análise: tudo enquadrado na janela; o Short é dimensionado pela altura disponível */
+.analise { display: flex; flex-direction: column; height: calc(100vh - 92px); max-width: 900px; margin: 0 auto; gap: 8px; }
+.analise .saudacao.compacta { padding: 4px 0 0; }
+.analise .saudacao.compacta h2 { font-size: 28px; }
+.analise .saudacao.compacta p { font-size: 15px; margin-top: 2px; }
+.meio-analise { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-right: 4px; }
+.meio-analise:empty { flex: 1; }
+.rodape-analise { flex-shrink: 0; padding-bottom: 4px; }
+.analise .short-drop { height: min(460px, 46vh); width: auto; aspect-ratio: 9 / 16; }
+.analise .short-drop.pronto { height: min(460px, 46vh); }
+.rodape-analise .compositor { padding: 10px 10px 8px 18px; }
+.rodape-analise .compositor textarea { font-size: 15px; }
+.rodape-analise > p.sub { margin: 0; }
+@media (max-height: 720px) { .analise .saudacao.compacta { display: none; } .analise .short-drop { height: 40vh; } }

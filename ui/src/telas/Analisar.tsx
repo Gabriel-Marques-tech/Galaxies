@@ -30,14 +30,14 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
   }
 
   return (
-    <div className="pilha analise" style={{ maxWidth: 860, margin: '0 auto' }}>
+    <div className="analise">
       {!conversas.length && !rodando && (
-        <div className="saudacao">
+        <div className="saudacao compacta">
           <h2>Antes de publicar</h2>
           <p>Suba o Short (ou só o título), escolha o canal e veja como ele deve performar.</p>
         </div>
       )}
-
+      <div className="meio-analise rolagem-fina">
       {conversas.map((c, i) => (
         <div key={i} className="pilha">
           <div className="pergunta-usuario">{c.pergunta}<div className="sub">{nomeCanal(c.canal)}</div></div>
@@ -53,6 +53,7 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
           <div className="pontos" aria-label="Analisando"><i /><i /><i /></div>
         </div>
       )}
+      </div>
 
       <div className="rodape-analise">
         <div className="palco">
