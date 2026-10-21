@@ -1,5 +1,5 @@
 import type { Tela } from '../App'
-import { api, type Projeto } from '../api'
+import { api, type Projeto, receitaTexto } from '../api'
 import { compacto, Icone, Metrica, pct, useCarga } from '../componentes'
 
 const ATALHOS: { tela: Tela; icone: string; titulo: string; texto: string }[] = [
@@ -34,7 +34,7 @@ export default function Inicio({ projeto, config, ir, aoMudarModo }: {
         <Metrica icone="frame_inspect" rotulo="Ganchos analisados" valor={r ? compacto(r.ganchos) : '—'}
           detalhe={r && Object.entries(r.atributos_por_extrator).map(([e, n]) => `${n} com ${e.replace('@cf/meta/', '')}`).join(' · ')} />
         <Metrica icone="model_training" rotulo="Modelo ativo" valor={ativo ? pct(ativo.resultado.ganho) : '—'}
-          detalhe={ativo ? `mais preciso que a média do canal · ${ativo.receita.camadas.join(' + ')}` : 'nenhum promovido ainda'} />
+          detalhe={ativo ? `mais preciso que a média do canal · ${receitaTexto(ativo.receita)}` : 'nenhum promovido ainda'} />
         <Metrica icone="science" rotulo="Experimentos" valor={r ? String(r.experimentos) : '—'} detalhe={r && `${r.revisoes} revisões humanas · ${r.runs} execuções`} />
         <Metrica icone="publish" rotulo="Em produção" valor={acomp.dados?.n ? `${Math.round(acomp.dados.cobertura * 100)}%` : '—'}
           detalhe={acomp.dados?.n ? `${acomp.dados.n} vídeo${acomp.dados.n === 1 ? '' : 's'} · dentro da faixa quase certa; ${Math.round(acomp.dados.cobertura_50 * 100)}% na provável · erro típico ${acomp.dados.erro_mediano.toFixed(1)}×` : 'nenhum vídeo acompanhado: publique e use "Acompanhar" na análise'} />

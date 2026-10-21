@@ -6,7 +6,7 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 
 - 46.393 Shorts de 113 canais (YouTube Data API. 2.807 unidades de cota gratuita).
 - 474 ganchos (primeiros 5s) com frames, descrição, fala e embedding.
-- Atributos por extrator: laya (474), @cf/meta/llama-3.1-8b-instruct-fast (474).
+- Atributos por extrator: laya (1151), @cf/meta/llama-3.1-8b-instruct-fast (474).
 
 ## Regras fixas (o agente não altera)
 
@@ -18,12 +18,12 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 
 ## Likes
 
-**Modelo ativo `1db5263c59`** (metadados + historico):
+**Modelo ativo `6e7808ded3`** (metadados + historico, âncora móvel):
 
-- Erro +19.0% menor que o baseline (MAE 0.700 vs 0.863; erro típico 2.01× vs 2.37×).
-- Acerta 58.5% dos pares A vs B no mesmo canal (acaso: 50%).
-- A faixa de 80% contém 74.2% dos resultados reais no teste (sem calibração: 62.7%). A faixa provável de 50% contém 49.3%.
-- Hipótese registrada: otimização: melhor de 13 tentativas na validação (+1.4% sobre o controle). Tentativas: padrão: metadados: +0.0%, padrão: historico: +1.1%, padrão: texto: -0.1%, padrão: historico+texto: +0.9%, min_data_in_leaf=10: +1.4%, meia_vida_dias=730: +0.5%, rodadas=1000: +0.8%, meia_vida_dias=180: -0.5%, learning_rate=0.0167: +0.8%
+- Erro +24.5% menor que o baseline (MAE 0.652 vs 0.863; erro típico 1.92× vs 2.37×).
+- Acerta 58.7% dos pares A vs B no mesmo canal (acaso: 50%).
+- A faixa de 80% contém 80.1% dos resultados reais no teste (sem calibração: 67.5%). A faixa provável de 50% contém 52.8%.
+- Hipótese registrada: âncora móvel: alvo relativo à média dos últimos 10 vídeos do canal (defasada 7 dias) em vez da mediana fixa do treino. Hipótese do diagnóstico da deriva: o período de teste rende ~18% abaixo da mediana histórica e a árvore não extrapola um deslocamento global; a âncora móvel segue o momento do canal. Na validação empata com a fixa (a deriva começa depois dela).
 
 | id | receita | n teste | MAE | só meta | baseline | vs baseline | vs controle | A vs B | faixa 80% |
 |---|---|---|---|---|---|---|---|---|---|
@@ -39,16 +39,17 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 | `c0e1db64a0` | metadados + multimodal + atributos (laya) | 103 | 1.072 | 1.045 | 1.114 | +3.7% | -2.6% | 54.6% | — |
 | `58381db140` | metadados + historico | 2041 | 0.699 | 0.744 | 0.863 | +19.0% | +6.0% | 58.0% | 75.6% |
 | `275468c32d` | metadados + historico + texto + multimodal + atributos (llama-3.1-8b-instruct-fast) | 190 | 0.909 | 0.914 | 0.977 | +6.9% | +0.5% | 58.7% | 74.2% |
-| `1db5263c59` | metadados + historico **← ativo** | 2041 | 0.700 | 0.740 | 0.863 | +19.0% | +5.4% | 58.5% | 74.2% |
+| `1db5263c59` | metadados + historico | 2041 | 0.700 | 0.740 | 0.863 | +19.0% | +5.4% | 58.5% | 74.2% |
+| `6e7808ded3` | metadados + historico, âncora móvel **← ativo** | 2041 | 0.652 | 0.738 | 0.863 | +24.5% | +11.8% | 58.7% | 80.1% |
 
 ## Views
 
-**Modelo ativo `c149994b1f`** (metadados + historico + texto):
+**Modelo ativo `db8c565807`** (metadados + historico, âncora móvel):
 
-- Erro +18.6% menor que o baseline (MAE 0.697 vs 0.856; erro típico 2.01× vs 2.35×).
-- Acerta 56.7% dos pares A vs B no mesmo canal (acaso: 50%).
-- A faixa de 80% contém 71.5% dos resultados reais no teste (sem calibração: 58.4%).
-- Hipótese registrada: otimização: melhor de 14 tentativas na validação (+4.7% sobre o controle). Tentativas: padrão: metadados: +0.0%, padrão: historico: +2.4%, padrão: texto: +1.7%, padrão: historico+texto: +3.7%, padrão: historico+texto+multimodal: -4.7%, padrão: completo: -3.5%, padrão: completo: +0.8%, min_data_in_leaf=10: +3.9%, min_data_in_leaf=80: +4.6%, min_data_in_leaf=40: +4.0%, learning_rate=0.0361: +3.7%, l
+- Erro +20.5% menor que o baseline (MAE 0.680 vs 0.856; erro típico 1.97× vs 2.35×).
+- Acerta 54.4% dos pares A vs B no mesmo canal (acaso: 50%).
+- A faixa de 80% contém 73.8% dos resultados reais no teste (sem calibração: 67.0%). A faixa provável de 50% contém 49.6%.
+- Hipótese registrada: âncora móvel: alvo relativo à média dos últimos 10 vídeos do canal (defasada 7 dias) em vez da mediana fixa do treino. Hipótese do diagnóstico da deriva: o período de teste rende ~18% abaixo da mediana histórica e a árvore não extrapola um deslocamento global; a âncora móvel segue o momento do canal. Na validação empata com a fixa (a deriva começa depois dela).
 
 | id | receita | n teste | MAE | só meta | baseline | vs baseline | vs controle | A vs B | faixa 80% |
 |---|---|---|---|---|---|---|---|---|---|
@@ -59,7 +60,8 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 | `15d5c1ab9c` | metadados + multimodal + atributos (llama-3.1-8b-instruct-fast) | 103 | 0.942 | 0.955 | 1.031 | +8.6% | +1.3% | 63.6% | — |
 | `84912b3899` | metadados + multimodal + atributos (laya) | 103 | 1.007 | 0.955 | 1.031 | +2.3% | -5.5% | 49.7% | — |
 | `977ae6bc8a` | metadados + historico + texto | 2062 | 0.697 | 0.732 | 0.856 | +18.5% | +4.8% | 57.3% | 72.2% |
-| `c149994b1f` | metadados + historico + texto **← ativo** | 2062 | 0.697 | 0.726 | 0.856 | +18.6% | +4.1% | 56.7% | 71.5% |
+| `c149994b1f` | metadados + historico + texto | 2062 | 0.697 | 0.726 | 0.856 | +18.6% | +4.1% | 56.7% | 71.5% |
+| `db8c565807` | metadados + historico, âncora móvel **← ativo** | 2062 | 0.680 | 0.728 | 0.856 | +20.5% | +6.5% | 54.4% | 73.8% |
 
 ## Busca do agente (likes, validação)
 
@@ -96,7 +98,7 @@ A coleta é uma foto só; os vídeos recentes foram reobservados dias depois (6.
 ## Limitações
 
 - Previsão antes de publicar tem teto natural: algoritmo e acaso pesam muito. O modelo serve para expectativa, triagem e priorizar testes, não para cravar números.
-- A faixa de 80% é calibrada no fim do treino e lá contém 80%; no teste (período mais recente) contém menos porque o período derivou: os vídeos novos rendem menos em relação à mediana histórica do canal do que o treino sugeria. Não é crescimento pendente (a curva observada mostra likes estáveis a partir de ~10 dias). O remédio é o ciclo: reotimizar com a base atualizada move o treino para perto do presente.
+- O período de teste derivou: os vídeos novos rendem ~18% menos em relação à mediana histórica do canal do que o treino sugeria. Não é crescimento pendente (a curva observada mostra likes estáveis a partir de ~10 dias). Com a âncora fixa a faixa de 80% cobria ~75% no teste; a âncora móvel (média dos últimos 10 vídeos do canal) segue a deriva e fechou a cobertura. O ciclo de reotimização com a base atualizada continua sendo o remédio de longo prazo.
 - Sugestões vêm de associação aprendida na base, não de causa.
 - Camadas de gancho e atributos cobrem só os vídeos com camada bruta; comparações nelas usam menos linhas de teste.
 

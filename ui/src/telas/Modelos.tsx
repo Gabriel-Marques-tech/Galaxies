@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { api, type Experimento, type Projeto } from '../api'
+import { api, type Experimento, type Projeto, receitaTexto } from '../api'
 import { Aviso, BarrasMae, ChipStatus, Dica, Icone, Metrica, num, pct, useCarga, Vazio } from '../componentes'
 
 export default function Modelos({ projeto, config, aoMudar }: { projeto: string; config: Projeto; aoMudar: () => void }) {
@@ -57,7 +57,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
                   return (
                     <tr key={e.id} className={`clicavel ${aberto === e.id ? 'selecionada' : ''}`} onClick={() => setAberto(e.id)}>
                       <td>
-                        <b>{e.receita.camadas.join(' + ')}</b>
+                        <b>{receitaTexto(e.receita)}</b>
                         <div className="sub">{e.alvo} · {e.resultado.n_teste} vídeos de teste</div>
                       </td>
                       <td>
@@ -86,7 +86,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
                 {ordenados.map((e) => (
                   <tr key={e.id} className={`clicavel ${aberto === e.id ? 'selecionada' : ''}`} onClick={() => setAberto(e.id)}>
                     <td>
-                      <b>{e.receita.camadas.join(' + ')}</b>
+                      <b>{receitaTexto(e.receita)}</b>
                       <div className="sub mono">{e.alvo} · {e.id}{e.receita.extrator ? ` · ${e.receita.extrator.replace('@cf/meta/', '')}` : ''}</div>
                     </td>
                     <td className="sub hipotese-curta" title={e.hipotese}>{e.hipotese || '—'}</td>
@@ -123,7 +123,7 @@ function Painel({ e, fechar, promover, decidir }: {
   return (
     <div className="painel" role="dialog" aria-label={`Experimento ${e.id}`}>
       <header>
-        <h2>{e.receita.camadas.join(' + ')}</h2>
+        <h2>{receitaTexto(e.receita)}</h2>
         <ChipStatus status={e.status} />
         <button className="btn-icone" onClick={fechar} aria-label="Fechar"><Icone nome="close" /></button>
       </header>

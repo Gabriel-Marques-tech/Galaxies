@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { api, type Experimento, type Insights } from '../api'
+import { api, type Experimento, type Insights, receitaTexto } from '../api'
 import { compacto, Icone, pct, useCarga } from '../componentes'
 
 // Tela inicial: feed vertical de projetos (um por vez, como Shorts). Arrastar um card para o
@@ -128,7 +128,7 @@ function PainelInsights({ projeto, ativo }: { projeto: string; ativo?: Experimen
               <>
                 <div className="linha-ins"><span>erro vs média do canal</span><b className="bom-t">−{pct(ativo.resultado.ganho, false)}</b></div>
                 <div className="linha-ins"><span>acerto A vs B</span><b>{pct(ativo.resultado.modelo.acerto_pares, false)}</b></div>
-                <div className="linha-ins"><span>receita</span><span className="sub">{ativo.receita.camadas.join(' + ')}</span></div>
+                <div className="linha-ins"><span>receita</span><span className="sub">{receitaTexto(ativo.receita)}</span></div>
               </>
             ) : <span className="sub">sem modelo ativo: peça ao agente otimizar</span>}
           </div>

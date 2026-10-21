@@ -20,9 +20,16 @@ def _fator(mae: float) -> str:
     return f"{math.exp(mae):.2f}×"
 
 
+def _receita(e: Experimento) -> str:
+    texto = " + ".join(e.receita.camadas)
+    if getattr(e.receita, "ancora", "mediana_canal") == "movel":
+        texto += ", âncora móvel"
+    return texto
+
+
 def _linha(e: Experimento) -> str:
     r = e.resultado
-    camadas = " + ".join(e.receita.camadas)
+    camadas = _receita(e)
     extrator = f" ({e.receita.extrator.replace('@cf/meta/', '')})" if e.receita.extrator else ""
     marca = " **← ativo**" if e.status == "ativo" else ""
     return (
@@ -111,7 +118,7 @@ def gerar(
         if ativo:
             r = ativo.resultado
             md += [
-                f"**Modelo ativo `{ativo.id}`** ({' + '.join(ativo.receita.camadas)}):",
+                f"**Modelo ativo `{ativo.id}`** ({_receita(ativo)}):",
                 "",
                 f"- Erro {_pct(r.ganho)} menor que o baseline (MAE {r.modelo.mae:.3f} vs "
                 f"{r.baseline.mae:.3f}; erro típico {_fator(r.modelo.mae)} vs "
@@ -162,11 +169,12 @@ def gerar(
         "",
         "- Previsão antes de publicar tem teto natural: algoritmo e acaso pesam muito. O modelo "
         "serve para expectativa, triagem e priorizar testes, não para cravar números.",
-        "- A faixa de 80% é calibrada no fim do treino e lá contém 80%; no teste (período mais "
-        "recente) contém menos porque o período derivou: os vídeos novos rendem menos em "
-        "relação à mediana histórica do canal do que o treino sugeria. Não é crescimento "
-        "pendente (a curva observada mostra likes estáveis a partir de ~10 dias). O remédio é "
-        "o ciclo: reotimizar com a base atualizada move o treino para perto do presente.",
+        "- O período de teste derivou: os vídeos novos rendem ~18% menos em relação à mediana "
+        "histórica do canal do que o treino sugeria. Não é crescimento pendente (a curva "
+        "observada mostra likes estáveis a partir de ~10 dias). Com a âncora fixa a faixa de "
+        "80% cobria ~75% no teste; a âncora móvel (média dos últimos 10 vídeos do canal) segue "
+        "a deriva e fechou a cobertura. O ciclo de reotimização com a base atualizada continua "
+        "sendo o remédio de longo prazo.",
         "- Sugestões vêm de associação aprendida na base, não de causa.",
         "- Camadas de gancho e atributos cobrem só os vídeos com camada bruta; comparações nelas "
         "usam menos linhas de teste.",

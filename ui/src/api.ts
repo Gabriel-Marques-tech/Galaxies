@@ -4,10 +4,12 @@ export type Metricas = { mae: number; spearman_no_canal: number; n: number; acer
 export type Erro = { video_id: string; canal_id: string; previsto: number; real: number; erro_log: number }
 export type Segmento = { chave: string; mae: number; n: number }
 
+export type Receita = { camadas: string[]; atributos: string[] | null; extrator: string | null; params: Record<string, number | null>; ancora?: 'mediana_canal' | 'movel' }
+export const receitaTexto = (r: Receita) => r.camadas.join(' + ') + (r.ancora === 'movel' ? ' · âncora móvel' : '')
 export type Experimento = {
   id: string
   alvo: string
-  receita: { camadas: string[]; atributos: string[] | null; extrator: string | null; params: Record<string, number> }
+  receita: Receita
   hipotese: string
   status: 'candidato' | 'aguardando_aprovacao' | 'ativo' | 'aposentado' | 'rejeitado'
   nota_humana: string

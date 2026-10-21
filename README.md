@@ -15,7 +15,16 @@ As regras de avaliação são fixas (o agente não as altera): todo experimento 
 mesmas linhas de teste, com o baseline do canal e com um controle só de metadados.
 
 Tudo roda em serviços gratuitos: YouTube Data API, Gemini pelo AI Studio (descrição do
-gancho), Laya local (atributos no formato do Jev), Whisper e SigLIP locais.
+gancho), um LLM do Workers AI (atributos do gancho, no formato do Jev), Laya local
+(perguntas de título para todos os vídeos), Whisper e SigLIP locais.
+
+Dois extratores, dois papéis. O **LLM** lê o gancho (título + descrição visual + fala) e
+responde os 15 atributos: precisa entender o vídeo, roda só nos ganchos processados. O
+**Laya** (encoder aberto, local, ~0,2 s por vídeo) responde 4 perguntas só de título para
+a base inteira: é a camada `titulo`, testável com n cheio. Na comparação medida em 474
+ganchos, Laya como extrator do gancho respondeu "sim" a quase tudo (rosto 96%, fala 95%,
+produto 93%) e piorou o modelo em todos os pares; por isso ficou de reserva nesse papel
+(`ATRIBUTOS_MODELO=laya`) e ganhou o papel de volume.
 
 ## Resultados (moda e beleza, 46.393 Shorts de 113 canais)
 
@@ -24,8 +33,8 @@ mais recentes). Baseline = média do canal.
 
 | Alvo | Receita escolhida pelo agente | Erro vs baseline | Acerto A vs B no canal | Faixa de 80% cobre |
 |---|---|---|---|---|
-| likes | metadados + histórico do canal (ajustado) | **−19,0%** (MAE 0,700 vs 0,863) | 58,5% (acaso: 50%) | 74% |
-| views | metadados + histórico + texto (ajustado) | **−18,6%** (MAE 0,697 vs 0,856) | 57% | 72% |
+| likes | metadados + histórico, âncora móvel | **−24,5%** (MAE 0,652 vs 0,863) | 58,7% (acaso: 50%) | 80% |
+| views | metadados + histórico, âncora móvel | **−20,5%** (MAE 0,680 vs 0,856) | 54% | 74% |
 
 Camadas de gancho e atributos (474 ganchos, 190 no teste) ainda não entram no modelo final:
 com 22 linhas na validação não há poder estatístico, e o agente agora diz quantos vídeos
@@ -34,10 +43,12 @@ bootstrap pareado: "ganho real" (≥ 90%) ou "indistinguível". Peso por recênc
 (`meia_vida_dias`) entra na busca e, nesta base, não ajudou (a deriva do período de teste
 vem depois da validação).
 
-O que isso quer dizer na prática: o erro típico cai de ~2,4× para ~2,0×; de dois vídeos
+O que isso quer dizer na prática: o erro típico cai de ~2,4× para ~1,9×; de dois vídeos
 do mesmo canal, o modelo aponta o melhor em ~58% dos casos; a faixa prometida de 80% contém
-~75% dos resultados reais (80% no fim do treino; o período de teste derivou para baixo, e o
-ciclo de reotimização é o remédio). Serve para expectativa, triagem e priorizar testes, não
+80% dos resultados reais em likes (74% em views). A âncora móvel foi o que fechou a faixa:
+o período de teste rende ~18% abaixo da mediana histórica dos canais, e o alvo relativo à
+média dos últimos 10 vídeos segue esse movimento (com a mediana fixa, likes ficavam em
+−19,7% e a faixa em 75%). Serve para expectativa, triagem e priorizar testes, não
 para cravar números.
 
 A base é uma foto só, então o framework **reobserva os vídeos recentes** (`observar_recentes`,
@@ -123,7 +134,9 @@ O mesmo núcleo pela linha de comando: `uv run python -m galaxies --help`.
 
 ## Regras fixas de avaliação
 
-- Alvo: `log((y + 1) / (mediana do canal + 1))`, mediana só do treino.
+- Alvo: `log((y + 1) / (mediana do canal + 1))`, mediana só do treino. A receita pode
+  trocar a âncora pela média dos últimos 10 vídeos do canal (defasada 7 dias, `ancora:
+  movel`), que segue o momento do canal; baseline e controle continuam na mediana fixa.
 - Split temporal: 20% mais recentes no teste, só vídeos com 7+ dias.
 - Até 300 vídeos por canal (os mais recentes), para canais gigantes não dominarem.
 - Métricas: MAE no log e Spearman dentro do canal, contra o baseline "média do canal".
