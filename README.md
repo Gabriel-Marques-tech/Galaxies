@@ -33,8 +33,14 @@ na validação parecem ajudar, mas no teste ficam a menos de 1% do controle só 
 
 O que isso quer dizer na prática: o erro típico cai de ~2,4× para ~2,0×; de dois vídeos
 do mesmo canal, o modelo aponta o melhor em ~58% dos casos; a faixa prometida de 80% contém
-~75% dos resultados reais. Serve para expectativa, triagem e priorizar testes, não para
-cravar números. Relatório completo, com todas as tentativas do agente:
+~75% dos resultados reais (80% no fim do treino; o período de teste derivou para baixo, e o
+ciclo de reotimização é o remédio). Serve para expectativa, triagem e priorizar testes, não
+para cravar números.
+
+A base é uma foto só, então o framework **reobserva os vídeos recentes** (`observar_recentes`,
+1 unidade de cota por 50 vídeos) e mede a curva de crescimento por idade: em moda e beleza,
+likes estabilizam a partir de ~10 dias e views seguem crescendo devagar até ~40 dias. A
+timeline usa essa curva nas idades que o modelo não viu no treino. Relatório completo, com todas as tentativas do agente:
 [`docs/avaliacao.md`](docs/avaliacao.md), gerado por
 `uv run python -m galaxies relatorio moda-beleza`.
 
@@ -89,6 +95,8 @@ Fluxo típico pedido ao agente:
    e sugestões de mudança ("título em pergunta: +X%").
 6. Depois de publicar: `acompanhar` liga a análise ao vídeo real; `atualizar_acompanhamentos`
    busca os números com o tempo; `acompanhamentos` mostra previsto × real em produção.
+   `observar_recentes` (1×/dia) reobserva todos os vídeos recentes da base; `crescimento`
+   mostra a curva que daí sai.
 7. `runs`, `trace`, `falhas`, `reprocessar` para auditar.
 
 ## Console humano (UI)

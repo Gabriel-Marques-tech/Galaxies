@@ -12,6 +12,7 @@ from galaxies import (
     armazenamento,
     camada_bruta,
     coleta,
+    crescimento,
     erros,
     experimentos,
     humano,
@@ -676,6 +677,42 @@ class Framework:
         with self._abrir_existente(projeto) as banco:
             return acompanhamento.listar(banco)
 
+    # ------------------------------------------------------------ curva de crescimento
+
+    def observar_recentes(
+        self, projeto: str, dias_max: float = 90, agora: datetime | None = None
+    ) -> crescimento.ResumoObservacao:
+        """Busca de novo os números dos vídeos com menos de `dias_max` dias (1 unidade por
+        50). A coleta vira a primeira observação; cada rodada acrescenta outra. Rode uma vez
+        por dia: é o que ensina a curva de crescimento."""
+        youtube = coleta.YouTubeMedido(self._exigir(self.dependencias.youtube, "youtube"))
+        agora = agora or crescimento.agora_utc()
+        with self._abrir_existente(projeto) as banco, executar(banco, "observar_recentes") as ex:
+            with ex.etapa("semear") as registro:
+                registro["saida"] = {"novas": crescimento.semear(banco)}
+            pendentes = crescimento.recentes(banco, dias_max, agora)
+            vistos = 0
+            for inicio in range(0, len(pendentes), 50):
+                lote = pendentes[inicio : inicio + 50]
+                with ex.etapa("buscar_videos", {"n": len(lote)}):
+                    for video in youtube.videos(lote):
+                        acompanhamento.observar(banco, video, agora)
+                        vistos += 1
+            coleta.registrar_cota(banco, ex.run_id, youtube.unidades)
+        return crescimento.ResumoObservacao(
+            candidatos=len(pendentes),
+            observados=vistos,
+            sem_dados=len(pendentes) - vistos,
+            unidades=youtube.unidades,
+        )
+
+    def crescimento(self, projeto: str, alvo: str | None = None) -> crescimento.Curva:
+        """Curva de crescimento observada: inclinação de log(1+y) por log(idade) por faixa de
+        idade, a partir dos vídeos reobservados."""
+        config = self.obter_projeto(projeto)
+        with self._abrir_existente(projeto) as banco:
+            return crescimento.curva(banco, alvo or config.alvo)
+
     def relatorio(self, projeto: str) -> str:
         """Relatório de avaliação em Markdown, reproduzível a partir do banco."""
         config = self.obter_projeto(projeto)
@@ -694,7 +731,11 @@ class Framework:
                 alvo = next((x.alvo for x in exps if x.criado_em >= inicio), config.alvo)
                 if tentativas and alvo not in {a for a, _ in otimizacoes}:
                     otimizacoes.append((alvo, tentativas))
-        return relatorio_md.gerar(projeto, config, self.resumo(projeto), exps, otimizacoes)
+            curvas = {alvo: crescimento.curva(banco, alvo) for alvo in ("likes", "views")}
+            idade_minima = crescimento.idade_minima_vista(banco)
+        return relatorio_md.gerar(
+            projeto, config, self.resumo(projeto), exps, otimizacoes, curvas, idade_minima
+        )
 
     def ciclo_automatico(self, projeto: str, alvo: str | None = None) -> Ciclo:
         """Modo automático: otimiza e promove sozinho."""
@@ -826,6 +867,8 @@ class Framework:
                         [_texto_do_video(video.titulo, video.descricao)]
                     )
                     registro["saida"] = {"dimensoes": len(texto)}
+            curva = crescimento.curva(banco, config.alvo)
+            idade_minima = crescimento.idade_minima_vista(banco)
             with ex.etapa("prever", video.model_dump(mode="json")) as registro:
                 resultado = prever(
                     modelos,
@@ -836,9 +879,13 @@ class Framework:
                     respostas=respostas,
                     historico=historico,
                     texto=texto,
+                    curva=curva if curva.faixas else None,
+                    idade_minima=idade_minima,
                 )
                 registro["saida"] = {
                     "experimento": exp.id,
+                    "idade_minima_vista": round(idade_minima, 1),
+                    "curva": {f"{f.de_dias:g}-{f.ate_dias:g}d": f.inclinacao for f in curva.faixas},
                     "timeline": [p.model_dump() for p in resultado["timeline"]],
                     "chances": [c.model_dump() for c in resultado["chances"]],
                 }

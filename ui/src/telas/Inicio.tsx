@@ -15,6 +15,9 @@ export default function Inicio({ projeto, config, ir, aoMudarModo }: {
   const resumo = useCarga(() => api.resumo(projeto), [projeto])
   const exps = useCarga(() => api.experimentos(projeto), [projeto])
   const acomp = useCarga(() => api.acompanhamentos(projeto), [projeto])
+  const curva = useCarga(() => api.crescimento(projeto), [projeto])
+  // idade a partir da qual a mediana dos vídeos parou de crescer
+  const estabiliza = curva.dados?.faixas.find((f) => f.inclinacao === 0)?.de_dias
   const ativo = exps.dados?.find((e) => e.status === 'ativo')
   const r = resumo.dados
   const mudarModo = (modo: Projeto['modo']) => api.definirModo(projeto, modo).then(aoMudarModo)
@@ -35,6 +38,10 @@ export default function Inicio({ projeto, config, ir, aoMudarModo }: {
         <Metrica icone="science" rotulo="Experimentos" valor={r ? String(r.experimentos) : '—'} detalhe={r && `${r.revisoes} revisões humanas · ${r.runs} execuções`} />
         <Metrica icone="publish" rotulo="Em produção" valor={acomp.dados?.n ? `${Math.round(acomp.dados.cobertura * 100)}%` : '—'}
           detalhe={acomp.dados?.n ? `${acomp.dados.n} vídeos acompanhados dentro da faixa · erro típico ${acomp.dados.erro_mediano.toFixed(1)}×` : 'nenhum vídeo acompanhado: publique e use "Acompanhar" na análise'} />
+        <Metrica icone="trending_up" rotulo="Curva de crescimento" valor={curva.dados?.videos ? compacto(curva.dados.videos) : '—'}
+          detalhe={curva.dados?.videos
+            ? `vídeos reobservados · ${curva.dados.alvo} ${estabiliza !== undefined ? `estabilizam a partir de ~${estabiliza} dias` : 'ainda crescendo em todas as faixas'}`
+            : 'sem reobservação: peça ao agente observar_recentes uma vez por dia'} />
       </div>
 
       <div className="cartao">

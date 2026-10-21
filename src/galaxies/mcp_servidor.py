@@ -338,6 +338,19 @@ def criar_servidor(fw: Framework) -> ServidorGalaxies:
         return _texto(fw.acompanhamentos(projeto))
 
     @tool
+    def observar_recentes(projeto: str, dias_max: float = 90) -> str:
+        """Reobserva os vídeos da base com menos de dias_max dias (1 unidade por 50). Rode uma
+        vez por dia: a coleta é a primeira observação e cada rodada acrescenta outra; disso
+        sai a curva de crescimento que corrige a timeline nas idades que o modelo não viu."""
+        return _texto(fw.observar_recentes(projeto, dias_max))
+
+    @tool
+    def crescimento(projeto: str, alvo: str | None = None) -> str:
+        """Curva de crescimento observada: por faixa de idade, quanto log(1+y) cresce por
+        log(idade) (0 = parou de crescer), com quantos vídeos reobservados sustentam cada faixa."""
+        return _texto(fw.crescimento(projeto, alvo))
+
+    @tool
     def comparar(projeto: str, video_a: dict, video_b: dict, canal_id: str) -> str:
         """A vs B: analisa duas versões do mesmo Short (ex.: dois títulos) no mesmo canal e
         diz qual deve performar melhor em 7 dias. Confiabilidade: acerto_pares do modelo."""

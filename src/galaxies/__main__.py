@@ -65,6 +65,14 @@ def main():
     ciclo = comandos.add_parser("ciclo-automatico", help="otimiza e promove (modo automático)")
     ciclo.add_argument("projeto")
     ciclo.add_argument("--alvo", choices=["likes", "views"], default=None)
+    observar = comandos.add_parser(
+        "observar-recentes", help="reobserva vídeos recentes (curva de crescimento); rode 1×/dia"
+    )
+    observar.add_argument("projeto")
+    observar.add_argument("--dias-max", type=float, default=90)
+    curva = comandos.add_parser("crescimento", help="curva de crescimento observada")
+    curva.add_argument("projeto")
+    curva.add_argument("--alvo", choices=["likes", "views"], default=None)
     args = cli.parse_args()
 
     fw = framework(
@@ -133,6 +141,10 @@ def main():
         print(json.dumps({"promovido": resultado.promovido, "pulados": resultado.pulados}))
     elif args.comando == "erros":
         print(fw.erros(args.projeto, alvo=args.alvo).model_dump_json(indent=2))
+    elif args.comando == "observar-recentes":
+        print(fw.observar_recentes(args.projeto, args.dias_max).model_dump_json(indent=2))
+    elif args.comando == "crescimento":
+        print(fw.crescimento(args.projeto, args.alvo).model_dump_json(indent=2))
 
 
 if __name__ == "__main__":

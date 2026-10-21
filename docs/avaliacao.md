@@ -4,7 +4,7 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 
 ## Base
 
-- 46.393 Shorts de 113 canais (YouTube Data API. 2.681 unidades de cota gratuita).
+- 46.393 Shorts de 113 canais (YouTube Data API. 2.806 unidades de cota gratuita).
 - 474 ganchos (primeiros 5s) com frames, descrição, fala e embedding.
 - Atributos por extrator: laya (474), @cf/meta/llama-3.1-8b-instruct-fast (474).
 
@@ -79,9 +79,24 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 | num_leaves=7 | metadados + historico + texto | +3.8% | 2172 |
 | rodadas=1000 | metadados + historico + texto | +4.7% | 2172 |
 
+## Crescimento observado
+
+A coleta é uma foto só; os vídeos recentes foram reobservados dias depois (6.237 vídeos, intervalo mediano 1.8 dias). A inclinação é quanto `log(1 + y)` cresce por `log(idade)`; 0 = parou de crescer. Abaixo de 48 dias (idade que o modelo quase não viu no treino) a timeline recua pela curva.
+
+| faixa de idade | likes (n) | views (n) |
+|---|---|---|
+| 0–2 dias | 0.35 (60) | 0.37 (63) |
+| 2–5 dias | 0.20 (155) | 0.27 (160) |
+| 5–10 dias | 0.07 (229) | 0.13 (239) |
+| 10–20 dias | 0.00 (488) | 0.07 (488) |
+| 20–40 dias | 0.00 (941) | 0.05 (944) |
+| 40–80 dias | 0.00 (3266) | 0.00 (3289) |
+| 80–160 dias | 0.00 (1032) | 0.00 (1054) |
+
 ## Limitações
 
 - Previsão antes de publicar tem teto natural: algoritmo e acaso pesam muito. O modelo serve para expectativa, triagem e priorizar testes, não para cravar números.
+- A faixa de 80% é calibrada no fim do treino e lá contém 80%; no teste (período mais recente) contém menos porque o período derivou: os vídeos novos rendem menos em relação à mediana histórica do canal do que o treino sugeria. Não é crescimento pendente (a curva observada mostra likes estáveis a partir de ~10 dias). O remédio é o ciclo: reotimizar com a base atualizada move o treino para perto do presente.
 - Sugestões vêm de associação aprendida na base, não de causa.
 - Camadas de gancho e atributos cobrem só os vídeos com camada bruta; comparações nelas usam menos linhas de teste.
 

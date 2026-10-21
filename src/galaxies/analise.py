@@ -171,14 +171,25 @@ def prever(
     respostas=None,
     historico: dict | None = None,
     texto=None,
+    curva=None,
+    idade_minima: float = 0.0,
 ) -> dict:
-    """Timeline, chances (mediana, dobro, viral), fatores SHAP e sugestões."""
+    """Timeline, chances (mediana, dobro, viral), fatores SHAP e sugestões.
+
+    Abaixo de `idade_minima` (dias que o modelo quase não viu) a timeline parte da previsão
+    em `idade_minima` e recua pela curva de crescimento observada; sem curva, fica igual."""
     canais = pd.DataFrame(meta["canais"]).set_index("canal_id")
     mediana = float(canais.loc[linha["canal_id"].iloc[0], "mediana"])
     k = float(meta.get("calibracao", 1.0))
-    por_dia = pd.concat([linha.assign(idade_dias=float(d)) for d in DIAS_DA_TIMELINE])
+    idades = [max(float(d), idade_minima) for d in DIAS_DA_TIMELINE]
+    por_dia = pd.concat([linha.assign(idade_dias=i) for i in idades])
     x = features(meta, por_dia, embedding, respostas, historico, texto)
-    relativo = np.maximum.accumulate(_quantis_relativos(modelos, x), axis=0)  # nunca decresce
+    relativo = _quantis_relativos(modelos, x)
+    if curva is not None:
+        pares = zip(idades, DIAS_DA_TIMELINE, strict=True)
+        recuo = np.array([np.log(curva.fator(i, float(d))) for i, d in pares])
+        relativo = relativo + recuo[:, None]  # mesma faixa, deslocada no log
+    relativo = np.maximum.accumulate(relativo, axis=0)  # nunca decresce
 
     def absoluto(r):
         return max(float(np.expm1(r + np.log1p(mediana))), 0.0)

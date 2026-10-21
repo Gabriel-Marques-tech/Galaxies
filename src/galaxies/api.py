@@ -131,6 +131,14 @@ def criar_app(fw: Framework) -> FastAPI:
     def acompanhamentos(projeto: str):
         return _json(fw.acompanhamentos(projeto))
 
+    @app.post("/projetos/{projeto}/observar-recentes")
+    def observar_recentes(projeto: str, dias_max: float = 90):
+        return _json(fw.observar_recentes(projeto, dias_max))
+
+    @app.get("/projetos/{projeto}/crescimento")
+    def crescimento(projeto: str, alvo: str | None = None):
+        return _json(fw.crescimento(projeto, alvo))
+
     # ------------------------------------------------------------ auditoria
 
     @app.get("/projetos/{projeto}/runs")

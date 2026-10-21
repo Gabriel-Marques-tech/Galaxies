@@ -12,6 +12,10 @@ def _pct(v: float, sinal: bool = True) -> str:
     return f"{v:+.1%}" if sinal else f"{v:.1%}"
 
 
+def _milhar(n: int) -> str:
+    return f"{n:,}".replace(",", ".")
+
+
 def _fator(mae: float) -> str:
     return f"{math.exp(mae):.2f}×"
 
@@ -29,7 +33,49 @@ def _linha(e: Experimento) -> str:
     )
 
 
-def gerar(projeto: str, config, resumo: dict, exps: list[Experimento], otimizacoes: list) -> str:
+def _curva_md(curvas: dict, idade_minima: float) -> list[str]:
+    com_dados = {alvo: c for alvo, c in curvas.items() if c.faixas}
+    if not com_dados:
+        return [
+            "## Crescimento observado",
+            "",
+            "- Ainda sem reobservação: rode `observar_recentes` uma vez por dia para medir como "
+            "likes e views crescem com a idade do vídeo.",
+            "",
+        ]
+    md = [
+        "## Crescimento observado",
+        "",
+        "A coleta é uma foto só; os vídeos recentes foram reobservados dias depois "
+        f"({_milhar(max(c.videos for c in com_dados.values()))} vídeos, intervalo mediano "
+        f"{max(c.intervalo_mediano_dias for c in com_dados.values()):.1f} dias). A inclinação é "
+        "quanto `log(1 + y)` cresce por `log(idade)`; 0 = parou de crescer. Abaixo de "
+        f"{idade_minima:.0f} dias (idade que o modelo quase não viu no treino) a timeline recua "
+        "pela curva.",
+        "",
+        "| faixa de idade | " + " | ".join(f"{a} (n)" for a in com_dados) + " |",
+        "|---|" + "---|" * len(com_dados),
+    ]
+    faixas = sorted({(f.de_dias, f.ate_dias) for c in com_dados.values() for f in c.faixas})
+    for de, ate in faixas:
+        celulas = []
+        for c in com_dados.values():
+            f = next((f for f in c.faixas if (f.de_dias, f.ate_dias) == (de, ate)), None)
+            celulas.append("—" if f is None else f"{f.inclinacao:.2f} ({f.n})")
+        rotulo = f"{de:g}–{ate:g} dias" if ate < 1000 else f"{de:g}+ dias"
+        md.append(f"| {rotulo} | " + " | ".join(celulas) + " |")
+    return [*md, ""]
+
+
+def gerar(
+    projeto: str,
+    config,
+    resumo: dict,
+    exps: list[Experimento],
+    otimizacoes: list,
+    curvas: dict | None = None,
+    idade_minima: float = 0.0,
+) -> str:
     md = [
         f"# Relatório de avaliação: {projeto}",
         "",
@@ -97,11 +143,17 @@ def gerar(projeto: str, config, resumo: dict, exps: list[Experimento], otimizaco
             t = {"n_validacao": 0, **t}
             md.append(f"| {t['origem']} | {camadas} | {obj} | {t['n_validacao']} |")
         md.append("")
+    md += _curva_md(curvas or {}, idade_minima)
     md += [
         "## Limitações",
         "",
         "- Previsão antes de publicar tem teto natural: algoritmo e acaso pesam muito. O modelo "
         "serve para expectativa, triagem e priorizar testes, não para cravar números.",
+        "- A faixa de 80% é calibrada no fim do treino e lá contém 80%; no teste (período mais "
+        "recente) contém menos porque o período derivou: os vídeos novos rendem menos em "
+        "relação à mediana histórica do canal do que o treino sugeria. Não é crescimento "
+        "pendente (a curva observada mostra likes estáveis a partir de ~10 dias). O remédio é "
+        "o ciclo: reotimizar com a base atualizada move o treino para perto do presente.",
         "- Sugestões vêm de associação aprendida na base, não de causa.",
         "- Camadas de gancho e atributos cobrem só os vídeos com camada bruta; comparações nelas "
         "usam menos linhas de teste.",
