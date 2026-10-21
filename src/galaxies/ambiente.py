@@ -33,13 +33,22 @@ def framework(multimodal: bool = False) -> Framework:
         elif chave := os.environ.get("OPENROUTER_API_KEY"):
             modelo = os.environ.get("OPENROUTER_MODELO", "google/gemini-3.1-flash-lite")
             deps.descritor = DescritorOpenRouter(chave, modelo)
-    deps.jev = extrator_de_atributos(os.environ.get("ATRIBUTOS_MODELO", "laya"))
+    tem_cloudflare = os.environ.get("CLOUDFLARE_ACCOUNT_ID") and os.environ.get(
+        "CLOUDFLARE_API_TOKEN"
+    )
+    padrao = MODELO_LLM_PADRAO if tem_cloudflare else "laya"
+    deps.jev = extrator_de_atributos(os.environ.get("ATRIBUTOS_MODELO") or padrao)
+    deps.rapido = extrator_de_atributos("laya")  # local: título de todos os vídeos
     raiz = os.environ.get("GALAXIES_DADOS", "data")
     return Framework(raiz=raiz, dependencias=deps)
 
 
+MODELO_LLM_PADRAO = "@cf/meta/llama-3.1-8b-instruct-fast"  # Workers AI, cota diária grátis
+
+
 def extrator_de_atributos(modelo: str):
-    """laya (padrão, local e grátis), um modelo @cf/* do Workers AI (grátis) ou typesafe/jev."""
+    """Para o gancho: um modelo @cf/* do Workers AI (padrão com credenciais da Cloudflare,
+    grátis), typesafe/jev (pago) ou laya (local; responde "sim" demais, fica como reserva)."""
     if modelo == "laya":
         from galaxies.adaptadores.jev import JevLaya
 

@@ -80,6 +80,7 @@ def test_com_arquivo_roda_gancho_e_atributos_sem_sujar_a_base(tmp_path):
         transcritor=TranscritorFalso(),
         embedder=EmbedderFalso(),
         jev=JevFalso(),
+        rapido=JevFalso(),
     )
     framework = Framework(raiz=tmp_path, dependencias=deps)
     framework.criar_projeto(

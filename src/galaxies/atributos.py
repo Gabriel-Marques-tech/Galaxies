@@ -163,6 +163,62 @@ def _a(id, tipo, instrucoes, criterios=None) -> Atributo:
     return Atributo(id=id, tipo=tipo, instrucoes=instrucoes, criterios=criterios)
 
 
+# Perguntas só de título e descrição: respondidas pelo extrator rápido (Laya, local) para
+# TODOS os vídeos, não só os com gancho processado. Viram a camada "titulo".
+DE_TITULO: tuple[Atributo, ...] = (
+    _a(
+        "titulo_tom",
+        "choice",
+        "Qual o tom do título?",
+        {
+            "informativo": "Explica, ensina ou mostra como fazer",
+            "curiosidade": "Provoca curiosidade, suspense ou surpresa",
+            "polemico": "Opinião forte, crítica ou polêmica",
+            "pessoal": "História, rotina ou desabafo pessoal",
+            "promocional": "Produto, marca, oferta ou sorteio",
+        },
+    ),
+    _a(
+        "titulo_promete_resultado",
+        "noul",
+        "O título promete um resultado ou transformação (ex.: 'em 5 minutos', 'ficou perfeito')?",
+    ),
+    _a(
+        "titulo_chama_acao",
+        "noul",
+        "O título pede uma ação ao espectador (comenta, salva, segue, testa, responde)?",
+    ),
+    _a("titulo_tendencia", "noul", "O título cita uma tendência, viral, trend ou desafio?"),
+)
+
+
+def estado_do_titulo(titulo: str | None, descricao: str | None) -> str:
+    return f"Título: {titulo or ''}\nDescrição: {(descricao or '')[:200]}"
+
+
+def videos_sem_titulo(
+    banco: duckdb.DuckDBPyConnection, extrator: str, por_canal: int = 300
+) -> list[tuple]:
+    """(id, título, descrição) dos vídeos sem resposta atual para todos os atributos de título.
+    Só os que o modelo usa: os `por_canal` mais recentes de cada canal."""
+    assinaturas = [a.assinatura for a in DE_TITULO]
+    ids = [a.id for a in DE_TITULO]
+    return banco.execute(
+        """
+        SELECT id, titulo, descricao FROM (
+            SELECT v.*, row_number() OVER (PARTITION BY canal_id ORDER BY publicado_em DESC) AS n
+            FROM videos v
+        ) WHERE n <= ?
+          AND (SELECT count(*) FROM respostas r
+               WHERE r.video_id = id AND r.extrator = ?
+                 AND r.atributo_id IN (SELECT unnest(?::VARCHAR[]))
+                 AND r.assinatura IN (SELECT unnest(?::VARCHAR[]))) < ?
+        ORDER BY publicado_em DESC
+        """,
+        [por_canal, extrator, ids, assinaturas, len(DE_TITULO)],
+    ).fetchall()
+
+
 # Os 15 atributos de partida, combinados no grilling: gancho, conteúdo, texto e produção.
 PADRAO: tuple[Atributo, ...] = (
     # Gancho (0–5s)

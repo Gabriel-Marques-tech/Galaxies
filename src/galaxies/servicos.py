@@ -42,6 +42,7 @@ from galaxies.experimentos import Ciclo, Experimento, Receita
 from galaxies.portas import Dependencias, identificar
 from galaxies.trace import Etapa, Run, executar, ler_andamento, ler_trace, listar_runs
 
+LOTE_TITULOS = 200  # vídeos por etapa do trace em calcular_titulos
 LIMIAR_NOVOS_ABSOLUTO = 100  # vídeos novos para a rotina reotimizar
 LIMIAR_NOVOS_FRACAO = 0.02  # ou 2% da base, o que for maior
 
@@ -209,6 +210,33 @@ class Framework:
                     )
                     resumo.falhas += 1
         return resumo
+
+    def calcular_titulos(self, projeto: str, limite: int | None = None) -> dict:
+        """Extrator rápido (Laya, local) responde as perguntas de título para todos os vídeos
+        que ainda não têm: é a camada "titulo", disponível para a base inteira."""
+        rapido = self._exigir(self.dependencias.rapido, "rapido")
+        extrator = identificar(rapido)
+        definicoes = list(atrib.DE_TITULO)
+        perguntas = {a.id: a.como_pergunta_jev() for a in definicoes}
+        feitos = falhas = 0
+        with self._abrir_existente(projeto) as banco, executar(banco, "calcular_titulos") as ex:
+            pendentes = atrib.videos_sem_titulo(banco, extrator)
+            if limite is not None:
+                pendentes = pendentes[:limite]
+            for inicio in range(0, len(pendentes), LOTE_TITULOS):
+                lote = pendentes[inicio : inicio + LOTE_TITULOS]
+                with ex.etapa("perguntar_titulos", {"n": len(lote), "feitos": feitos}) as reg:
+                    for video_id, titulo, descricao in lote:
+                        try:
+                            respostas = rapido.perguntar(
+                                atrib.estado_do_titulo(titulo, descricao), perguntas
+                            )
+                            atrib.salvar_respostas(banco, video_id, definicoes, respostas, extrator)
+                            feitos += 1
+                        except Exception as e:  # um título ruim não derruba o lote
+                            falhas += 1
+                            reg["saida"] = {"ultimo_erro": f"{type(e).__name__}: {e}"[:200]}
+        return {"calculados": feitos, "falhas": falhas, "extrator": extrator}
 
     def features_de_atributos(self, projeto: str) -> list[dict]:
         with self._abrir_existente(projeto) as banco:
@@ -924,6 +952,15 @@ class Framework:
                         [_texto_do_video(video.titulo, video.descricao)]
                     )
                     registro["saida"] = {"dimensoes": len(texto)}
+            titulo_resp = None
+            if meta.get("titulo"):
+                rapido = self._exigir(self.dependencias.rapido, "rapido")
+                with ex.etapa("perguntar_titulo") as registro:
+                    titulo_resp = rapido.perguntar(
+                        atrib.estado_do_titulo(video.titulo, video.descricao),
+                        {a.id: a.como_pergunta_jev() for a in atrib.DE_TITULO},
+                    )
+                    registro["saida"] = titulo_resp
             curva = crescimento.curva(banco, config.alvo)
             idade_minima = crescimento.idade_minima_vista(banco)
             with ex.etapa("prever", video.model_dump(mode="json")) as registro:
@@ -938,6 +975,7 @@ class Framework:
                     texto=texto,
                     curva=curva if curva.faixas else None,
                     idade_minima=idade_minima,
+                    titulo=titulo_resp,
                 )
                 registro["saida"] = {
                     "experimento": exp.id,

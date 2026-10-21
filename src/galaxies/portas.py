@@ -72,7 +72,8 @@ class Dependencias:
     descritor: DescritorDeGancho | None = None
     transcritor: Transcritor | None = None
     embedder: Embedder | None = None
-    jev: Jev | None = None
+    jev: Jev | None = None  # lê o gancho: perguntas que exigem entender o vídeo (LLM)
+    rapido: Jev | None = None  # decisões rápidas em volume, local (Laya): título de todo vídeo
     texto: EmbedderDeTexto | None = None
 
 

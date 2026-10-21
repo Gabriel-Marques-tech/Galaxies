@@ -27,6 +27,7 @@ def projeto(tmp_path, modo="automatico", ganchos=False):
         transcritor=TranscritorFalso(),
         embedder=EmbedderFalso(),
         jev=JevFalso(),
+        rapido=JevFalso(),
         texto=TextoFalso(),
     )
     framework = Framework(raiz=tmp_path, dependencias=deps)

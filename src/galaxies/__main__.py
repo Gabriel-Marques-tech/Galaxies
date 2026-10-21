@@ -23,6 +23,9 @@ def main():
     ganchos.add_argument("--limite-por-canal", type=int, default=None)
     ganchos.add_argument("--canais", nargs="*", default=None, help="ids de canal (UC...)")
     ganchos.add_argument("--desde", type=date.fromisoformat, default=None, help="AAAA-MM-DD")
+    titulos = comandos.add_parser("calcular-titulos", help="perguntas de título (Laya) p/ todos")
+    titulos.add_argument("projeto")
+    titulos.add_argument("--limite", type=int, default=None)
     texto = comandos.add_parser("calcular-texto", help="embedding de título e descrição")
     texto.add_argument("projeto")
     calcular = comandos.add_parser("calcular-atributos", help="pergunta os atributos ao Jev")
@@ -95,6 +98,8 @@ def main():
             desde=args.desde,
         )
         print(resumo.model_dump_json(indent=2))
+    elif args.comando == "calcular-titulos":
+        print(json.dumps(fw.calcular_titulos(args.projeto, args.limite)))
     elif args.comando == "calcular-texto":
         print(fw.calcular_texto(args.projeto))
     elif args.comando == "calcular-atributos":

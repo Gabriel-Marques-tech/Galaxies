@@ -22,7 +22,7 @@ from galaxies import modelagem as m
 
 # metadados, historico e texto existem para todos os vídeos; multimodal e atributos, só
 # para os que têm camada bruta do gancho.
-Camada = Literal["metadados", "historico", "texto", "multimodal", "atributos"]
+Camada = Literal["metadados", "historico", "texto", "titulo", "multimodal", "atributos"]
 COBERTURA_ALVO = 0.8  # a faixa q10–q90 é calibrada para conter 80% dos casos
 FRACAO_CALIBRACAO = 0.2  # fim do treino separado para calibrar a faixa
 Status = Literal["candidato", "aguardando_aprovacao", "ativo", "aposentado", "rejeitado"]
@@ -47,11 +47,16 @@ class Receita(BaseModel):
     # Quem respondeu os atributos (laya, um modelo @cf/*, typesafe/jev). None = o atual.
     extrator: str | None = None
     params: Params = Params()
+    # A que o alvo é relativo: mediana do canal no treino (fixa) ou a média dos últimos 10
+    # vídeos do canal, defasada 7 dias (móvel: segue o momento do canal e a deriva do setor).
+    ancora: Literal["mediana_canal", "movel"] = "mediana_canal"
 
     @model_validator(mode="after")
     def _metadados_sempre(self):
         if "metadados" not in self.camadas:
             raise ValueError("toda receita inclui a camada 'metadados'")
+        if self.ancora == "movel" and "historico" not in self.camadas:
+            raise ValueError("ancora 'movel' precisa da camada 'historico'")
         return self
 
 
@@ -145,6 +150,8 @@ RECEITAS_PADRAO = {
     "metadados": Receita(camadas=["metadados"]),
     "historico": Receita(camadas=["metadados", "historico"]),
     "texto": Receita(camadas=["metadados", "texto"]),
+    "titulo": Receita(camadas=["metadados", "historico", "titulo"]),
+    "movel": Receita(camadas=["metadados", "historico"], ancora="movel"),
     "historico+texto": Receita(camadas=["metadados", "historico", "texto"]),
     "historico+texto+multimodal": Receita(
         camadas=["metadados", "historico", "texto", "multimodal"]
@@ -217,12 +224,14 @@ def avaliar(
         )
     x_meta = m.features_de_metadados(base, canais, setores)
     x, _ = _montar_x(x_meta, extras, tr, te)
-    y = m.alvo_relativo(base, canais)
+    y_fixo = m.alvo_relativo(base, canais)
+    anc = _ancora_log(base, canais, extras, receita)
+    y = base["log_y"] - anc
 
     modelos = _quantis(x.loc[tr], y.loc[tr], receita.params, base.loc[tr, "publicado_em"])
-    controle = _quantis(x_meta.loc[tr], y.loc[tr], Params())  # referência fixa
+    controle = _quantis(x_meta.loc[tr], y_fixo.loc[tr], Params())  # referência fixa
     sub_te = base.loc[te]
-    ancora = np.log1p(canais.reindex(sub_te["canal_id"])["mediana"].to_numpy())
+    ancora = anc.loc[te].to_numpy()
     q = {k: b.predict(x.loc[te]) + ancora for k, b in modelos.items()}
     pred = q[0.5]
     k = _calibrar(base, tr, x, y, receita.params)
@@ -290,6 +299,12 @@ def _camadas_extras(banco, base, receita, escolhidos, alvo, cache=None) -> tuple
             raise ValueError("camada texto sem embeddings: rode calcular_texto antes")
         extras["texto"] = texto
         tem &= texto.notna().all(axis=1)
+    if "titulo" in receita.camadas:
+        titulo = memo(("titulo",), lambda: _features_de_titulo(banco, base))
+        if titulo is None:
+            raise ValueError("camada titulo sem respostas: rode calcular_titulos antes")
+        extras["titulo"] = titulo
+        tem &= titulo.notna().all(axis=1)
     if "multimodal" in receita.camadas:
         emb = memo(("multimodal", alvo), lambda: _embeddings(banco, "camada_bruta", base))
         if emb is None:
@@ -306,6 +321,29 @@ def _camadas_extras(banco, base, receita, escolhidos, alvo, cache=None) -> tuple
         extras["atributos"] = feats
         tem &= feats.notna().all(axis=1)
     return extras, tem
+
+
+def _ancora_log(base, canais, extras, receita) -> pd.Series:
+    """log(1 + âncora) por linha da base. Fixa: mediana do canal no treino. Móvel: média dos
+    últimos 10 vídeos (log, defasada 7 dias); sem passado, cai na fixa."""
+    fixa = pd.Series(
+        np.log1p(canais.reindex(base["canal_id"])["mediana"].to_numpy()), index=base.index
+    )
+    if receita.ancora != "movel":
+        return fixa
+    return extras["historico"]["hist_media_10"].fillna(fixa)
+
+
+def _features_de_titulo(banco, base: pd.DataFrame) -> pd.DataFrame | None:
+    """Respostas do extrator rápido às perguntas de título, uma linha por vídeo da base."""
+    definicoes = list(atrib.DE_TITULO)
+    feats = pd.DataFrame(atrib.features(banco, definicoes))
+    if feats.empty:
+        return None
+    colunas = _colunas_de_atributos(definicoes)
+    feats = feats.set_index("video_id").reindex(base["video_id"])[colunas]
+    feats.index = base.index
+    return feats
 
 
 def _embeddings(banco, tabela: str, base: pd.DataFrame) -> pd.DataFrame | None:
@@ -333,6 +371,8 @@ def _montar_x(x_meta, extras, ajuste, aplicar) -> tuple[pd.DataFrame, dict]:
             red_tr, red_te, pca = m.reduzir_embeddings(emb.loc[ajuste], emb.loc[linhas])
             x = x.join(red_te.rename(columns=lambda c, p=prefixo: c.replace("siglip", p)))
             pcas[camada] = pca
+    if "titulo" in extras:
+        x = x.join(extras["titulo"])
     if "atributos" in extras:
         x = x.join(extras["atributos"])
     return x, pcas
@@ -404,7 +444,9 @@ def _modelo_final(base, tem, extras, receita, escolhidos, calibracao, pasta: Pat
     canais = m.estatisticas_dos_canais(base)
     setores = sorted(base["setor"].unique())
     x_meta = m.features_de_metadados(sub, canais, setores)
-    x, pcas = _montar_x(x_meta, {k: v.loc[linhas] for k, v in extras.items()}, linhas, linhas[:0])
+    extras_sub = {k: v.loc[linhas] for k, v in extras.items()}
+    x, pcas = _montar_x(x_meta, extras_sub, linhas, linhas[:0])
+    y = sub["log_y"] - _ancora_log(sub, canais, extras_sub, receita)
     meta: dict = {"receita": receita.model_dump(), "setores": setores, "calibracao": calibracao}
     for camada, pca in pcas.items():
         meta[f"pca_{camada}"] = {
@@ -415,7 +457,8 @@ def _modelo_final(base, tem, extras, receita, escolhidos, calibracao, pasta: Pat
     if "atributos" in extras:
         meta["atributos"] = [a.model_dump() for a in escolhidos]
         meta["extrator"] = receita.extrator
-    modelos = _quantis(x, m.alvo_relativo(sub, canais), receita.params, sub["publicado_em"])
+    meta["titulo"] = "titulo" in extras
+    modelos = _quantis(x, y, receita.params, sub["publicado_em"])
     meta |= {
         "colunas": list(x.columns),
         "canais": canais.reset_index().to_dict(orient="records"),

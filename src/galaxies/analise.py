@@ -127,6 +127,7 @@ def features(
     respostas=None,
     historico: dict | None = None,
     texto=None,
+    titulo: dict | None = None,
 ) -> pd.DataFrame:
     """As mesmas colunas do modelo da receita, para um ou mais cenários do vídeo."""
     canais = pd.DataFrame(meta["canais"]).set_index("canal_id")
@@ -146,6 +147,10 @@ def features(
         for definicao in meta["atributos"]:
             a = atrib.Atributo.model_validate(definicao)
             for coluna, valor in atrib.para_features(a, respostas[a.id]).items():
+                x[coluna] = valor
+    if meta.get("titulo"):
+        for a in atrib.DE_TITULO:
+            for coluna, valor in atrib.para_features(a, titulo[a.id]).items():
                 x[coluna] = valor
     return x[meta["colunas"]]
 
@@ -177,6 +182,7 @@ def prever(
     texto=None,
     curva=None,
     idade_minima: float = 0.0,
+    titulo: dict | None = None,
 ) -> dict:
     """Timeline, chances (mediana, dobro, viral), fatores SHAP e sugestões.
 
@@ -187,8 +193,15 @@ def prever(
     k = float(meta.get("calibracao", 1.0))
     idades = [max(float(d), idade_minima) for d in DIAS_DA_TIMELINE]
     por_dia = pd.concat([linha.assign(idade_dias=i) for i in idades])
-    x = features(meta, por_dia, embedding, respostas, historico, texto)
-    relativo = _quantis_relativos(modelos, x)
+    x = features(meta, por_dia, embedding, respostas, historico, texto, titulo)
+    # Âncora móvel: o modelo prevê relativo ao momento do canal; converte para relativo à
+    # mediana fixa, que é a referência de chances, sugestões e timeline.
+    deslocamento = 0.0
+    if meta["receita"].get("ancora") == "movel" and historico is not None:
+        recente = historico.get("hist_media_10")
+        if recente is not None and not np.isnan(recente):
+            deslocamento = float(recente - np.log1p(mediana))
+    relativo = _quantis_relativos(modelos, x) + deslocamento
     if curva is not None:
         pares = zip(idades, DIAS_DA_TIMELINE, strict=True)
         recuo = np.array([np.log(curva.fator(i, float(d))) for i, d in pares])
@@ -235,7 +248,9 @@ def prever(
         "p_viral": chances[-1].prob,
         "chances": chances,
         "fatores": fatores,
-        "sugestoes": sugerir(modelos, x.iloc[[i7]], x.iloc[[i30]], mediana, k, limite_viral, meta),
+        "sugestoes": sugerir(
+            modelos, x.iloc[[i7]], x.iloc[[i30]], mediana, k, limite_viral, meta, deslocamento
+        ),
     }
 
 
@@ -279,17 +294,22 @@ def _alavancas(meta: dict) -> dict[str, list[tuple[str, dict[str, float]]]]:
     }
 
 
-def sugerir(modelos, x7, x30, mediana: float, k: float, limite_viral: float, meta: dict):
+def sugerir(
+    modelos, x7, x30, mediana: float, k: float, limite_viral: float, meta: dict, desloc: float = 0.0
+):
     """Para cada alavanca, a alternativa que mais aumenta a chance de viralizar (e quanto
     move a mediana em 7 dias). Associação aprendida na base, não causa: hipóteses a testar."""
-    atual_7d = float(np.expm1(modelos[0.5].predict(x7)[0] + np.log1p(mediana)))
-    atual_viral = float(_prob_acima(_quantis_relativos(modelos, x30), k, mediana, limite_viral)[0])
+    base_log = desloc + np.log1p(mediana)
+    atual_7d = float(np.expm1(modelos[0.5].predict(x7)[0] + base_log))
+    atual_viral = float(
+        _prob_acima(_quantis_relativos(modelos, x30) + desloc, k, mediana, limite_viral)[0]
+    )
     sugestoes = []
     for opcoes in _alavancas(meta).values():
         c7 = pd.concat([x7.assign(**mudanca) for _, mudanca in opcoes])
         c30 = pd.concat([x30.assign(**mudanca) for _, mudanca in opcoes])
-        previstos = np.expm1(modelos[0.5].predict(c7) + np.log1p(mediana)).clip(min=0)
-        virais = _prob_acima(_quantis_relativos(modelos, c30), k, mediana, limite_viral)
+        previstos = np.expm1(modelos[0.5].predict(c7) + base_log).clip(min=0)
+        virais = _prob_acima(_quantis_relativos(modelos, c30) + desloc, k, mediana, limite_viral)
         i = int(np.argmax(virais + 1e-3 * previstos / max(atual_7d, 1.0)))  # desempate: mediana
         if all(float(x7.iloc[0][c]) == v for c, v in opcoes[i][1].items()):
             continue  # o vídeo já está na melhor opção

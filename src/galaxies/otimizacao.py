@@ -22,7 +22,7 @@ from galaxies.trace import Execucao
 MELHORA_MINIMA = 0.002  # menos que isso é ruído: não conta como melhora
 MIN_VALIDACAO = 300  # linhas na validação; abaixo disso não há poder para medir ±1%
 CONFIANCA = 0.9  # bootstrap pareado: abaixo disso a melhora é "indistinguível"
-EXTRAS = ("historico", "texto", "multimodal", "atributos")
+EXTRAS = ("historico", "texto", "titulo", "multimodal", "atributos")
 
 
 class Tentativa(BaseModel):
@@ -49,6 +49,10 @@ def disponiveis(banco: duckdb.DuckDBPyConnection) -> tuple[set[str], list[str]]:
         camadas.add("texto")
     if contar("camada_bruta"):
         camadas.add("multimodal")
+    if banco.execute("SELECT count(*) FROM respostas WHERE atributo_id LIKE 'titulo_%'").fetchone()[
+        0
+    ]:
+        camadas.add("titulo")
     extratores = [e for (e,) in banco.execute("SELECT DISTINCT extrator FROM respostas").fetchall()]
     if extratores:
         camadas.add("atributos")
@@ -156,6 +160,8 @@ def _melhor(tentativas: list[Tentativa]) -> Tentativa | None:
 def _mutar(melhor: Tentativa, camadas, extratores, ganhos_attr, rng, definicoes):
     r = melhor.receita
     opcoes = ["camada", "param", "param"]
+    if "historico" in r.camadas:
+        opcoes.append("ancora")
     if "atributos" in r.camadas:
         opcoes += ["atributo"] + (["extrator"] if len(extratores) > 1 else [])
     escolha = rng.choice(opcoes)
@@ -179,6 +185,10 @@ def _mutar(melhor: Tentativa, camadas, extratores, ganhos_attr, rng, definicoes)
             restantes = [a for a in atuais if a != pior]
             return r.model_copy(update={"atributos": restantes}), f"sem o atributo {pior}"
         escolha = "param"
+
+    if escolha == "ancora":
+        nova = "movel" if r.ancora == "mediana_canal" else "mediana_canal"
+        return r.model_copy(update={"ancora": nova}), f"ancora {nova}"
 
     if escolha == "extrator":
         outro = rng.choice([e for e in extratores if e != r.extrator] or extratores)

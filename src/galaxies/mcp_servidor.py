@@ -22,8 +22,10 @@ from galaxies.serializar import para_json as _json
 INSTRUCOES = """Galaxies: você (o agente) constrói o modelo que prevê a performance de
 YouTube Shorts de um setor. As regras de avaliação são fixas; você escolhe as receitas.
 
-Dados: criar_projeto → coletar (job) → calcular_texto (job) → processar_ganchos (job,
-caro: confirme com o usuário lotes grandes) → calcular_atributos (job).
+Dados: criar_projeto → coletar (job) → calcular_texto (job) → calcular_titulos (job, local)
+→ processar_ganchos (job, caro: confirme com o usuário lotes grandes) → calcular_atributos
+(job, LLM lê o gancho). Camadas: metadados, historico, texto e titulo existem para todos os
+vídeos; multimodal e atributos só para os com gancho processado.
 
 Modelo: otimizar (job) busca a melhor receita na validação e testa só a escolhida. Use-o
 sempre que houver dados novos. Para testar uma ideia específica: experimentar (job) com
@@ -192,6 +194,15 @@ def criar_servidor(fw: Framework) -> ServidorGalaxies:
                 canais,
                 date.fromisoformat(desde) if desde else None,
             )
+        )
+
+    @tool
+    def calcular_titulos(projeto: str, limite: int | None = None) -> str:
+        """Extrator rápido local (Laya) responde perguntas de título para todos os vídeos que
+        ainda não têm (job; ~0,15 s por vídeo, sem cota). Habilita a camada 'titulo', que
+        existe para a base inteira, diferente dos atributos de gancho."""
+        return _texto(
+            jobs.iniciar("calcular_titulos", projeto, fw.calcular_titulos, projeto, limite)
         )
 
     @tool
