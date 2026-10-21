@@ -3,7 +3,7 @@
 // a partir da origem; a intensidade sobe e cai, e o anel vai ficando mais largo e suave.
 
 const ID = 'ondulacao'
-const DURACAO_MS = 1600
+const DURACAO_MS = 1300
 
 // Anel: cinza (128) = sem deslocamento; a faixa clara/escura desloca os pixels ao passar.
 const ANEL =
@@ -45,13 +45,14 @@ function garantirFiltro(): { imagem: SVGFEImageElement; mapa: SVGFEDisplacementM
 let animacao = 0
 
 /** Dispara a onda no elemento `alvo`, saindo do ponto (x, y) em px da tela. */
-export function ondular(alvo: HTMLElement, x: number, y: number, forca = 46) {
+export function ondular(alvo: HTMLElement, x: number, y: number, forca = 40) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
   const { imagem, mapa } = garantirFiltro()
   const caixa = alvo.getBoundingClientRect()
   const cx = x - caixa.left, cy = y - caixa.top
   const alcance = Math.hypot(Math.max(cx, caixa.width - cx), Math.max(cy, caixa.height - cy)) * 1.25
   const filtroAnterior = alvo.style.filter
+  alvo.classList.add('ondulando') // desliga os blurs enquanto a onda roda
   alvo.style.filter = `url(#${ID})`
   alvo.style.willChange = 'filter'
   cancelAnimationFrame(animacao)
@@ -69,7 +70,7 @@ export function ondular(alvo: HTMLElement, x: number, y: number, forca = 46) {
     imagem.setAttribute('height', String(raio * 2))
     mapa.setAttribute('scale', intensidade.toFixed(2))
     if (t < 1) animacao = requestAnimationFrame(quadro)
-    else { alvo.style.filter = filtroAnterior; alvo.style.willChange = '' }
+    else { alvo.style.filter = filtroAnterior; alvo.style.willChange = ''; alvo.classList.remove('ondulando') }
   }
   animacao = requestAnimationFrame(quadro)
 }
