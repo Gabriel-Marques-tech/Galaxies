@@ -145,6 +145,10 @@ def criar_app(fw: Framework) -> FastAPI:
     def runs(projeto: str):
         return _json(fw.runs(projeto))
 
+    @app.get("/projetos/{projeto}/proximo-passo")
+    def proximo_passo(projeto: str):
+        return _json(fw.proximo_passo(projeto))
+
     @app.get("/projetos/{projeto}/andamento")
     def andamento(projeto: str):
         return _json(fw.andamento(projeto))

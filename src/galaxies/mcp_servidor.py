@@ -27,6 +27,9 @@ Dados: criar_projeto → coletar (job) → calcular_texto (job) → calcular_tit
 (job, LLM lê o gancho). Camadas: metadados, historico, texto e titulo existem para todos os
 vídeos; multimodal e atributos só para os com gancho processado.
 
+Antes de agir: proximo_passo diz o que o estado do projeto pede agora (regras, com motivo);
+siga-o, e só delibere quando ele devolver certeza='ambiguo'.
+
 Modelo: otimizar (job) busca a melhor receita na validação e testa só a escolhida. Use-o
 sempre que houver dados novos. Para testar uma ideia específica: experimentar (job) com
 uma receita {camadas, atributos, extrator, params} e uma hipótese escrita por você. Cada
@@ -358,6 +361,13 @@ def criar_servidor(fw: Framework) -> ServidorGalaxies:
         vez por dia: a coleta é a primeira observação e cada rodada acrescenta outra; disso
         sai a curva de crescimento que corrige a timeline nas idades que o modelo não viu."""
         return _texto(fw.observar_recentes(projeto, dias_max))
+
+    @tool
+    def proximo_passo(projeto: str) -> str:
+        """Comece por aqui: o roadmap deduzido do estado do projeto (regras, grátis e
+        auditável): qual tool chamar agora, por quê e alternativas. certeza='ambiguo' marca
+        decisões de custo ou escopo: discuta com o usuário antes de agir."""
+        return _texto(fw.proximo_passo(projeto))
 
     @tool
     def rotina(projeto: str, alvo: str | None = None) -> str:

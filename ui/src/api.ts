@@ -78,6 +78,7 @@ export type Acompanhamento = {
   ultima: { idade_dias: number; real: number; previsto_q10: number; previsto_q25: number; previsto_q50: number; previsto_q75: number; previsto_q90: number; dentro_da_faixa: boolean; dentro_da_faixa_50: boolean; erro_log: number } | null
 }
 export type ListaAcompanhamentos = { videos: Acompanhamento[]; n: number; cobertura: number; cobertura_50: number; erro_mediano: number }
+export type ProximoPasso = { acao: string; motivo: string; certeza: 'regra' | 'ambiguo'; alternativas: string[]; estado: Record<string, unknown> }
 export type Curva = {
   alvo: string; videos: number; intervalo_mediano_dias: number
   faixas: { de_dias: number; ate_dias: number; n: number; inclinacao: number }[]
@@ -121,6 +122,7 @@ export const api = {
   atualizarAcompanhamentos: (pr: string) => pedir<{ atualizados: number; sem_dados: string[] }>(`${p(pr)}/acompanhamentos/atualizar`, {}),
   acompanhamentos: (pr: string) => pedir<ListaAcompanhamentos>(`${p(pr)}/acompanhamentos`),
   crescimento: (pr: string) => pedir<Curva>(`${p(pr)}/crescimento`),
+  proximoPasso: (pr: string) => pedir<ProximoPasso>(`${p(pr)}/proximo-passo`),
   avaliacao: (pr: string) => pedir<Record<string, unknown>>(`${p(pr)}/avaliacao`),
   falhas: (pr: string) => pedir<{ video_id: string; etapa: string; erro: string; run_id: string }[]>(`${p(pr)}/falhas`),
   atributos: (pr: string) => pedir<Atributo[]>(`${p(pr)}/atributos`),

@@ -2,6 +2,7 @@
 
 from datetime import UTC, date, datetime
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -45,6 +46,16 @@ from galaxies.trace import Etapa, Run, executar, ler_andamento, ler_trace, lista
 LOTE_TITULOS = 200  # vídeos por etapa do trace em calcular_titulos
 LIMIAR_NOVOS_ABSOLUTO = 100  # vídeos novos para a rotina reotimizar
 LIMIAR_NOVOS_FRACAO = 0.02  # ou 2% da base, o que for maior
+
+
+class ProximoPasso(BaseModel):
+    """Roadmap do projeto deduzido do estado: o que o agente deve chamar agora e por quê."""
+
+    acao: str  # nome da tool (ou "aguardar_humano" / "manter")
+    motivo: str
+    certeza: Literal["regra", "ambiguo"]  # ambiguo = decisão de custo/escopo: envolva o usuário
+    alternativas: list[str] = []
+    estado: dict = {}
 
 
 class Rotina(BaseModel):
@@ -753,6 +764,81 @@ class Framework:
             sem_dados=len(pendentes) - vistos,
             unidades=youtube.unidades,
         )
+
+    def proximo_passo(self, projeto: str) -> ProximoPasso:
+        """Decide o próximo passo do roadmap por regras sobre o estado do projeto. Regras dão
+        decisão auditável e grátis; o agente (LLM) só entra onde a resposta é 'ambiguo'."""
+        config = self.obter_projeto(projeto)
+        with self._abrir_existente(projeto) as banco:
+            um = lambda sql, *p: banco.execute(sql, list(p)).fetchone()[0]  # noqa: E731
+            e = {
+                "canais": um("SELECT count(*) FROM canais"),
+                "videos": um("SELECT count(*) FROM videos"),
+                "com_texto": um("SELECT count(*) FROM texto_embedding"),
+                "com_titulo": um(
+                    "SELECT count(DISTINCT video_id) FROM respostas "
+                    "WHERE atributo_id LIKE 'titulo_%'"
+                ),
+                "ganchos": um("SELECT count(*) FROM camada_bruta"),
+                "aguardando": um(
+                    "SELECT count(*) FROM experimentos WHERE status = 'aguardando_aprovacao'"
+                ),
+                "ultima_observacao": um("SELECT max(quando) FROM observacoes"),
+            }
+            ativo = experimentos.ativo(banco, config.alvo)
+            e["modelo_ativo"] = ativo.id if ativo else None
+            e["videos_novos"] = (
+                um("SELECT count(*) FROM videos WHERE coletado_em > ?", ativo.criado_em)
+                if ativo
+                else e["videos"]
+            )
+            base_modelo = um(
+                "SELECT count(*) FROM (SELECT row_number() OVER (PARTITION BY canal_id "
+                "ORDER BY publicado_em DESC) AS n FROM videos) WHERE n <= 300"
+            )
+        passo = lambda acao, motivo, certeza="regra", alt=(): ProximoPasso(  # noqa: E731
+            acao=acao, motivo=motivo, certeza=certeza, alternativas=list(alt), estado=e
+        )
+        if e["canais"] == 0 and not config.canais_semente:
+            return passo("descobrir_canais", "o projeto não tem canais", alt=["adicionar_canal"])
+        if e["videos"] == 0:
+            return passo("coletar", "canais sem vídeos coletados")
+        if self.dependencias.texto is not None and e["com_texto"] < 0.9 * e["videos"]:
+            return passo(
+                "calcular_texto", f"{e['videos'] - e['com_texto']} vídeos sem embedding de texto"
+            )
+        if self.dependencias.rapido is not None and e["com_titulo"] < 0.9 * base_modelo:
+            return passo(
+                "calcular_titulos",
+                f"{base_modelo - e['com_titulo']} vídeos da base sem perguntas de título (local)",
+            )
+        if config.modo == "cientista" and e["aguardando"]:
+            return passo(
+                "aguardar_humano",
+                f"{e['aguardando']} experimento(s) aguardando aprovação na UI",
+                alt=["experimentar"],
+            )
+        if ativo is None:
+            return passo("otimizar", f"nenhum modelo ativo para {config.alvo}")
+        limiar = max(LIMIAR_NOVOS_ABSOLUTO, int(0.02 * e["videos"]))
+        if e["videos_novos"] >= limiar:
+            return passo(
+                "otimizar",
+                f"{e['videos_novos']} vídeos novos desde o modelo ativo (limiar {limiar})",
+            )
+        ultima = e["ultima_observacao"]
+        if ultima is None or (datetime.now(UTC) - ultima.astimezone(UTC)).days >= 1:
+            return passo("observar_recentes", "reobservação diária pendente (curva de crescimento)")
+        precisa = 2900  # ~300 linhas na validação para a camada de gancho ter poder estatístico
+        if e["ganchos"] < precisa:
+            return passo(
+                "manter",
+                f"modelo em dia; a camada de gancho só vira testável com ~{precisa} ganchos "
+                f"(há {e['ganchos']}): processar mais custa Gemini e horas, decida com o usuário",
+                certeza="ambiguo",
+                alt=["processar_ganchos", "descobrir_canais", "rotina"],
+            )
+        return passo("manter", "modelo em dia e base estável", alt=["rotina"])
 
     def rotina(self, projeto: str, alvo: str | None = None) -> "Rotina":
         """O dia a dia do agente, numa chamada: reobserva os vídeos recentes (curva de

@@ -16,6 +16,7 @@ export default function Inicio({ projeto, config, ir, aoMudarModo }: {
   const exps = useCarga(() => api.experimentos(projeto), [projeto])
   const acomp = useCarga(() => api.acompanhamentos(projeto), [projeto])
   const curva = useCarga(() => api.crescimento(projeto), [projeto])
+  const passo = useCarga(() => api.proximoPasso(projeto), [projeto])
   // idade a partir da qual a mediana dos vídeos parou de crescer
   const estabiliza = curva.dados?.faixas.find((f) => f.inclinacao === 0)?.de_dias
   const ativo = exps.dados?.find((e) => e.status === 'ativo')
@@ -44,6 +45,21 @@ export default function Inicio({ projeto, config, ir, aoMudarModo }: {
             : 'sem reobservação: peça ao agente observar_recentes uma vez por dia'} />
       </div>
 
+      {passo.dados && (
+        <div className="cartao" style={{ borderColor: passo.dados.certeza === 'ambiguo' ? 'var(--aviso)' : undefined }}>
+          <div className="linha" style={{ gap: 10 }}>
+            <Icone nome={passo.dados.certeza === 'ambiguo' ? 'help' : 'route'} className="destaque-icone" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h3 style={{ margin: 0 }}>Próximo passo: <span className="mono">{passo.dados.acao}</span></h3>
+              <p className="descricao" style={{ margin: '4px 0 0' }}>{passo.dados.motivo}</p>
+            </div>
+            {passo.dados.alternativas.length > 0 && <span className="sub">ou: {passo.dados.alternativas.join(', ')}</span>}
+          </div>
+          <p className="sub" style={{ margin: '10px 0 0' }}>
+            {passo.dados.certeza === 'ambiguo' ? 'Decisão de custo ou escopo: o agente pergunta antes de agir.' : 'Deduzido do estado do projeto por regra; o agente segue sem perguntar.'}
+          </p>
+        </div>
+      )}
       <div className="cartao">
         <h3>Como você quer trabalhar?</h3>
         <p className="descricao">O agente faz o trabalho de cientista de dados. Você decide quanto quer participar.</p>
