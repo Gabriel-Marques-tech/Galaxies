@@ -67,3 +67,31 @@ def test_nota_de_dado_ruim_exclui_o_video_e_padrao_vira_pista_para_o_agente(tmp_
     exp = framework.experimentar("moda-beleza", {"camadas": ["metadados"]})
     assert ruim not in {e.video_id for e in exp.resultado.piores}
     assert framework.erros("moda-beleza").notas_padrao == ["collab com famosa"]
+
+
+def test_amostra_poe_primeiro_os_videos_em_que_os_extratores_discordam(com_ganchos):
+    import json
+    from datetime import UTC, datetime
+
+    atributo = next(a for a in com_ganchos.atributos("moda-beleza") if a.id == "rosto_no_gancho")
+    antes = com_ganchos.amostra_para_revisao("moda-beleza", "rosto_no_gancho", n=5)
+    alvo = antes[-1].video_id  # último da fila; o fake respondeu 0.8 (sim)
+    with com_ganchos._abrir_existente("moda-beleza") as banco:
+        banco.execute(
+            "INSERT OR REPLACE INTO respostas VALUES (?, ?, ?, ?, ?, ?)",
+            [
+                alvo,
+                "rosto_no_gancho",
+                "outro",
+                atributo.assinatura,
+                json.dumps({"type": "noul", "noul": 0.1}),
+                datetime.now(UTC),
+            ],
+        )
+
+    depois = com_ganchos.amostra_para_revisao("moda-beleza", "rosto_no_gancho", n=5)
+
+    assert depois[0].video_id == alvo
+    assert depois[0].discordancia is True
+    assert depois[0].outras_respostas == {"outro": 0.1}
+    assert all(not i.discordancia for i in depois[1:])

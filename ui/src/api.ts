@@ -37,6 +37,7 @@ export type Atributo = { id: string; tipo: 'choice' | 'score' | 'noul'; instruco
 export type ItemRevisao = {
   video_id: string; atributo_id: string; extrator: string; titulo: string; gancho: string; fala: string
   resposta_extrator: number | string
+  outras_respostas: Record<string, number | string>; discordancia: boolean
 }
 export type Concordancia = { atributo_id: string; revisados: number; concordancia: number; confiavel: boolean }
 export type Nota = { video_id: string; tipo: 'dado_ruim' | 'padrao'; nota: string; quando: string }

@@ -67,11 +67,13 @@ function Cartao({ item, atributo, responder }: { item: ItemRevisao; atributo: At
     atributo.tipo === 'noul' ? [['Sim', true], ['Não', false]]
       : atributo.tipo === 'choice' ? Object.keys(atributo.criterios ?? {}).map((r) => [r, r])
         : (atributo.criterios as string[]).map((nivel, i) => [nivel, i])
-  const maquina = typeof item.resposta_extrator === 'number'
-    ? atributo.tipo === 'noul' ? `${Math.round(item.resposta_extrator * 100)}% sim` : item.resposta_extrator.toFixed(2)
-    : item.resposta_extrator
+  const legivel = (v: number | string) => typeof v === 'number'
+    ? atributo.tipo === 'noul' ? `${Math.round(v * 100)}% sim` : v.toFixed(2)
+    : v
+  const maquina = legivel(item.resposta_extrator)
   return (
-    <div className="cartao-revisao">
+    <div className={`cartao-revisao ${item.discordancia ? 'discordante' : ''}`}>
+      {item.discordancia && <span className="chip ruim" style={{ alignSelf: 'flex-start' }}><Icone nome="call_split" />extratores discordam: você desempata</span>}
       <a href={`https://youtube.com/shorts/${item.video_id}`} target="_blank" rel="noreferrer" style={{ fontWeight: 500 }}>
         {item.titulo || '(sem título)'} <Icone nome="open_in_new" className="sub" />
       </a>
@@ -79,6 +81,9 @@ function Cartao({ item, atributo, responder }: { item: ItemRevisao; atributo: At
       <div className="campo-texto"><span>Fala</span><span>{item.fala || '(sem fala)'}</span></div>
       <div className="linha">
         <span className="chip"><Icone nome="smart_toy" />{item.extrator.replace('@cf/meta/', '')}: {maquina}</span>
+        {Object.entries(item.outras_respostas ?? {}).map(([quem, v]) => (
+          <span key={quem} className="chip sub"><Icone nome="smart_toy" />{quem.replace('@cf/meta/', '')}: {legivel(v)}</span>
+        ))}
         <span style={{ flex: 1 }} />
         {opcoes.map(([rotulo, valor]) => (
           <button key={rotulo} className="btn contorno pequeno" onClick={() => responder(item, valor)}>{rotulo}</button>

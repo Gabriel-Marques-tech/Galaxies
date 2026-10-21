@@ -25,6 +25,8 @@ class ItemRevisao(BaseModel):
     gancho: str
     fala: str
     resposta_extrator: float | str  # noul/score: valor; choice: rótulo
+    outras_respostas: dict[str, float | str] = {}  # o que os outros extratores disseram
+    discordancia: bool = False  # extratores discordam: caso difícil, vai primeiro na fila
 
 
 class Concordancia(BaseModel):
@@ -47,7 +49,8 @@ class Nota(BaseModel):
 def amostra(
     banco: duckdb.DuckDBPyConnection, atributo: atrib.Atributo, extrator: str | None, n: int
 ) -> list[ItemRevisao]:
-    """Vídeos ainda não revisados neste atributo, numa ordem fixa e espalhada."""
+    """Vídeos ainda não revisados neste atributo. Primeiro os em que os extratores discordam
+    (o humano desempata os casos difíceis); depois os demais, numa ordem fixa e espalhada."""
     linhas = banco.execute(
         """
         SELECT r.video_id, r.extrator, r.resposta, v.titulo, b.descricao, b.transcricao
@@ -59,22 +62,46 @@ def amostra(
           AND r.video_id NOT IN (SELECT video_id FROM revisoes WHERE atributo_id = ?)
         QUALIFY ROW_NUMBER() OVER (PARTITION BY r.video_id ORDER BY r.quando DESC) = 1
         ORDER BY hash(r.video_id)
-        LIMIT ?
         """,
-        [atributo.id, atributo.assinatura, extrator, extrator, atributo.id, n],
+        [atributo.id, atributo.assinatura, extrator, extrator, atributo.id],
     ).fetchall()
-    return [
-        ItemRevisao(
-            video_id=video_id,
-            atributo_id=atributo.id,
-            extrator=quem,
-            titulo=titulo or "",
-            gancho=gancho,
-            fala=fala,
-            resposta_extrator=_valor_do_extrator(atributo, json.loads(resposta)),
+    outras: dict[str, dict[str, float | str]] = {}
+    for video_id, quem, resposta in banco.execute(
+        """
+        SELECT video_id, extrator, resposta FROM respostas
+        WHERE atributo_id = ? AND assinatura = ?
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY video_id, extrator ORDER BY quando DESC) = 1
+        """,
+        [atributo.id, atributo.assinatura],
+    ).fetchall():
+        outras.setdefault(video_id, {})[quem] = _valor_do_extrator(atributo, json.loads(resposta))
+    itens = []
+    for video_id, quem, resposta, titulo, gancho, fala in linhas:
+        valor = _valor_do_extrator(atributo, json.loads(resposta))
+        demais = {e: v for e, v in outras.get(video_id, {}).items() if e != quem}
+        itens.append(
+            ItemRevisao(
+                video_id=video_id,
+                atributo_id=atributo.id,
+                extrator=quem,
+                titulo=titulo or "",
+                gancho=gancho,
+                fala=fala,
+                resposta_extrator=valor,
+                outras_respostas=demais,
+                discordancia=any(_discordam(atributo, valor, v) for v in demais.values()),
+            )
         )
-        for video_id, quem, resposta, titulo, gancho, fala in linhas
-    ]
+    itens.sort(key=lambda i: not i.discordancia)  # estável: mantém a ordem espalhada
+    return itens[:n]
+
+
+def _discordam(atributo: atrib.Atributo, a: float | str, b: float | str) -> bool:
+    if atributo.tipo == "noul":
+        return (float(a) >= 0.5) != (float(b) >= 0.5)
+    if atributo.tipo == "score":
+        return round(float(a)) != round(float(b))
+    return a != b
 
 
 def revisar(banco: duckdb.DuckDBPyConnection, atributo: atrib.Atributo, video_id: str, valor):
