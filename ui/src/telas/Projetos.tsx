@@ -36,8 +36,8 @@ export default function Projetos({ projetos, abrir, aoCriar }: {
   const emFoco = cartoes[foco]
 
   return (
-    <div className="pilha">
-      <div className="saudacao">
+    <div className="pilha tela-projetos">
+      <div className="saudacao compacta">
         <h2>Olá</h2>
         <p>Role para escolher o projeto. Arraste um card para o lado para criar outro.</p>
       </div>

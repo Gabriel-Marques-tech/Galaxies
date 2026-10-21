@@ -531,3 +531,13 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 .rodape-analise .compositor textarea { font-size: 15px; }
 .rodape-analise > p.sub { margin: 0; }
 @media (max-height: 760px) { .analise .short-drop, .analise .short-drop.pronto { height: 38vh; } .analise .saudacao.compacta h2 { font-size: 24px; } }
+
+/* projetos: a página não rola; só o feed (e o painel de insights por dentro) */
+.tela-projetos { height: calc(100vh - 92px); overflow: hidden; gap: 8px; }
+.tela-projetos .saudacao.compacta { padding: 4px 0 0; }
+.tela-projetos .saudacao.compacta h2 { font-size: 30px; }
+.tela-projetos .saudacao.compacta p { font-size: 16px; margin-top: 2px; }
+.tela-projetos .projetos-grade { flex: 1; min-height: 0; align-items: stretch; }
+.tela-projetos .feed { height: 100%; padding-top: 6px; }
+.tela-projetos .feed .cartao-projeto { height: min(470px, calc(100% - 72px)); }
+.tela-projetos .insights { max-height: 100%; }
