@@ -118,6 +118,22 @@ Fluxo típico pedido ao agente:
    mostra a curva que daí sai.
 7. `runs`, `trace`, `falhas`, `reprocessar` para auditar.
 
+## Eficiência do agente (medido no projeto moda-beleza, 21/10/2026)
+
+| o que | medida |
+|---|---|
+| um ciclo de `otimizar` (13–14 receitas, validação + teste da escolhida) | 3–4 min de CPU, zero cota |
+| tentativas sem poder estatístico por ciclo (n=22 na validação) | 3–6 de 13–14; antes entravam como medidas (−4,7%, +0,8%); agora são puladas antes de treinar e dizem quantos vídeos faltam |
+| promoções erradas evitadas pela trava (teste + bootstrap) | 1 regressão de likes (−19% → +0,5% sobre o controle) barrada; peso por recência testado e descartado com número |
+| ganho por ciclo: mediana fixa → âncora móvel | likes −19,0% → −24,5% de erro vs média do canal; faixa de 80% de 75% → 80% |
+| passos até o primeiro modelo com `proximo_passo` | 5 chamadas determinísticas (coletar → texto → títulos → otimizar → promover); sem ele o agente lê ~35 tools e pode otimizar antes de ter as camadas, gastando um ciclo |
+| custo do dado | 46k Shorts por 2,8k unidades da cota diária de 10k; 6k reobservações por 125 |
+
+O que ainda limita: o teto é o dado (A vs B ~58%), não a busca. O pré-cheque de poder
+economiza decisão, não CPU (as tentativas sem poder custavam 3–4 s). Para medir o efeito do
+`proximo_passo` no agente real, rode um setor novo duas vezes com o Claude Code, com e sem a
+tool, e compare chamadas, minutos e o ganho final.
+
 ## Console humano (UI)
 
 ```bash

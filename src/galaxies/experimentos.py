@@ -27,6 +27,16 @@ COBERTURA_ALVO = 0.8  # a faixa q10–q90 é calibrada para conter 80% dos casos
 FRACAO_CALIBRACAO = 0.2  # fim do treino separado para calibrar a faixa
 Status = Literal["candidato", "aguardando_aprovacao", "ativo", "aposentado", "rejeitado"]
 MIN_TREINO, MIN_TESTE = 50, 10
+
+
+class PoucoPoder(ValueError):
+    """Linhas de mais para falhar, de menos para medir: quem chamou decide o que dizer."""
+
+    def __init__(self, n_treino: int, n_teste: int, minimo: int):
+        self.n_treino, self.n_teste, self.minimo = n_treino, n_teste, minimo
+        super().__init__(f"{n_teste} linhas de avaliação (mínimo {minimo})")
+
+
 AMOSTRA_PEQUENA = 100
 
 
@@ -199,6 +209,7 @@ def avaliar(
     extrator_atual: str | None = None,
     em: Literal["teste", "validacao"] = "teste",
     cache: dict | None = None,
+    min_teste: int | None = None,
 ) -> tuple[Receita, Resultado, tuple]:
     """Mede a receita. em='validacao' usa o fim do período de treino como teste: é onde a
     otimização compara receitas, para o teste ser usado uma vez só, na escolhida."""
@@ -222,6 +233,8 @@ def avaliar(
             f"receita com poucos dados ({len(tr)} treino, {len(te)} teste): processe mais "
             "ganchos, calcule os atributos ou o texto"
         )
+    if min_teste is not None and len(te) < min_teste:
+        raise PoucoPoder(len(tr), len(te), min_teste)  # antes de treinar: não gasta CPU
     x_meta = m.features_de_metadados(base, canais, setores)
     x, _ = _montar_x(x_meta, extras, tr, te)
     y_fixo = m.alvo_relativo(base, canais)

@@ -83,30 +83,36 @@ def otimizar(
         with ex.etapa("tentativa", {"origem": origem, "receita": receita.model_dump()}) as r:
             try:
                 _, res, _ = exps.avaliar(
-                    banco, alvo, receita, definicoes, em="validacao", cache=cache
+                    banco,
+                    alvo,
+                    receita,
+                    definicoes,
+                    em="validacao",
+                    cache=cache,
+                    min_teste=MIN_VALIDACAO,
                 )
-                if res.n_teste < MIN_VALIDACAO:
-                    precisa = -(-MIN_VALIDACAO * (res.n_treino + res.n_teste) // res.n_teste)
-                    t = Tentativa(
-                        receita=receita,
-                        origem=origem,
-                        objetivo=None,
-                        n_validacao=res.n_teste,
-                        erro=f"sem poder estatístico: {res.n_teste} linhas na validação "
-                        f"(mínimo {MIN_VALIDACAO}); precisa de ~{precisa} vídeos com essas "
-                        "camadas para medir a diferença",
-                    )
-                else:
-                    t = Tentativa(
-                        receita=receita,
-                        origem=origem,
-                        objetivo=res.melhora_sobre_controle,
-                        ganho=res.ganho,
-                        confianca=res.confianca_sobre_controle,
-                        n_validacao=res.n_teste,
-                    )
+                t = Tentativa(
+                    receita=receita,
+                    origem=origem,
+                    objetivo=res.melhora_sobre_controle,
+                    ganho=res.ganho,
+                    confianca=res.confianca_sobre_controle,
+                    n_validacao=res.n_teste,
+                )
                 tentativas.append(t)
                 ganhos_attr[chave] = res.ganho_por_atributo
+            except exps.PoucoPoder as pouco:  # pulou o treino: só conta e explica
+                precisa = -(-MIN_VALIDACAO * (pouco.n_treino + pouco.n_teste) // pouco.n_teste)
+                t = Tentativa(
+                    receita=receita,
+                    origem=origem,
+                    objetivo=None,
+                    n_validacao=pouco.n_teste,
+                    erro=f"sem poder estatístico: {pouco.n_teste} linhas na validação "
+                    f"(mínimo {MIN_VALIDACAO}); precisa de ~{precisa} vídeos com essas "
+                    "camadas para medir a diferença",
+                )
+                tentativas.append(t)
             except ValueError as erro:
                 t = Tentativa(receita=receita, origem=origem, objetivo=None, erro=str(erro))
                 tentativas.append(t)
