@@ -523,13 +523,17 @@ class Framework:
             alvo,
         )
         promovido = None
-        if self.obter_projeto(projeto).modo == "automatico" and exp.resultado.ganho > 0:
+        with self._abrir_existente(projeto) as banco:
+            ativo = experimentos.ativo(banco, alvo)
+        motivo = experimentos.motivo_para_nao_promover(exp, ativo)
+        if self.obter_projeto(projeto).modo == "automatico" and motivo is None:
             promovido = self.promover(projeto, exp.id).id
         return Ciclo(
             experimentos=[exp],
             promovido=promovido,
             tentativas=[t.model_dump() for t in busca.tentativas],
             objetivo_validacao=busca.objetivo_validacao,
+            motivo=motivo,
         )
 
     def insights(self, projeto: str, alvo: str | None = None) -> dict:

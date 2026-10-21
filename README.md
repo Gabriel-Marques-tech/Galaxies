@@ -25,7 +25,11 @@ mais recentes). Baseline = média do canal.
 | Alvo | Receita escolhida pelo agente | Erro vs baseline | Acerto A vs B no canal | Faixa de 80% cobre |
 |---|---|---|---|---|
 | likes | metadados + histórico do canal | **−19,0%** (MAE 0,699 vs 0,863) | 58% (acaso: 50%) | 76% |
-| views | metadados + histórico + texto | **−18,5%** (MAE 0,697 vs 0,856) | 57% | 72% |
+| views | metadados + histórico + texto (ajustado) | **−18,6%** (MAE 0,697 vs 0,856) | 57% | 72% |
+
+Camadas de gancho e atributos (474 ganchos, 190 no teste) ainda não entram no modelo final:
+na validação parecem ajudar, mas no teste ficam a menos de 1% do controle só de metadados, e o
+`otimizar` não promove o que não confirma no teste.
 
 O que isso quer dizer na prática: o erro típico cai de ~2,4× para ~2,0×; de dois vídeos
 do mesmo canal, o modelo aponta o melhor em ~58% dos casos; a faixa prometida de 80% contém

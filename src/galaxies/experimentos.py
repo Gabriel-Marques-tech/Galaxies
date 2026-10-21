@@ -101,9 +101,31 @@ def escolher(feitos: list["Experimento"]) -> "Experimento | None":
     return max(simples, key=lambda e: e.resultado.ganho) if simples else None
 
 
+TOLERANCIA_VS_ATIVO = 0.02  # novo pode ficar até 2 pontos abaixo do ativo vs baseline
+
+
+def motivo_para_nao_promover(exp: "Experimento", ativo: "Experimento | None") -> str | None:
+    """Trava da promoção automática: o teste é a palavra final, não a validação."""
+    r = exp.resultado
+    if r.ganho <= 0:
+        return "não supera a média do canal no teste"
+    if exp.receita.camadas != ["metadados"] and r.melhora_sobre_controle < MARGEM_SOBRE_CONTROLE:
+        return (
+            f"as camadas extras melhoram só {r.melhora_sobre_controle:+.1%} sobre o controle no "
+            f"teste (mínimo {MARGEM_SOBRE_CONTROLE:.0%}); fica como candidato"
+        )
+    if ativo is not None and r.ganho < ativo.resultado.ganho - TOLERANCIA_VS_ATIVO:
+        return (
+            f"ganho no teste ({r.ganho:+.1%}) fica abaixo do modelo ativo "
+            f"({ativo.resultado.ganho:+.1%}); fica como candidato"
+        )
+    return None
+
+
 class Ciclo(BaseModel):
     experimentos: list[Experimento]
     promovido: str | None
+    motivo: str | None = None  # por que a escolhida não foi promovida
     pulados: dict[str, str] = {}  # receita → motivo
     tentativas: list[dict] = []  # busca na validação (otimizacao.Tentativa)
     objetivo_validacao: float | None = None

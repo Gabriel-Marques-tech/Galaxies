@@ -301,3 +301,18 @@ def test_relatorio_reproduz_os_numeros_do_banco(tmp_path):
     assert "# Relatório de avaliação: moda-beleza" in md
     assert "**Modelo ativo" in md
     assert "Busca do agente (likes, validação)" in md
+
+
+def test_otimizar_nao_promove_receita_que_so_brilha_na_validacao():
+    from galaxies.experimentos import motivo_para_nao_promover
+
+    ativo = _exp(["metadados"], ganho=0.19, melhora=0.0)
+    fraco = _exp(["metadados", "atributos"], ganho=0.069, melhora=0.005)
+    bom = _exp(["metadados", "historico"], ganho=0.185, melhora=0.04)
+
+    assert "controle" in motivo_para_nao_promover(fraco, ativo)
+    assert motivo_para_nao_promover(bom, ativo) is None
+    assert "abaixo do modelo ativo" in motivo_para_nao_promover(
+        _exp(["metadados", "historico"], ganho=0.10, melhora=0.04), ativo
+    )
+    assert motivo_para_nao_promover(bom, None) is None
