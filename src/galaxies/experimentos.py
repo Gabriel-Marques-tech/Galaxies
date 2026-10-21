@@ -64,6 +64,7 @@ class Resultado(BaseModel):
     # Fração do teste dentro da faixa de 80%: crua e depois da calibração conformal.
     cobertura_bruta: float = 0.0
     cobertura_80: float = 0.0
+    cobertura_50: float = 0.0  # faixa "provável" (q25–q75 derivada da calibrada)
     calibracao: float = 1.0  # quanto a faixa foi alargada
     melhora_sobre_controle: float = 0.0  # 1 - MAE do modelo / MAE do controle
     ganho_por_atributo: dict[str, float] = {}
@@ -232,6 +233,7 @@ def avaliar(
         melhora_sobre_controle=1 - resultado_modelo.mae / controle_m.mae,
         cobertura_bruta=_cobertura(q, real, 1.0),
         cobertura_80=_cobertura(q, real, k),
+        cobertura_50=_cobertura(q, real, k, estreita=True),
         calibracao=k,
         ganho_por_atributo=_ganho_por_permutacao(
             modelos, x.loc[te], sub_te, canais, escolhidos, resultado_modelo.mae
@@ -346,9 +348,11 @@ def alargar(q10, q50, q90, k: float):
     return q50 - k * (q50 - q10), q50 + k * (q90 - q50)
 
 
-def _cobertura(q: dict, real: np.ndarray, k: float) -> float:
+def _cobertura(q: dict, real: np.ndarray, k: float, estreita: bool = False) -> float:
     lo, mid, hi = np.sort(np.column_stack([q[0.1], q[0.5], q[0.9]]), axis=1).T
     lo, hi = alargar(lo, mid, hi, k)
+    if estreita:
+        lo, hi = m.faixa_50(lo, mid, hi)
     return float(np.mean((real >= lo) & (real <= hi)))
 
 

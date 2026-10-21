@@ -141,13 +141,13 @@ function Resultado({ a, alvo, projeto }: { a: Analise; alvo: string; projeto: st
   return (
     <div className="pilha" style={{ minWidth: 0 }}>
       <p style={{ margin: 0, fontSize: 16 }}>
-        Em 7 dias, o mais provável é <b>{compacto(p.q50)} {alvo}</b>, com 80% de chance de ficar entre {compacto(p.q10)} e {compacto(p.q90)}.
+        Em 7 dias, o mais provável é <b>{compacto(p.q50)} {alvo}</b>: na metade dos casos fica entre {compacto(p.q25)} e {compacto(p.q75)}; é quase certo (80%) que fique entre {compacto(p.q10)} e {compacto(p.q90)}.
         A chance de viralizar ({a.limite_viral}× a mediana do canal em {a.dias_viral} dias) é de <b>{pct(a.p_viral, false)}</b>.
       </p>
       <div className="grade-2">
         <div className="cartao">
           <h3>Timeline prevista</h3>
-          <p className="descricao">Mediana e faixa de 80%</p>
+          <p className="descricao">Mediana, faixa provável (50%) e quase certa (80%)</p>
           <GraficoTimeline pontos={a.timeline} alvo={alvo} />
         </div>
         <div className="cartao">

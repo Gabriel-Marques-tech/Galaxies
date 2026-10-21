@@ -38,8 +38,12 @@ class VideoNovo(BaseModel):
 
 
 class Faixa(BaseModel):
+    """q25–q75: faixa provável (metade dos casos); q10–q90: quase certo (80%)."""
+
     q10: float
+    q25: float = 0.0
     q50: float
+    q75: float = 0.0
     q90: float
 
 
@@ -197,8 +201,16 @@ def prever(
     timeline = []
     for d, (q10, q50, q90) in zip(DIAS_DA_TIMELINE, relativo, strict=True):
         lo, hi = q50 - k * (q50 - q10), q50 + k * (q90 - q50)  # faixa calibrada
+        q25, q75 = m.faixa_50(lo, q50, hi)
         timeline.append(
-            PontoTimeline(dias=d, q10=absoluto(lo), q50=absoluto(q50), q90=absoluto(hi))
+            PontoTimeline(
+                dias=d,
+                q10=absoluto(lo),
+                q25=absoluto(q25),
+                q50=absoluto(q50),
+                q75=absoluto(q75),
+                q90=absoluto(hi),
+            )
         )
     i7 = DIAS_DA_TIMELINE.index(DIAS_DA_PREVISAO)
     i30 = DIAS_DA_TIMELINE.index(DIAS_DO_VIRAL)

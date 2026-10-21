@@ -57,7 +57,7 @@ export type Insights = {
   piores_fatores: { fator: string; efeito: number; n: number }[]
 }
 export type Canal = { id: string; titulo: string; handle: string | null; setor: string; inscritos: number; videos: number; ganchos: number }
-export type Faixa = { q10: number; q50: number; q90: number }
+export type Faixa = { q10: number; q25: number; q50: number; q75: number; q90: number }
 export type Analise = {
   run_id: string; experimento_id: string; canal_id: string; alvo: string; mediana_canal: number
   previsao_7d: Faixa; timeline: (Faixa & { dias: number })[]; limite_viral: number; p_viral: number; dias_viral: number
@@ -72,9 +72,9 @@ export type VideoNovo = { titulo: string; descricao?: string; tags?: string[]; d
 export type Acompanhamento = {
   video_id: string; run_id: string; canal_id: string; alvo: string; publicado_em: string
   observacoes: { quando: string; idade_dias: number; likes: number | null; views: number | null }[]
-  ultima: { idade_dias: number; real: number; previsto_q10: number; previsto_q50: number; previsto_q90: number; dentro_da_faixa: boolean; erro_log: number } | null
+  ultima: { idade_dias: number; real: number; previsto_q10: number; previsto_q25: number; previsto_q50: number; previsto_q75: number; previsto_q90: number; dentro_da_faixa: boolean; dentro_da_faixa_50: boolean; erro_log: number } | null
 }
-export type ListaAcompanhamentos = { videos: Acompanhamento[]; n: number; cobertura: number; erro_mediano: number }
+export type ListaAcompanhamentos = { videos: Acompanhamento[]; n: number; cobertura: number; cobertura_50: number; erro_mediano: number }
 export type Curva = {
   alvo: string; videos: number; intervalo_mediano_dias: number
   faixas: { de_dias: number; ate_dias: number; n: number; inclinacao: number }[]

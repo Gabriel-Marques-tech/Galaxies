@@ -119,7 +119,12 @@ def gerar(
                 f"- Acerta {_pct(r.modelo.acerto_pares, False)} dos pares A vs B no mesmo canal "
                 "(acaso: 50%).",
                 f"- A faixa de 80% contém {_pct(r.cobertura_80, False)} dos resultados reais no "
-                f"teste (sem calibração: {_pct(r.cobertura_bruta, False)}).",
+                f"teste (sem calibração: {_pct(r.cobertura_bruta, False)})."
+                + (
+                    f" A faixa provável de 50% contém {_pct(r.cobertura_50, False)}."
+                    if r.cobertura_50
+                    else ""
+                ),
                 f"- Hipótese registrada: {ativo.hipotese[:400]}",
                 "",
             ]

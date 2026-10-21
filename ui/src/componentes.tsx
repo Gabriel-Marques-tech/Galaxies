@@ -78,7 +78,8 @@ export function BarrasMae({ r }: { r: Experimento['resultado'] }) {
   )
 }
 
-// Timeline prevista: mediana (linha) e faixa q10–q90 (área), com crosshair e tooltip.
+// Timeline prevista: mediana (linha), faixa provável q25–q75 (área forte) e quase certa q10–q90
+// (área leve), com crosshair e tooltip.
 export function GraficoTimeline({ pontos, alvo }: { pontos: (Faixa & { dias: number })[]; alvo: string }) {
   const largura = 640, altura = 240, m = { e: 48, d: 16, t: 16, b: 32 }
   const [foco, setFoco] = useState<number | null>(null)
@@ -89,6 +90,7 @@ export function GraficoTimeline({ pontos, alvo }: { pontos: (Faixa & { dias: num
   const y = (v: number) => altura - m.b - (v / maxY) * (altura - m.t - m.b)
   const linha = (k: keyof Faixa) => pontos.map((p, i) => `${i ? 'L' : 'M'}${x(p.dias)},${y(p[k])}`).join('')
   const banda = `${linha('q90')}${[...pontos].reverse().map((p) => `L${x(p.dias)},${y(p.q10)}`).join('')}Z`
+  const bandaProvavel = `${linha('q75')}${[...pontos].reverse().map((p) => `L${x(p.dias)},${y(p.q25)}`).join('')}Z`
   const ticksY = [0, 0.25, 0.5, 0.75, 1].map((f) => f * maxY)
 
   const mover = (ev: React.PointerEvent) => {
@@ -103,13 +105,14 @@ export function GraficoTimeline({ pontos, alvo }: { pontos: (Faixa & { dias: num
   return (
     <div className="grafico">
       <svg ref={ref} viewBox={`0 0 ${largura} ${altura}`} onPointerMove={mover} onPointerLeave={() => setFoco(null)}
-        role="img" aria-label={`Previsão de ${alvo} por dia, com faixa de 80%`}>
+        role="img" aria-label={`Previsão de ${alvo} por dia, com faixas de 50% e 80%`}>
         <g className="grade">{ticksY.map((t) => <line key={t} x1={m.e} x2={largura - m.d} y1={y(t)} y2={y(t)} />)}</g>
         <g className="eixo">
           {ticksY.map((t) => <text key={t} x={m.e - 8} y={y(t) + 4} textAnchor="end">{compacto(t)}</text>)}
           {pontos.map((p) => <text key={p.dias} x={x(p.dias)} y={altura - 10} textAnchor="middle">{p.dias}d</text>)}
         </g>
         <path d={banda} fill="var(--serie-banda)" />
+        <path d={bandaProvavel} fill="var(--serie-1)" opacity={0.28} />
         <path d={linha('q50')} fill="none" stroke="var(--serie-1)" strokeWidth={2} strokeLinejoin="round" />
         {pontos.map((pt, i) => (
           <circle key={pt.dias} cx={x(pt.dias)} cy={y(pt.q50)} r={foco === i ? 5 : 4} fill="var(--serie-1)" stroke="var(--superficie-2)" strokeWidth={2} />
@@ -120,7 +123,8 @@ export function GraficoTimeline({ pontos, alvo }: { pontos: (Faixa & { dias: num
         <div className="tooltip" style={{ left: `${(x(p.dias) / largura) * 100}%`, top: `${(y(p.q90) / altura) * 100}%` }}>
           <b>{p.dias} {p.dias === 1 ? 'dia' : 'dias'}</b><br />
           mediana {compacto(p.q50)} {alvo}<br />
-          <span className="sub">faixa {compacto(p.q10)} – {compacto(p.q90)}</span>
+          <span className="sub">provável {compacto(p.q25)} – {compacto(p.q75)}</span><br />
+          <span className="sub">quase certo {compacto(p.q10)} – {compacto(p.q90)}</span>
         </div>
       )}
     </div>

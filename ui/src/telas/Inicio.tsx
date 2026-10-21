@@ -37,7 +37,7 @@ export default function Inicio({ projeto, config, ir, aoMudarModo }: {
           detalhe={ativo ? `mais preciso que a média do canal · ${ativo.receita.camadas.join(' + ')}` : 'nenhum promovido ainda'} />
         <Metrica icone="science" rotulo="Experimentos" valor={r ? String(r.experimentos) : '—'} detalhe={r && `${r.revisoes} revisões humanas · ${r.runs} execuções`} />
         <Metrica icone="publish" rotulo="Em produção" valor={acomp.dados?.n ? `${Math.round(acomp.dados.cobertura * 100)}%` : '—'}
-          detalhe={acomp.dados?.n ? `${acomp.dados.n} vídeos acompanhados dentro da faixa · erro típico ${acomp.dados.erro_mediano.toFixed(1)}×` : 'nenhum vídeo acompanhado: publique e use "Acompanhar" na análise'} />
+          detalhe={acomp.dados?.n ? `${acomp.dados.n} vídeo${acomp.dados.n === 1 ? '' : 's'} · dentro da faixa quase certa; ${Math.round(acomp.dados.cobertura_50 * 100)}% na provável · erro típico ${acomp.dados.erro_mediano.toFixed(1)}×` : 'nenhum vídeo acompanhado: publique e use "Acompanhar" na análise'} />
         <Metrica icone="trending_up" rotulo="Curva de crescimento" valor={curva.dados?.videos ? compacto(curva.dados.videos) : '—'}
           detalhe={curva.dados?.videos
             ? `vídeos reobservados · ${curva.dados.alvo} ${estabiliza !== undefined ? `estabilizam a partir de ~${estabiliza} dias` : 'ainda crescendo em todas as faixas'}`

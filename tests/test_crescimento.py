@@ -104,3 +104,16 @@ def test_timeline_abaixo_da_idade_minima_recua_pela_curva(tmp_path):
     assert com_curva.timeline[1].q50 < sem_curva.timeline[1].q50  # 3 dias recua
     assert com_curva.timeline[-1].q50 == sem_curva.timeline[-1].q50  # 30 dias: idade vista
     assert com_curva.timeline[-1].q50 >= com_curva.timeline[0].q50
+
+
+def test_timeline_traz_faixa_provavel_dentro_da_quase_certa(tmp_path):
+    framework = projeto(tmp_path)
+    exp = framework.experimentar("moda-beleza", {"camadas": ["metadados"]})
+    framework.promover("moda-beleza", exp.id)
+
+    a = framework.analisar("moda-beleza", VIDEO, canal_id="canal1")
+
+    for p in a.timeline:
+        assert p.q10 <= p.q25 <= p.q50 <= p.q75 <= p.q90
+        assert p.q25 > p.q10 or p.q10 == p.q50  # faixa provável é mais estreita de verdade
+    assert exp.resultado.cobertura_50 <= exp.resultado.cobertura_80

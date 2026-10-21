@@ -91,8 +91,10 @@ Fluxo típico pedido ao agente:
    `ciclo_automatico` faz tudo.
 4. Adaptar: ler `erros`, `notas` e `concordancia`, ajustar com `definir_atributos` e
    experimentar de novo.
-5. `analisar` um vídeo novo: faixa em 7 dias, timeline 1/3/7/14/30 dias, P(viral), fatores
-   e sugestões de mudança ("título em pergunta: +X%").
+5. `analisar` um vídeo novo: mediana em 7 dias com duas faixas (provável, 50%, e quase
+   certa, 80%), timeline 1/3/7/14/30 dias, P(viral), fatores e sugestões de mudança
+   ("título em pergunta: +X%"). A faixa de 80% é larga de propósito: o erro típico é 2×,
+   e canais voláteis têm histórico de 10× entre um vídeo fraco e um bombado.
 6. Depois de publicar: `acompanhar` liga a análise ao vídeo real; `atualizar_acompanhamentos`
    busca os números com o tempo; `acompanhamentos` mostra previsto × real em produção.
    `observar_recentes` (1×/dia) reobserva todos os vídeos recentes da base; `crescimento`

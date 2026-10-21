@@ -22,6 +22,16 @@ IDADE_MINIMA_TESTE_DIAS = 7
 MAX_POR_CANAL = 300  # canais gigantes não dominam o treino
 MIN_VIDEOS_CANAL_SPEARMAN = 5
 QUANTIS = (0.1, 0.5, 0.9)
+# Faixa "provável" de 50% derivada da faixa calibrada de 80%: numa normal no log, a meia
+# largura q25–q75 é z(0.75)/z(0.9) = 0.6745/1.2816 da meia largura q10–q90.
+FRACAO_FAIXA_50 = 0.5263
+
+
+def faixa_50(lo, mid, hi):
+    """q25 e q75 a partir da faixa calibrada (lo, mid, hi), lado a lado."""
+    return mid - FRACAO_FAIXA_50 * (mid - lo), mid + FRACAO_FAIXA_50 * (hi - mid)
+
+
 DIMENSOES_SIGLIP = 16
 PARAMS_LGB = {
     "learning_rate": 0.05,

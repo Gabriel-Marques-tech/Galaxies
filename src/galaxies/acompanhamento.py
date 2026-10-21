@@ -12,6 +12,8 @@ import duckdb
 import numpy as np
 from pydantic import BaseModel
 
+from galaxies.modelagem import faixa_50
+
 ESQUEMA = """
 CREATE TABLE IF NOT EXISTS acompanhamentos (
     video_id     VARCHAR PRIMARY KEY,
@@ -55,7 +57,10 @@ class Comparacao(BaseModel):
     previsto_q10: float
     previsto_q50: float
     previsto_q90: float
-    dentro_da_faixa: bool
+    previsto_q25: float = 0.0
+    previsto_q75: float = 0.0
+    dentro_da_faixa: bool  # quase certo (80%)
+    dentro_da_faixa_50: bool = False  # provável (50%)
     erro_log: float  # |log(1+real) - log(1+previsto)|; e^erro = fator de erro
 
 
@@ -79,6 +84,7 @@ class ListaAcompanhamentos(BaseModel):
     videos: list[Acompanhamento]
     n: int  # com pelo menos uma comparação
     cobertura: float  # fração das últimas observações dentro da faixa de 80%
+    cobertura_50: float = 0.0  # idem, faixa provável de 50%
     erro_mediano: float  # fator típico (e^mediana do erro_log)
 
 
@@ -145,6 +151,9 @@ def listar(banco: duckdb.DuckDBPyConnection) -> ListaAcompanhamentos:
         videos=videos,
         n=len(comparados),
         cobertura=float(np.mean([c.dentro_da_faixa for c in comparados])) if comparados else 0.0,
+        cobertura_50=float(np.mean([c.dentro_da_faixa_50 for c in comparados]))
+        if comparados
+        else 0.0,
         erro_mediano=float(np.exp(np.median([c.erro_log for c in comparados])))
         if comparados
         else 1.0,
@@ -156,13 +165,18 @@ def comparar(a: Acompanhamento, obs: Observacao) -> Comparacao | None:
     if real is None:
         return None
     q10, q50, q90 = (_interpolar(a.timeline, obs.idade_dias, q) for q in ("q10", "q50", "q90"))
+    q25, q75 = faixa_50(np.log1p(q10), np.log1p(q50), np.log1p(q90))  # no log, como o modelo
+    q25, q75 = float(np.expm1(q25)), float(np.expm1(q75))
     return Comparacao(
         idade_dias=obs.idade_dias,
         real=real,
         previsto_q10=q10,
         previsto_q50=q50,
         previsto_q90=q90,
+        previsto_q25=q25,
+        previsto_q75=q75,
         dentro_da_faixa=q10 <= real <= q90,
+        dentro_da_faixa_50=q25 <= real <= q75,
         erro_log=abs(float(np.log1p(real) - np.log1p(q50))),
     )
 
