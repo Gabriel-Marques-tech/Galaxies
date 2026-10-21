@@ -525,9 +525,9 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 .meio-analise { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-right: 4px; }
 .meio-analise:empty { flex: 1; }
 .rodape-analise { flex-shrink: 0; padding-bottom: 4px; }
-.analise .short-drop { height: min(460px, 46vh); width: auto; aspect-ratio: 9 / 16; }
-.analise .short-drop.pronto { height: min(460px, 46vh); }
+.analise .short-drop { height: min(440px, 44vh); width: auto; aspect-ratio: 9 / 16; }
+.analise .short-drop.pronto { height: min(440px, 44vh); }
 .rodape-analise .compositor { padding: 10px 10px 8px 18px; }
 .rodape-analise .compositor textarea { font-size: 15px; }
 .rodape-analise > p.sub { margin: 0; }
-@media (max-height: 720px) { .analise .saudacao.compacta { display: none; } .analise .short-drop { height: 40vh; } }
+@media (max-height: 760px) { .analise .short-drop, .analise .short-drop.pronto { height: 38vh; } .analise .saudacao.compacta h2 { font-size: 24px; } }
