@@ -466,7 +466,8 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 
 /* ---------------------------------------------------------------- vidro + ressonância 3D ao trocar o modo */
 /* Manchas de cor do modo atrás de tudo: dão o que o blur do vidro desfocar. */
-.shell { position: relative; isolation: isolate; perspective: 1600px; overflow: hidden; }
+.shell { position: relative; isolation: isolate; overflow: hidden; }
+.shell.ondulando { will-change: filter; transform: translateZ(0); backface-visibility: hidden; }
 /* sem filter: blur (caro); os gradientes já são suaves. Só transform/opacity animam. */
 .fundo-vivo { position: absolute; inset: -20%; z-index: -1; pointer-events: none; opacity: .5; transition: opacity .8s; will-change: transform;
   background:
