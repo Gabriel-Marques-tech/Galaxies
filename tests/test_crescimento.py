@@ -117,3 +117,65 @@ def test_timeline_traz_faixa_provavel_dentro_da_quase_certa(tmp_path):
         assert p.q10 <= p.q25 <= p.q50 <= p.q75 <= p.q90
         assert p.q25 > p.q10 or p.q10 == p.q50  # faixa provável é mais estreita de verdade
     assert exp.resultado.cobertura_50 <= exp.resultado.cobertura_80
+
+
+def test_peso_por_recencia_e_confianca_pareada():
+    import pandas as pd
+
+    from galaxies import modelagem as m
+
+    datas = pd.Series(pd.to_datetime(["2026-01-01", "2026-04-01", "2026-07-01"], utc=True))
+    peso = m.peso_por_recencia(datas, meia_vida_dias=91)
+    assert peso[-1] == 1.0 and abs(peso[1] - 0.5) < 0.01 and peso[0] < 0.26
+    assert m.peso_por_recencia(datas, None) is None
+    melhor = np.full(500, 0.5)
+    pior = np.full(500, 0.6)
+    assert m.confianca_pareada(melhor, pior) == 1.0
+    assert m.confianca_pareada(pior, melhor) == 0.0
+    assert m.confianca_pareada(melhor, melhor) == 0.5
+
+
+def test_receita_com_meia_vida_treina_e_traz_confianca(tmp_path):
+    framework = projeto(tmp_path)
+
+    exp = framework.experimentar(
+        "moda-beleza", {"camadas": ["metadados"], "params": {"meia_vida_dias": 180}}
+    )
+
+    assert exp.receita.params.meia_vida_dias == 180
+    assert 0.0 <= exp.resultado.confianca_sobre_controle <= 1.0
+
+
+def test_otimizador_marca_tentativa_sem_poder_estatistico(tmp_path, monkeypatch):
+    from galaxies import otimizacao
+
+    monkeypatch.setattr(otimizacao, "MIN_VALIDACAO", 10_000)
+    framework = projeto(tmp_path)
+
+    ciclo = framework.otimizar("moda-beleza", orcamento=2, paciencia=1)
+
+    assert ciclo.experimentos == []
+    assert all(t["objetivo"] is None for t in ciclo.tentativas)
+    assert "sem poder estatístico" in ciclo.tentativas[0]["erro"]
+    assert "precisa de ~" in ciclo.tentativas[0]["erro"]
+
+
+def test_rotina_reobserva_coleta_e_so_reotimiza_quando_a_base_cresce(tmp_path, monkeypatch):
+    from galaxies import servicos
+
+    framework = projeto(tmp_path)
+
+    parada = framework.rotina("moda-beleza")
+
+    assert parada.observados > 0
+    assert parada.videos_novos == 0
+    assert not parada.reotimizou
+    assert "modelo mantido" in parada.motivo
+
+    monkeypatch.setattr(servicos, "LIMIAR_NOVOS_ABSOLUTO", 0)
+    monkeypatch.setattr(servicos, "LIMIAR_NOVOS_FRACAO", 0.0)
+    completa = framework.rotina("moda-beleza")
+
+    assert completa.reotimizou
+    assert completa.experimento is not None
+    assert completa.motivo

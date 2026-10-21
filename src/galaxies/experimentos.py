@@ -37,6 +37,8 @@ class Params(BaseModel):
     learning_rate: float = Field(default=0.05, ge=0.005, le=0.3)
     rodadas: int = Field(default=300, ge=20, le=2000)
     min_data_in_leaf: int = Field(default=20, ge=5, le=200)
+    # Peso por recência: metade a cada meia-vida. None = todos os vídeos pesam igual.
+    meia_vida_dias: int | None = Field(default=None, ge=30, le=3000)
 
 
 class Receita(BaseModel):
@@ -66,6 +68,7 @@ class Resultado(BaseModel):
     cobertura_80: float = 0.0
     cobertura_50: float = 0.0  # faixa "provável" (q25–q75 derivada da calibrada)
     calibracao: float = 1.0  # quanto a faixa foi alargada
+    confianca_sobre_controle: float = 0.5  # bootstrap pareado: P(modelo bate o controle)
     melhora_sobre_controle: float = 0.0  # 1 - MAE do modelo / MAE do controle
     ganho_por_atributo: dict[str, float] = {}
     piores: list[m.Erro] = []
@@ -85,6 +88,7 @@ class Experimento(BaseModel):
 
 
 MARGEM_SOBRE_CONTROLE = 0.01  # camadas extras precisam reduzir o MAE do controle em 1%+
+CONFIANCA_MINIMA = 0.9  # bootstrap pareado no teste: camadas extras precisam de ganho real
 
 
 def escolher(feitos: list["Experimento"]) -> "Experimento | None":
@@ -114,6 +118,11 @@ def motivo_para_nao_promover(exp: "Experimento", ativo: "Experimento | None") ->
         return (
             f"as camadas extras melhoram só {r.melhora_sobre_controle:+.1%} sobre o controle no "
             f"teste (mínimo {MARGEM_SOBRE_CONTROLE:.0%}); fica como candidato"
+        )
+    if exp.receita.camadas != ["metadados"] and r.confianca_sobre_controle < CONFIANCA_MINIMA:
+        return (
+            f"no teste, o ganho sobre o controle é indistinguível de acaso (confiança "
+            f"{r.confianca_sobre_controle:.0%}, mínimo {CONFIANCA_MINIMA:.0%}); fica como candidato"
         )
     if ativo is not None and r.ganho < ativo.resultado.ganho - TOLERANCIA_VS_ATIVO:
         return (
@@ -210,7 +219,7 @@ def avaliar(
     x, _ = _montar_x(x_meta, extras, tr, te)
     y = m.alvo_relativo(base, canais)
 
-    modelos = _quantis(x.loc[tr], y.loc[tr], receita.params)
+    modelos = _quantis(x.loc[tr], y.loc[tr], receita.params, base.loc[tr, "publicado_em"])
     controle = _quantis(x_meta.loc[tr], y.loc[tr], Params())  # referência fixa
     sub_te = base.loc[te]
     ancora = np.log1p(canais.reindex(sub_te["canal_id"])["mediana"].to_numpy())
@@ -220,8 +229,10 @@ def avaliar(
     resultado_modelo = m.medir(pred, sub_te)
     baseline = m.medir(m.predicao_baseline(sub_te, canais), sub_te)
     piores, segmentos = m.diagnosticar(pred, sub_te)
-    controle_m = m.medir(m.prever_log(controle, x_meta.loc[te], sub_te, canais), sub_te)
+    pred_controle = m.prever_log(controle, x_meta.loc[te], sub_te, canais)
+    controle_m = m.medir(pred_controle, sub_te)
     real = sub_te["log_y"].to_numpy()
+    confianca = m.confianca_pareada(np.abs(pred - real), np.abs(pred_controle - real))
     resultado = Resultado(
         n_treino=len(tr),
         n_teste=len(te),
@@ -231,6 +242,7 @@ def avaliar(
         modelo=resultado_modelo,
         ganho=1 - resultado_modelo.mae / baseline.mae,
         melhora_sobre_controle=1 - resultado_modelo.mae / controle_m.mae,
+        confianca_sobre_controle=confianca,
         cobertura_bruta=_cobertura(q, real, 1.0),
         cobertura_80=_cobertura(q, real, k),
         cobertura_50=_cobertura(q, real, k, estreita=True),
@@ -334,7 +346,7 @@ def _calibrar(base, tr, x, y, params) -> float:
     ajuste, cal = tr[datas < corte], tr[datas >= corte]
     if len(ajuste) < MIN_TREINO or len(cal) < MIN_TESTE:
         return 1.0
-    modelos = _quantis(x.loc[ajuste], y.loc[ajuste], params)
+    modelos = _quantis(x.loc[ajuste], y.loc[ajuste], params, base.loc[ajuste, "publicado_em"])
     q = {k: b.predict(x.loc[cal]) for k, b in modelos.items()}
     lo, mid, hi = np.sort(np.column_stack([q[0.1], q[0.5], q[0.9]]), axis=1).T
     real = y.loc[cal].to_numpy()
@@ -366,8 +378,11 @@ def _colunas_de_atributos(definicoes: list[atrib.Atributo]) -> list[str]:
     return colunas
 
 
-def _quantis(x, y, params: Params):
-    return m.treinar_quantis(x, y, params.model_dump(exclude={"rodadas"}), params.rodadas)
+def _quantis(x, y, params: Params, datas: pd.Series | None = None):
+    peso = None if datas is None else m.peso_por_recencia(datas, params.meia_vida_dias)
+    return m.treinar_quantis(
+        x, y, params.model_dump(exclude={"rodadas", "meia_vida_dias"}), params.rodadas, peso
+    )
 
 
 def _ganho_por_permutacao(modelos, x_te, teste, canais, definicoes, mae_base) -> dict:
@@ -400,7 +415,7 @@ def _modelo_final(base, tem, extras, receita, escolhidos, calibracao, pasta: Pat
     if "atributos" in extras:
         meta["atributos"] = [a.model_dump() for a in escolhidos]
         meta["extrator"] = receita.extrator
-    modelos = _quantis(x, m.alvo_relativo(sub, canais), receita.params)
+    modelos = _quantis(x, m.alvo_relativo(sub, canais), receita.params, sub["publicado_em"])
     meta |= {
         "colunas": list(x.columns),
         "canais": canais.reset_index().to_dict(orient="records"),

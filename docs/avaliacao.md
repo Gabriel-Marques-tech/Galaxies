@@ -4,7 +4,7 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 
 ## Base
 
-- 46.393 Shorts de 113 canais (YouTube Data API. 2.806 unidades de cota gratuita).
+- 46.393 Shorts de 113 canais (YouTube Data API. 2.807 unidades de cota gratuita).
 - 474 ganchos (primeiros 5s) com frames, descrição, fala e embedding.
 - Atributos por extrator: laya (474), @cf/meta/llama-3.1-8b-instruct-fast (474).
 
@@ -18,12 +18,12 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 
 ## Likes
 
-**Modelo ativo `58381db140`** (metadados + historico):
+**Modelo ativo `1db5263c59`** (metadados + historico):
 
-- Erro +19.0% menor que o baseline (MAE 0.699 vs 0.863; erro típico 2.01× vs 2.37×).
-- Acerta 58.0% dos pares A vs B no mesmo canal (acaso: 50%).
-- A faixa de 80% contém 75.6% dos resultados reais no teste (sem calibração: 63.1%).
-- Hipótese registrada: otimização: melhor de 13 tentativas na validação (+2.5% sobre o controle). Tentativas: padrão: metadados: +0.0%, padrão: historico: +0.9%, padrão: texto: -0.5%, padrão: historico+texto: +1.0%, padrão: historico+texto+multimodal: +4.3%, padrão: completo: +4.8%, padrão: completo: +5.4%, min_data_in_leaf=10: +2.5%, min_data_in_leaf=80: +1.7%, min_data_in_leaf=40: +1.0%, learning_rate=0.0361: +1.7%, l
+- Erro +19.0% menor que o baseline (MAE 0.700 vs 0.863; erro típico 2.01× vs 2.37×).
+- Acerta 58.5% dos pares A vs B no mesmo canal (acaso: 50%).
+- A faixa de 80% contém 74.2% dos resultados reais no teste (sem calibração: 62.7%). A faixa provável de 50% contém 49.3%.
+- Hipótese registrada: otimização: melhor de 13 tentativas na validação (+1.4% sobre o controle). Tentativas: padrão: metadados: +0.0%, padrão: historico: +1.1%, padrão: texto: -0.1%, padrão: historico+texto: +0.9%, min_data_in_leaf=10: +1.4%, meia_vida_dias=730: +0.5%, rodadas=1000: +0.8%, meia_vida_dias=180: -0.5%, learning_rate=0.0167: +0.8%
 
 | id | receita | n teste | MAE | só meta | baseline | vs baseline | vs controle | A vs B | faixa 80% |
 |---|---|---|---|---|---|---|---|---|---|
@@ -37,8 +37,9 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 | `42aff946c4` | metadados + atributos (laya) | 103 | 1.102 | 1.045 | 1.114 | +1.1% | -5.5% | 52.5% | — |
 | `d5df310a1b` | metadados + multimodal + atributos (llama-3.1-8b-instruct-fast) | 103 | 1.009 | 1.045 | 1.114 | +9.4% | +3.5% | 62.4% | — |
 | `c0e1db64a0` | metadados + multimodal + atributos (laya) | 103 | 1.072 | 1.045 | 1.114 | +3.7% | -2.6% | 54.6% | — |
-| `58381db140` | metadados + historico **← ativo** | 2041 | 0.699 | 0.744 | 0.863 | +19.0% | +6.0% | 58.0% | 75.6% |
+| `58381db140` | metadados + historico | 2041 | 0.699 | 0.744 | 0.863 | +19.0% | +6.0% | 58.0% | 75.6% |
 | `275468c32d` | metadados + historico + texto + multimodal + atributos (llama-3.1-8b-instruct-fast) | 190 | 0.909 | 0.914 | 0.977 | +6.9% | +0.5% | 58.7% | 74.2% |
+| `1db5263c59` | metadados + historico **← ativo** | 2041 | 0.700 | 0.740 | 0.863 | +19.0% | +5.4% | 58.5% | 74.2% |
 
 ## Views
 
@@ -62,22 +63,21 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 
 ## Busca do agente (likes, validação)
 
-| origem | camadas | melhora sobre o controle | n validação |
-|---|---|---|---|
-| padrão: metadados | metadados | +0.0% | 2172 |
-| padrão: historico | metadados + historico | +2.4% | 2172 |
-| padrão: texto | metadados + texto | +1.7% | 2172 |
-| padrão: historico+texto | metadados + historico + texto | +3.7% | 2172 |
-| padrão: historico+texto+multimodal | metadados + historico + texto + multimodal | -4.7% | 22 |
-| padrão: completo | metadados + historico + texto + multimodal + atributos | -3.5% | 22 |
-| padrão: completo | metadados + historico + texto + multimodal + atributos | +0.8% | 22 |
-| min_data_in_leaf=10 | metadados + historico + texto | +3.9% | 2172 |
-| min_data_in_leaf=80 | metadados + historico + texto | +4.6% | 2172 |
-| min_data_in_leaf=40 | metadados + historico + texto | +4.0% | 2172 |
-| learning_rate=0.0361 | metadados + historico + texto | +3.7% | 2172 |
-| learning_rate=0.0858 | metadados + historico + texto | +4.2% | 2172 |
-| num_leaves=7 | metadados + historico + texto | +3.8% | 2172 |
-| rodadas=1000 | metadados + historico + texto | +4.7% | 2172 |
+| origem | camadas | melhora sobre o controle | ganho real? | n validação |
+|---|---|---|---|---|
+| padrão: metadados | metadados | +0.0% | indistinguível (50%) | 2144 |
+| padrão: historico | metadados + historico | +1.1% | sim (94%) | 2144 |
+| padrão: texto | metadados + texto | -0.1% | indistinguível (42%) | 2144 |
+| padrão: historico+texto | metadados + historico + texto | +0.9% | indistinguível (88%) | 2144 |
+| padrão: historico+texto+multimodal | metadados + historico + texto + multimodal | — | sem poder estatístico: 22 linhas na validação (mínimo 300); precisa de ~2891 vídeos com essas camadas para medir a difer | 22 |
+| padrão: completo | metadados + historico + texto + multimodal + atributos | — | sem poder estatístico: 22 linhas na validação (mínimo 300); precisa de ~2891 vídeos com essas camadas para medir a difer | 22 |
+| padrão: completo | metadados + historico + texto + multimodal + atributos | — | sem poder estatístico: 22 linhas na validação (mínimo 300); precisa de ~2891 vídeos com essas camadas para medir a difer | 22 |
+| min_data_in_leaf=10 | metadados + historico | +1.4% | sim (98%) | 2144 |
+| meia_vida_dias=730 | metadados + historico | +0.5% | indistinguível (75%) | 2144 |
+| rodadas=1000 | metadados + historico | +0.8% | indistinguível (87%) | 2144 |
+| meia_vida_dias=180 | metadados + historico | -0.5% | indistinguível (26%) | 2144 |
+| learning_rate=0.0167 | metadados + historico | +0.8% | indistinguível (89%) | 2144 |
+| com multimodal | metadados + historico + multimodal | — | sem poder estatístico: 22 linhas na validação (mínimo 300); precisa de ~2891 vídeos com essas camadas para medir a difer | 22 |
 
 ## Crescimento observado
 

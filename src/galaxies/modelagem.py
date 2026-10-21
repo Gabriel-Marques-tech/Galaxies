@@ -202,13 +202,37 @@ def alvo_relativo(df: pd.DataFrame, canais: pd.DataFrame) -> pd.Series:
 
 
 def treinar_quantis(
-    x: pd.DataFrame, y: pd.Series, params: dict | None = None, rodadas: int = RODADAS
+    x: pd.DataFrame,
+    y: pd.Series,
+    params: dict | None = None,
+    rodadas: int = RODADAS,
+    peso: np.ndarray | None = None,
 ) -> dict[float, lgb.Booster]:
     base = {**PARAMS_LGB, **(params or {})}
+    dados = lgb.Dataset(x, y, weight=peso)
     return {
-        q: lgb.train({**base, "objective": "quantile", "alpha": q}, lgb.Dataset(x, y), rodadas)
-        for q in QUANTIS
+        q: lgb.train({**base, "objective": "quantile", "alpha": q}, dados, rodadas) for q in QUANTIS
     }
+
+
+def peso_por_recencia(datas: pd.Series, meia_vida_dias: float | None) -> np.ndarray | None:
+    """Peso 1 para o vídeo mais recente, metade a cada meia-vida para trás: o modelo
+    acompanha a deriva do setor sem jogar fora o histórico."""
+    if meia_vida_dias is None:
+        return None
+    idade = (datas.max() - datas).dt.total_seconds() / 86400
+    return (0.5 ** (idade / meia_vida_dias)).to_numpy()
+
+
+def confianca_pareada(erros_modelo: np.ndarray, erros_controle: np.ndarray, n: int = 1000) -> float:
+    """Bootstrap pareado nas mesmas linhas: fração das reamostras em que o MAE do modelo fica
+    abaixo do MAE do controle. ~0,5 = indistinguível; ≥ 0,9 = ganho real."""
+    dif = np.asarray(erros_modelo) - np.asarray(erros_controle)
+    if len(dif) == 0 or np.all(dif == 0):
+        return 0.5
+    rng = np.random.default_rng(0)
+    amostras = rng.choice(dif, size=(n, len(dif)), replace=True).mean(axis=1)
+    return float(np.mean(amostras < 0))
 
 
 def medir(pred_log: np.ndarray, teste: pd.DataFrame) -> Metricas:

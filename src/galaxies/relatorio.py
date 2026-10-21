@@ -139,14 +139,22 @@ def gerar(
         md += [
             f"## Busca do agente ({alvo}, validação)",
             "",
-            "| origem | camadas | melhora sobre o controle | n validação |",
-            "|---|---|---|---|",
+            "| origem | camadas | melhora sobre o controle | ganho real? | n validação |",
+            "|---|---|---|---|---|",
         ]
         for t in tentativas:
             obj = "—" if t["objetivo"] is None else _pct(t["objetivo"])
             camadas = " + ".join(t["receita"]["camadas"])
-            t = {"n_validacao": 0, **t}
-            md.append(f"| {t['origem']} | {camadas} | {obj} | {t['n_validacao']} |")
+            t = {"n_validacao": 0, "confianca": None, "erro": "", **t}
+            if t["objetivo"] is None:
+                real = t["erro"][:120] or "—"
+            elif t["confianca"] is None:
+                real = "—"
+            else:
+                real = (
+                    f"{'sim' if t['confianca'] >= 0.9 else 'indistinguível'} ({t['confianca']:.0%})"
+                )
+            md.append(f"| {t['origem']} | {camadas} | {obj} | {real} | {t['n_validacao']} |")
         md.append("")
     md += _curva_md(curvas or {}, idade_minima)
     md += [

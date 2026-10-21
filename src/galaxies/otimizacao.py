@@ -20,6 +20,8 @@ from galaxies import experimentos as exps
 from galaxies.trace import Execucao
 
 MELHORA_MINIMA = 0.002  # menos que isso é ruído: não conta como melhora
+MIN_VALIDACAO = 300  # linhas na validação; abaixo disso não há poder para medir ±1%
+CONFIANCA = 0.9  # bootstrap pareado: abaixo disso a melhora é "indistinguível"
 EXTRAS = ("historico", "texto", "multimodal", "atributos")
 
 
@@ -28,6 +30,7 @@ class Tentativa(BaseModel):
     origem: str  # de onde veio: receita padrão ou a mutação aplicada
     objetivo: float | None  # melhora sobre o controle na validação (None = não deu para medir)
     ganho: float | None = None
+    confianca: float | None = None  # P(modelo bate o controle) na validação
     n_validacao: int = 0
     erro: str = ""
 
@@ -78,19 +81,34 @@ def otimizar(
                 _, res, _ = exps.avaliar(
                     banco, alvo, receita, definicoes, em="validacao", cache=cache
                 )
-                t = Tentativa(
-                    receita=receita,
-                    origem=origem,
-                    objetivo=res.melhora_sobre_controle,
-                    ganho=res.ganho,
-                    n_validacao=res.n_teste,
-                )
+                if res.n_teste < MIN_VALIDACAO:
+                    precisa = -(-MIN_VALIDACAO * (res.n_treino + res.n_teste) // res.n_teste)
+                    t = Tentativa(
+                        receita=receita,
+                        origem=origem,
+                        objetivo=None,
+                        n_validacao=res.n_teste,
+                        erro=f"sem poder estatístico: {res.n_teste} linhas na validação "
+                        f"(mínimo {MIN_VALIDACAO}); precisa de ~{precisa} vídeos com essas "
+                        "camadas para medir a diferença",
+                    )
+                else:
+                    t = Tentativa(
+                        receita=receita,
+                        origem=origem,
+                        objetivo=res.melhora_sobre_controle,
+                        ganho=res.ganho,
+                        confianca=res.confianca_sobre_controle,
+                        n_validacao=res.n_teste,
+                    )
                 tentativas.append(t)
                 ganhos_attr[chave] = res.ganho_por_atributo
             except ValueError as erro:
                 t = Tentativa(receita=receita, origem=origem, objetivo=None, erro=str(erro))
                 tentativas.append(t)
-            r["saida"] = t.model_dump(include={"objetivo", "ganho", "n_validacao", "erro"})
+            r["saida"] = t.model_dump(
+                include={"objetivo", "ganho", "confianca", "n_validacao", "erro"}
+            )
         return t
 
     for nome, receita in exps.RECEITAS_PADRAO.items():
@@ -123,10 +141,13 @@ def otimizar(
 
 
 def _melhor(tentativas: list[Tentativa]) -> Tentativa | None:
-    """Maior melhora sobre o controle; em empate (dentro do ruído), a receita mais simples."""
+    """Maior melhora sobre o controle entre as que têm ganho real (confiança ≥ CONFIANCA);
+    sem nenhuma, entre todas. Em empate (dentro do ruído), a receita mais simples."""
     validas = [t for t in tentativas if t.objetivo is not None and (t.ganho or 0) > 0]
     if not validas:
         return None
+    reais = [t for t in validas if (t.confianca or 0) >= CONFIANCA]
+    validas = reais or validas
     topo = max(t.objetivo for t in validas)
     empatadas = [t for t in validas if t.objetivo >= topo - MELHORA_MINIMA]
     return min(empatadas, key=lambda t: (len(t.receita.camadas), -t.objetivo))
@@ -170,6 +191,7 @@ def _mutar(melhor: Tentativa, camadas, extratores, ganhos_attr, rng, definicoes)
         "learning_rate": lambda: round(10 ** rng.uniform(-2.2, -0.7), 4),
         "rodadas": lambda: rng.choice([150, 300, 600, 1000]),
         "min_data_in_leaf": lambda: rng.choice([10, 20, 40, 80, 150]),
+        "meia_vida_dias": lambda: rng.choice([90, 180, 365, 730, None]),
     }[nome]()
     params = exps.Params(**{**p, nome: novo})
     return r.model_copy(update={"params": params}), f"{nome}={novo}"

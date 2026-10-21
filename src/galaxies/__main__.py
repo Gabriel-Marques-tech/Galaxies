@@ -70,6 +70,9 @@ def main():
     )
     observar.add_argument("projeto")
     observar.add_argument("--dias-max", type=float, default=90)
+    rotina = comandos.add_parser("rotina", help="rotina diária: reobserva, coleta e reotimiza")
+    rotina.add_argument("projeto")
+    rotina.add_argument("--alvo", choices=["likes", "views"], default=None)
     curva = comandos.add_parser("crescimento", help="curva de crescimento observada")
     curva.add_argument("projeto")
     curva.add_argument("--alvo", choices=["likes", "views"], default=None)
@@ -143,6 +146,8 @@ def main():
         print(fw.erros(args.projeto, alvo=args.alvo).model_dump_json(indent=2))
     elif args.comando == "observar-recentes":
         print(fw.observar_recentes(args.projeto, args.dias_max).model_dump_json(indent=2))
+    elif args.comando == "rotina":
+        print(fw.rotina(args.projeto, args.alvo).model_dump_json(indent=2))
     elif args.comando == "crescimento":
         print(fw.crescimento(args.projeto, args.alvo).model_dump_json(indent=2))
 

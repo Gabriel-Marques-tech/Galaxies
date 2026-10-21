@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from galaxies import (
     acompanhamento,
@@ -41,6 +41,21 @@ from galaxies.erros import (
 from galaxies.experimentos import Ciclo, Experimento, Receita
 from galaxies.portas import Dependencias, identificar
 from galaxies.trace import Etapa, Run, executar, ler_trace, listar_runs
+
+LIMIAR_NOVOS_ABSOLUTO = 100  # vídeos novos para a rotina reotimizar
+LIMIAR_NOVOS_FRACAO = 0.02  # ou 2% da base, o que for maior
+
+
+class Rotina(BaseModel):
+    observados: int
+    acompanhamentos_atualizados: int
+    videos_novos: int
+    unidades: int  # cota do YouTube gasta na reobservação
+    texto_calculado: int = 0
+    reotimizou: bool = False
+    experimento: str | None = None
+    promovido: str | None = None
+    motivo: str | None = None
 
 
 class Framework:
@@ -705,6 +720,43 @@ class Framework:
             sem_dados=len(pendentes) - vistos,
             unidades=youtube.unidades,
         )
+
+    def rotina(self, projeto: str, alvo: str | None = None) -> "Rotina":
+        """O dia a dia do agente, numa chamada: reobserva os vídeos recentes (curva de
+        crescimento), atualiza os acompanhamentos, coleta o que os canais publicaram desde a
+        última vez e, se a base cresceu o bastante, calcula o texto e reotimiza (automático:
+        promove sozinho; cientista: deixa candidato para aprovação)."""
+        config = self.obter_projeto(projeto)
+        antes = self.resumo(projeto)["videos"]
+        observacao = self.observar_recentes(projeto)
+        acompanhamentos = self.atualizar_acompanhamentos(projeto).atualizados
+        coletados = self.coletar(projeto, so_faltantes=True).videos_novos
+        rotina = Rotina(
+            observados=observacao.observados,
+            acompanhamentos_atualizados=acompanhamentos,
+            videos_novos=coletados,
+            unidades=observacao.unidades,
+        )
+        limiar = max(LIMIAR_NOVOS_ABSOLUTO, int(antes * LIMIAR_NOVOS_FRACAO))
+        if coletados < limiar:
+            rotina.motivo = (
+                f"{coletados} vídeos novos (reotimiza a partir de {limiar}): modelo mantido"
+            )
+            return rotina
+        if self.dependencias.texto is not None:
+            rotina.texto_calculado = self.calcular_texto(projeto).get("calculados", 0)
+        ciclo = self.otimizar(projeto, alvo)
+        rotina.reotimizou = True
+        rotina.experimento = ciclo.experimentos[0].id if ciclo.experimentos else None
+        rotina.promovido = ciclo.promovido
+        rotina.motivo = ciclo.motivo or (
+            "promovido"
+            if ciclo.promovido
+            else "candidato aguardando aprovação"
+            if config.modo == "cientista"
+            else "nenhuma receita superou a média do canal"
+        )
+        return rotina
 
     def crescimento(self, projeto: str, alvo: str | None = None) -> crescimento.Curva:
         """Curva de crescimento observada: inclinação de log(1+y) por log(idade) por faixa de

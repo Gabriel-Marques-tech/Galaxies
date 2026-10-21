@@ -37,6 +37,10 @@ com definir_atributos, calcule e otimize de novo. Diagnóstico da base: treinar 
 Usar: analisar um vídeo novo (chances, timeline, fatores e sugestões para viralizar).
 Depois de publicar: acompanhar(run_id, video_id) e, com o tempo, atualizar_acompanhamentos;
 acompanhamentos mostra previsto × real em produção.
+Todo dia: rotina (job) reobserva os vídeos recentes (curva de crescimento), atualiza os
+acompanhamentos, coleta vídeos novos e reotimiza quando a base cresce. Tentativas marcadas
+"sem poder estatístico" dizem quantos vídeos faltam para medir uma camada: não insista nela
+antes disso. Peso por recência (params.meia_vida_dias) é uma das coisas que a busca varia.
 Auditar: runs, trace, erros, falhas, reprocessar. Jobs devolvem job_id: use status."""
 
 
@@ -343,6 +347,13 @@ def criar_servidor(fw: Framework) -> ServidorGalaxies:
         vez por dia: a coleta é a primeira observação e cada rodada acrescenta outra; disso
         sai a curva de crescimento que corrige a timeline nas idades que o modelo não viu."""
         return _texto(fw.observar_recentes(projeto, dias_max))
+
+    @tool
+    def rotina(projeto: str, alvo: str | None = None) -> str:
+        """O dia a dia do agente numa chamada (job): reobserva vídeos recentes, atualiza os
+        acompanhamentos, coleta o que os canais publicaram e, se a base cresceu (100 vídeos ou
+        2%), recalcula o texto e reotimiza. Rode uma vez por dia."""
+        return _texto(jobs.iniciar("rotina", projeto, fw.rotina, projeto, alvo))
 
     @tool
     def crescimento(projeto: str, alvo: str | None = None) -> str:
