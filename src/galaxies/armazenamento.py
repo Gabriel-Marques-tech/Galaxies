@@ -4,7 +4,7 @@ from pathlib import Path
 
 import duckdb
 
-from galaxies import trace
+from galaxies import acompanhamento, trace
 
 ESQUEMA = """
 CREATE TABLE IF NOT EXISTS projeto (
@@ -137,4 +137,5 @@ def abrir(raiz: Path, nome: str) -> duckdb.DuckDBPyConnection:
     _migrar_respostas(conexao)
     conexao.execute(ESQUEMA)
     conexao.execute(trace.ESQUEMA)
+    conexao.execute(acompanhamento.ESQUEMA)
     return conexao

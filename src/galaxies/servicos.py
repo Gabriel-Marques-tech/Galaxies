@@ -1,6 +1,6 @@
 """Camada de serviços: o único seam do núcleo. MCP e FastAPI só chamam isto."""
 
-from datetime import UTC, date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import numpy as np
@@ -8,6 +8,7 @@ import pandas as pd
 from pydantic import ValidationError
 
 from galaxies import (
+    acompanhamento,
     armazenamento,
     camada_bruta,
     coleta,
@@ -615,6 +616,65 @@ class Framework:
             "fatores": fatores[:6],
             "piores_fatores": fatores[-3:][::-1] if len(fatores) > 6 else [],
         }
+
+    # ------------------------------------------------------------ pós-publicação
+
+    def acompanhar(self, projeto: str, run_id: str, video_id: str) -> acompanhamento.Acompanhamento:
+        """Liga uma análise (run de analisar) ao vídeo publicado e guarda os números de agora."""
+        youtube = coleta.YouTubeMedido(self._exigir(self.dependencias.youtube, "youtube"))
+        config = self.obter_projeto(projeto)
+        with self._abrir_existente(projeto) as banco, executar(banco, "acompanhar") as ex:
+            run = next((r for r in listar_runs(banco) if r.id == run_id), None)
+            if run is None or run.operacao != "analisar":
+                raise erros.ErroGalaxies(f"'{run_id}' não é um run de analisar.")
+            prever = next((e for e in ler_trace(banco, run_id) if e.nome == "prever"), None)
+            if prever is None or not prever.saida:
+                raise erros.ErroGalaxies(f"O run {run_id} não tem previsão registrada.")
+            with ex.etapa("buscar_video", {"video_id": video_id}):
+                videos = youtube.videos([video_id])
+            coleta.registrar_cota(banco, ex.run_id, youtube.unidades)
+            if not videos:
+                raise erros.ErroGalaxies(f"Vídeo '{video_id}' não encontrado no YouTube.")
+            video = videos[0]
+            publicado = video["publicado_em"]
+            if isinstance(publicado, str):
+                publicado = datetime.fromisoformat(publicado.replace("Z", "+00:00"))
+            acompanhamento.registrar(
+                banco,
+                video_id,
+                run_id,
+                video["canal_id"],
+                config.alvo,
+                publicado,
+                prever.saida["timeline"],
+            )
+            acompanhamento.observar(banco, video)
+            return next(a for a in acompanhamento.listar(banco).videos if a.video_id == video_id)
+
+    def atualizar_acompanhamentos(self, projeto: str) -> acompanhamento.ResumoAtualizacao:
+        """Busca os números atuais de todos os vídeos acompanhados (1 unidade por 50)."""
+        youtube = coleta.YouTubeMedido(self._exigir(self.dependencias.youtube, "youtube"))
+        with (
+            self._abrir_existente(projeto) as banco,
+            executar(banco, "atualizar_acompanhamentos") as ex,
+        ):
+            pendentes = acompanhamento.ids(banco)
+            vistos: set[str] = set()
+            for inicio in range(0, len(pendentes), 50):
+                lote = pendentes[inicio : inicio + 50]
+                with ex.etapa("buscar_videos", {"n": len(lote)}):
+                    for video in youtube.videos(lote):
+                        acompanhamento.observar(banco, video)
+                        vistos.add(video["id"])
+            coleta.registrar_cota(banco, ex.run_id, youtube.unidades)
+        return acompanhamento.ResumoAtualizacao(
+            atualizados=len(vistos), sem_dados=[v for v in pendentes if v not in vistos]
+        )
+
+    def acompanhamentos(self, projeto: str) -> acompanhamento.ListaAcompanhamentos:
+        """Previsto × real dos vídeos acompanhados, com cobertura da faixa e erro típico."""
+        with self._abrir_existente(projeto) as banco:
+            return acompanhamento.listar(banco)
 
     def relatorio(self, projeto: str) -> str:
         """Relatório de avaliação em Markdown, reproduzível a partir do banco."""

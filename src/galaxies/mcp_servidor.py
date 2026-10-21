@@ -35,6 +35,8 @@ tudo. Modo cientista: a promoção espera aprovação humana na UI; discuta com 
 Melhorar sempre: leia erros, notas (pistas do humano) e concordancia; crie atributos novos
 com definir_atributos, calcule e otimize de novo. Diagnóstico da base: treinar → avaliar.
 Usar: analisar um vídeo novo (chances, timeline, fatores e sugestões para viralizar).
+Depois de publicar: acompanhar(run_id, video_id) e, com o tempo, atualizar_acompanhamentos;
+acompanhamentos mostra previsto × real em produção.
 Auditar: runs, trace, erros, falhas, reprocessar. Jobs devolvem job_id: use status."""
 
 
@@ -317,6 +319,23 @@ def criar_servidor(fw: Framework) -> ServidorGalaxies:
         roda o gancho e os atributos). Devolve faixa em 7 dias, timeline 1/3/7/14/30 dias,
         P(viral) e os fatores que mais pesaram."""
         return _texto(fw.analisar(projeto, video, canal_id))
+
+    @tool
+    def acompanhar(projeto: str, run_id: str, video_id: str) -> str:
+        """Depois de publicar: liga a análise (run_id de analisar) ao vídeo publicado (id do
+        YouTube) e guarda os números de agora. Use atualizar_acompanhamentos com o tempo."""
+        return _texto(fw.acompanhar(projeto, run_id, video_id))
+
+    @tool
+    def atualizar_acompanhamentos(projeto: str) -> str:
+        """Busca os números atuais dos vídeos acompanhados (1 unidade de cota por 50)."""
+        return _texto(fw.atualizar_acompanhamentos(projeto))
+
+    @tool
+    def acompanhamentos(projeto: str) -> str:
+        """Previsto × real dos vídeos publicados: cobertura da faixa de 80% e erro típico em
+        produção. É a prova do modelo fora do teste."""
+        return _texto(fw.acompanhamentos(projeto))
 
     @tool
     def comparar(projeto: str, video_a: dict, video_b: dict, canal_id: str) -> str:

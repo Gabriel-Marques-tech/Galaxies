@@ -43,7 +43,7 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
           <div className="pergunta-usuario">{c.pergunta}<div className="sub">{nomeCanal(c.canal)}</div></div>
           <div className="resposta">
             <span className="avatar"><img src="/logo.svg" alt="" style={{ width: 20, height: 20 }} /></span>
-            {c.erro ? <Aviso texto={c.erro} /> : c.analise && <Resultado a={c.analise} alvo={config.alvo} />}
+            {c.erro ? <Aviso texto={c.erro} /> : c.analise && <Resultado a={c.analise} alvo={config.alvo} projeto={projeto} />}
           </div>
         </div>
       ))}
@@ -136,7 +136,7 @@ function ShortDrop({ projeto, short, setShort }: { projeto: string; short: Short
   )
 }
 
-function Resultado({ a, alvo }: { a: Analise; alvo: string }) {
+function Resultado({ a, alvo, projeto }: { a: Analise; alvo: string; projeto: string }) {
   const p = a.previsao_7d
   return (
     <div className="pilha" style={{ minWidth: 0 }}>
@@ -203,7 +203,29 @@ function Resultado({ a, alvo }: { a: Analise; alvo: string }) {
           <p className="sub" style={{ margin: 0 }}>Fala: {a.gancho.transcricao || '(sem fala)'}</p>
         </div>
       )}
+      <Publiquei projeto={projeto} runId={a.run_id} />
       <span className="sub mono">modelo {a.experimento_id} · run {a.run_id}</span>
+    </div>
+  )
+}
+
+// Depois de publicar: liga esta análise ao vídeo real para acompanhar previsto × real.
+function Publiquei({ projeto, runId }: { projeto: string; runId: string }) {
+  const [id, setId] = useState('')
+  const [estado, setEstado] = useState<string | null>(null)
+  const enviar = () => {
+    const videoId = id.trim().replace(/^.*(?:shorts\/|v=|youtu\.be\/)/, '').split(/[?&]/)[0]
+    api.acompanhar(projeto, runId, videoId)
+      .then((a) => setEstado(`acompanhando ${a.video_id}: ${a.observacoes[0]?.likes ?? '—'} likes até agora`))
+      .catch((e: Error) => setEstado(e.message))
+  }
+  return (
+    <div className="cartao contorno linha" style={{ gap: 10 }}>
+      <Icone nome="publish" className="destaque-icone" />
+      <span style={{ flex: 1, minWidth: 160 }}><b>Publicou?</b> <span className="sub">Cole o link ou id do Short para acompanhar previsto × real.</span></span>
+      <input className="campo" style={{ maxWidth: 260 }} placeholder="link ou id do vídeo" value={id} onChange={(e) => setId(e.target.value)} />
+      <button className="btn tonal pequeno" onClick={enviar} disabled={!id.trim()}>Acompanhar</button>
+      {estado && <span className="sub" style={{ width: '100%' }}>{estado}</span>}
     </div>
   )
 }

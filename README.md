@@ -87,7 +87,9 @@ Fluxo típico pedido ao agente:
    experimentar de novo.
 5. `analisar` um vídeo novo: faixa em 7 dias, timeline 1/3/7/14/30 dias, P(viral), fatores
    e sugestões de mudança ("título em pergunta: +X%").
-6. `runs`, `trace`, `falhas`, `reprocessar` para auditar.
+6. Depois de publicar: `acompanhar` liga a análise ao vídeo real; `atualizar_acompanhamentos`
+   busca os números com o tempo; `acompanhamentos` mostra previsto × real em produção.
+7. `runs`, `trace`, `falhas`, `reprocessar` para auditar.
 
 ## Console humano (UI)
 

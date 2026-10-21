@@ -14,6 +14,7 @@ export default function Inicio({ projeto, config, ir, aoMudarModo }: {
 }) {
   const resumo = useCarga(() => api.resumo(projeto), [projeto])
   const exps = useCarga(() => api.experimentos(projeto), [projeto])
+  const acomp = useCarga(() => api.acompanhamentos(projeto), [projeto])
   const ativo = exps.dados?.find((e) => e.status === 'ativo')
   const r = resumo.dados
   const mudarModo = (modo: Projeto['modo']) => api.definirModo(projeto, modo).then(aoMudarModo)
@@ -32,6 +33,8 @@ export default function Inicio({ projeto, config, ir, aoMudarModo }: {
         <Metrica icone="model_training" rotulo="Modelo ativo" valor={ativo ? pct(ativo.resultado.ganho) : '—'}
           detalhe={ativo ? `mais preciso que a média do canal · ${ativo.receita.camadas.join(' + ')}` : 'nenhum promovido ainda'} />
         <Metrica icone="science" rotulo="Experimentos" valor={r ? String(r.experimentos) : '—'} detalhe={r && `${r.revisoes} revisões humanas · ${r.runs} execuções`} />
+        <Metrica icone="publish" rotulo="Em produção" valor={acomp.dados?.n ? `${Math.round(acomp.dados.cobertura * 100)}%` : '—'}
+          detalhe={acomp.dados?.n ? `${acomp.dados.n} vídeos acompanhados dentro da faixa · erro típico ${acomp.dados.erro_mediano.toFixed(1)}×` : 'nenhum vídeo acompanhado: publique e use "Acompanhar" na análise'} />
       </div>
 
       <div className="cartao">

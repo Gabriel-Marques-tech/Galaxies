@@ -119,6 +119,18 @@ def criar_app(fw: Framework) -> FastAPI:
     ):
         return _json(fw.comparar(projeto, video_a, video_b, canal_id))
 
+    @app.post("/projetos/{projeto}/acompanhar")
+    def acompanhar(projeto: str, run_id: str = Body(), video_id: str = Body()):
+        return _json(fw.acompanhar(projeto, run_id, video_id))
+
+    @app.post("/projetos/{projeto}/acompanhamentos/atualizar")
+    def atualizar_acompanhamentos(projeto: str):
+        return _json(fw.atualizar_acompanhamentos(projeto))
+
+    @app.get("/projetos/{projeto}/acompanhamentos")
+    def acompanhamentos(projeto: str):
+        return _json(fw.acompanhamentos(projeto))
+
     # ------------------------------------------------------------ auditoria
 
     @app.get("/projetos/{projeto}/runs")
