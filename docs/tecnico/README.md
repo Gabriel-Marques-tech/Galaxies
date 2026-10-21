@@ -12,6 +12,7 @@ o que sai, as regras que ele garante e onde ele é usado.
 | [04-servicos-e-interfaces.md](04-servicos-e-interfaces.md) | `Framework` (serviços), MCP, API HTTP, CLI, portões humanos, ambiente |
 | [05-ui.md](05-ui.md) | console React: telas, estado, estilos, modo, animações |
 | [06-operacao.md](06-operacao.md) | setup, rodar, rotina diária, custos e cotas, limites, como estender, testes, problemas comuns |
+| [07-testes.md](07-testes.md) | como rodar cada teste, o que cada arquivo prova, checklist manual (integrações reais, UI, agente) |
 
 Convenções do código:
 
