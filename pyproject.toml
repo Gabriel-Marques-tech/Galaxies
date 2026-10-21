@@ -50,6 +50,7 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["lento: treina modelos de verdade; pule com -m 'not lento' no ciclo rápido"]
 
 [tool.ruff]
 line-length = 100

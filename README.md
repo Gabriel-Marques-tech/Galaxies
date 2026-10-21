@@ -113,7 +113,9 @@ cd ui && npm install && npm run dev      # UI em :5173
 
 Abas: **Modelos** (experimentos contra baseline e controle, sugestões, aprovar/rejeitar),
 **Revisão de atributos** (concordância humano × extrator), **Erros** (triagem: dado ruim ou
-padrão) e **Trace** (cada passo de cada execução).
+padrão) e **Trace** (cada passo de cada execução). Enquanto o agente roda um job (MCP ou
+CLI), uma faixa no topo mostra a operação, a etapa atual e o tempo decorrido: o run grava
+`andamento.json` ao lado do banco e a UI lê sem abrir o DuckDB.
 
 ## CLI
 
@@ -129,5 +131,6 @@ O mesmo núcleo pela linha de comando: `uv run python -m galaxies --help`.
 ## Testes
 
 ```bash
-uv run pytest
+uv run pytest                 # tudo (~8 min: treina e otimiza de verdade)
+uv run pytest -m "not lento"  # ciclo rápido (~2 min)
 ```

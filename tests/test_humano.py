@@ -3,6 +3,8 @@ import pytest
 from galaxies import ErroGalaxies
 from tests.test_experimentos import projeto
 
+pytestmark = pytest.mark.lento  # treina e otimiza de verdade (dezenas de segundos)
+
 
 @pytest.fixture
 def com_ganchos(tmp_path):

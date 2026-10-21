@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 import numpy as np
+import pytest
 
 from galaxies import crescimento
 from galaxies.crescimento import Curva, FaixaDaCurva
@@ -80,6 +81,7 @@ def test_fator_integra_so_as_faixas_cobertas():
     assert np.isclose(curva.fator(1, 20), 2.0)
 
 
+@pytest.mark.lento
 def test_timeline_abaixo_da_idade_minima_recua_pela_curva(tmp_path):
     framework = projeto(tmp_path)
     exp = framework.experimentar("moda-beleza", {"camadas": ["metadados"]})
@@ -135,6 +137,7 @@ def test_peso_por_recencia_e_confianca_pareada():
     assert m.confianca_pareada(melhor, melhor) == 0.5
 
 
+@pytest.mark.lento
 def test_receita_com_meia_vida_treina_e_traz_confianca(tmp_path):
     framework = projeto(tmp_path)
 
@@ -146,6 +149,7 @@ def test_receita_com_meia_vida_treina_e_traz_confianca(tmp_path):
     assert 0.0 <= exp.resultado.confianca_sobre_controle <= 1.0
 
 
+@pytest.mark.lento
 def test_otimizador_marca_tentativa_sem_poder_estatistico(tmp_path, monkeypatch):
     from galaxies import otimizacao
 
@@ -160,6 +164,7 @@ def test_otimizador_marca_tentativa_sem_poder_estatistico(tmp_path, monkeypatch)
     assert "precisa de ~" in ciclo.tentativas[0]["erro"]
 
 
+@pytest.mark.lento
 def test_rotina_reobserva_coleta_e_so_reotimiza_quando_a_base_cresce(tmp_path, monkeypatch):
     from galaxies import servicos
 

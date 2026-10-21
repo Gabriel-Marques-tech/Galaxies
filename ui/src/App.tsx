@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { api } from './api'
+import { api, type Andamento } from './api'
 import { Aviso, Icone, useCarga } from './componentes'
 import { ondular } from './ondulacao'
 import Analisar from './telas/Analisar'
@@ -41,6 +41,7 @@ export default function App() {
   const shell = useRef<HTMLDivElement>(null)
   const chipModo = useRef<HTMLButtonElement>(null)
   const config = useCarga(() => (projeto ? api.projeto(projeto) : Promise.resolve(null)), [projeto])
+  const andamento = useAndamento(projeto)
   const experimentos = useCarga(() => (projeto ? api.experimentos(projeto) : Promise.resolve([])), [projeto, tela])
 
   useEffect(() => {
@@ -131,6 +132,14 @@ export default function App() {
             </button>
           )}
         </div>
+        {andamento && tela !== 'projetos' && (
+          <div className="andamento" role="status">
+            <span className="pulso" />
+            <b>Agente rodando {andamento.operacao}</b>
+            {andamento.ultima && <span className="sub"> · {andamento.etapas} etapa{andamento.etapas === 1 ? '' : 's'} · {andamento.ultima.nome}{andamento.ultima.entrada && <span className="mono"> {andamento.ultima.entrada}</span>}</span>}
+            <span className="sub tempo">{Math.floor(andamento.decorrido_s / 60)} min {andamento.decorrido_s % 60} s</span>
+          </div>
+        )}
         <div className="conteudo">
           <div className="largura tela-anim" key={`${tela}-${projeto}`}>
             {projetos.erro && <Aviso texto={`API indisponível (${projetos.erro}). Rode: uv run --extra multimodal galaxies-api`} />}
@@ -153,4 +162,18 @@ export default function App() {
       </div>
     </div>
   )
+}
+
+// Sonda o run em andamento a cada 4 s: o agente roda em outro processo (MCP, CLI).
+function useAndamento(projeto: string) {
+  const [estado, setEstado] = useState<Andamento | null>(null)
+  useEffect(() => {
+    if (!projeto) return
+    let vivo = true
+    const sondar = () => api.andamento(projeto).then((a) => { if (vivo) setEstado(a) }).catch(() => { if (vivo) setEstado(null) })
+    sondar()
+    const t = setInterval(sondar, 4000)
+    return () => { vivo = false; clearInterval(t) }
+  }, [projeto])
+  return estado
 }

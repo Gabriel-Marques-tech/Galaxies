@@ -40,7 +40,7 @@ from galaxies.erros import (
 )
 from galaxies.experimentos import Ciclo, Experimento, Receita
 from galaxies.portas import Dependencias, identificar
-from galaxies.trace import Etapa, Run, executar, ler_trace, listar_runs
+from galaxies.trace import Etapa, Run, executar, ler_andamento, ler_trace, listar_runs
 
 LIMIAR_NOVOS_ABSOLUTO = 100  # vídeos novos para a rotina reotimizar
 LIMIAR_NOVOS_FRACAO = 0.02  # ou 2% da base, o que for maior
@@ -152,6 +152,11 @@ class Framework:
     def trace(self, projeto: str, run_id: str) -> list[Etapa]:
         with self._abrir_existente(projeto) as banco:
             return ler_trace(banco, run_id)
+
+    def andamento(self, projeto: str) -> dict | None:
+        """O run em execução agora (de qualquer processo: MCP, CLI), sem abrir o banco."""
+        self.obter_projeto(projeto)
+        return ler_andamento(self._pasta_do_projeto(projeto))
 
     # Serviços das próximas tasks. Assinaturas finais saem de cada uma.
 

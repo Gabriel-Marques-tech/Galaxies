@@ -81,6 +81,7 @@ export type Curva = {
 }
 
 export type Run = { id: string; operacao: string; inicio: string; status: 'rodando' | 'ok' | 'falhou' }
+export type Andamento = { run_id: string; operacao: string; inicio: string; etapas: number; decorrido_s: number; ultima: { nome: string; entrada: string } | null }
 export type Etapa = { nome: string; duracao_ms: number; entrada: unknown; saida: unknown; erro: string | null }
 
 async function pedir<T>(caminho: string, corpo?: unknown): Promise<T> {
@@ -133,5 +134,6 @@ export const api = {
   anotar: (pr: string, video_id: string, tipo: Nota['tipo'], nota: string) =>
     pedir<Nota>(`${p(pr)}/notas`, { video_id, tipo, nota }),
   runs: (pr: string) => pedir<Run[]>(`${p(pr)}/runs`),
+  andamento: (pr: string) => pedir<Andamento | null>(`${p(pr)}/andamento`),
   trace: (pr: string, run: string) => pedir<Etapa[]>(`${p(pr)}/runs/${run}/trace`),
 }

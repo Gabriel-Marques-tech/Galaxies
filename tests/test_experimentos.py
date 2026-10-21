@@ -13,6 +13,8 @@ from tests.fakes import (
     base_com_sinal,
 )
 
+pytestmark = pytest.mark.lento  # treina e otimiza de verdade (dezenas de segundos)
+
 BASE = base_com_sinal(canais=4, por_canal=100)
 VIDEO = {"titulo": "Você sabia disso?", "duracao_s": 30}
 
