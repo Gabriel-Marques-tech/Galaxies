@@ -523,14 +523,18 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 .analise .saudacao.compacta h2 { font-size: 28px; }
 .analise .saudacao.compacta p { font-size: 15px; margin-top: 2px; }
 .meio-analise { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-right: 4px; }
-.meio-analise:empty { flex: 1; }
-.rodape-analise { flex-shrink: 0; padding-bottom: 4px; }
-.analise .short-drop { height: min(440px, 44vh); width: auto; aspect-ratio: 9 / 16; }
-.analise .short-drop.pronto { height: min(440px, 44vh); }
+.meio-analise:empty { flex: 0 0 0; }
+.rodape-analise { flex: 1; min-height: 0; padding-bottom: 4px; display: flex; flex-direction: column; }
+.analise .palco { flex: 1; min-height: 0; margin-bottom: 10px; }
+.analise.com-resultados .meio-analise { flex: 1 1 60%; }
+.analise.com-resultados .rodape-analise { flex: 0 0 auto; }
+.analise.com-resultados .short-drop { height: 26vh; }
+.analise .short-drop { height: 100%; max-height: 720px; width: auto; aspect-ratio: 9 / 16; }
+.analise .short-drop.pronto { height: 100%; max-height: 720px; }
 .rodape-analise .compositor { padding: 10px 10px 8px 18px; }
 .rodape-analise .compositor textarea { font-size: 15px; }
 .rodape-analise > p.sub { margin: 0; }
-@media (max-height: 760px) { .analise .short-drop, .analise .short-drop.pronto { height: 38vh; } .analise .saudacao.compacta h2 { font-size: 24px; } }
+@media (max-height: 760px) { .analise .saudacao.compacta h2 { font-size: 24px; } }
 
 /* projetos: a página não rola; só o feed (e o painel de insights por dentro) */
 .tela-projetos { height: calc(100vh - 92px); overflow: hidden; gap: 8px; }
@@ -541,3 +545,13 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 .tela-projetos .feed { height: 100%; padding-top: 6px; }
 .tela-projetos .feed .cartao-projeto { height: min(470px, calc(100% - 72px)); }
 .tela-projetos .insights { max-height: 100%; }
+
+/* trace: grafo horizontal */
+.grafo { overflow-x: auto; overflow-y: hidden; padding: 0 12px; scrollbar-width: thin; }
+.grafo svg { display: block; }
+.rotulo-lane { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.rotulo-dia { fill: var(--texto-3); font-size: 11px; }
+.rotulo-no { fill: var(--texto-2); font-size: 11px; }
+.grafo .no circle { transition: r .15s; }
+.grafo .no:hover circle { r: 9; }
+.ponto-lane { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }

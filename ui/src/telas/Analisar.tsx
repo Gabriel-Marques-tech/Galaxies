@@ -30,7 +30,7 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
   }
 
   return (
-    <div className="analise">
+    <div className={`analise ${conversas.length || rodando ? 'com-resultados' : ''}`}>
       {!conversas.length && !rodando && (
         <div className="saudacao compacta">
           <h2>Antes de publicar</h2>
