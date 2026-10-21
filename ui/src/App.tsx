@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import { Aviso, Icone, useCarga } from './componentes'
+import { ondular } from './ondulacao'
 import Analisar from './telas/Analisar'
 import Erros from './telas/Erros'
 import Inicio from './telas/Inicio'
@@ -37,6 +38,8 @@ export default function App() {
   // Onda que atravessa a tela quando o modo muda (sai do botão do topo)
   const [onda, setOnda] = useState<'automatico' | 'cientista' | null>(null)
   const modoAnterior = useRef<string | undefined>(undefined)
+  const shell = useRef<HTMLDivElement>(null)
+  const chipModo = useRef<HTMLButtonElement>(null)
   const config = useCarga(() => (projeto ? api.projeto(projeto) : Promise.resolve(null)), [projeto])
   const experimentos = useCarga(() => (projeto ? api.experimentos(projeto) : Promise.resolve([])), [projeto, tela])
 
@@ -50,6 +53,10 @@ export default function App() {
     modoAnterior.current = config.dados?.modo
     if (!mudou) return
     setOnda(modo)
+    if (shell.current) {
+      const r = chipModo.current?.getBoundingClientRect()
+      ondular(shell.current, r ? r.left + r.width / 2 : window.innerWidth - 120, r ? r.top + r.height / 2 : 40)
+    }
     const t = setTimeout(() => setOnda(null), 1500)
     return () => clearTimeout(t)
   }, [config.dados?.modo])
@@ -65,9 +72,8 @@ export default function App() {
   const alternarModo = () => config.dados && api.definirModo(projeto, config.dados.modo === 'cientista' ? 'automatico' : 'cientista').then(config.recarregar)
 
   return (
-    <div className={`shell ${onda ? 'ressoando' : ''}`}>
+    <div className={`shell ${onda ? 'ressoando' : ''}`} ref={shell}>
       <div className="fundo-vivo" aria-hidden />
-      {onda && <div className="vidro" aria-hidden />}
       <aside className={`sidebar ${recolhida ? 'recolhida' : ''}`}>
         <div className="topo-sidebar">
           <button className="btn-icone" onClick={() => setRecolhida(!recolhida)} aria-label="Alternar menu"><Icone nome="menu" /></button>
@@ -117,7 +123,7 @@ export default function App() {
           {recolhida && <button className="btn-icone" onClick={() => setRecolhida(false)} aria-label="Abrir menu"><Icone nome="menu" /></button>}
           <h1>{titulo}</h1>
           {config.dados && tela !== 'projetos' && (
-            <button className="chip alternar" onClick={alternarModo}
+            <button className="chip alternar" ref={chipModo} onClick={alternarModo}
               title={`Clique para mudar para ${config.dados.modo === 'cientista' ? 'Automático' : 'Data Scientist'}`}>
               <Icone nome={config.dados.modo === 'cientista' ? 'person_search' : 'bolt'} />
               {config.dados.modo === 'cientista' ? 'Data Scientist' : 'Automático'} · {config.dados.alvo}
