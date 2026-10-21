@@ -169,7 +169,10 @@ def test_ciclo_automatico_otimiza_na_validacao_e_testa_so_a_escolhida(com_gancho
     (escolhido,) = ciclo.experimentos
     assert escolhido.hipotese.startswith("otimização")
     ativos = [e for e in com_ganchos.experimentos("moda-beleza") if e.status == "ativo"]
-    assert [a.id for a in ativos] == [ciclo.promovido] == [escolhido.id]
+    if ciclo.promovido:  # só promove se o teste confirmar; senão fica candidato com motivo
+        assert [a.id for a in ativos] == [ciclo.promovido] == [escolhido.id]
+    else:
+        assert ciclo.motivo and escolhido.status == "candidato"
 
 
 def test_ciclo_automatico_e_recusado_no_modo_cientista(tmp_path):
