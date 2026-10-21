@@ -50,7 +50,7 @@ export default function App() {
     modoAnterior.current = config.dados?.modo
     if (!mudou) return
     setOnda(modo)
-    const t = setTimeout(() => setOnda(null), 1300)
+    const t = setTimeout(() => setOnda(null), 1500)
     return () => clearTimeout(t)
   }, [config.dados?.modo])
   useEffect(() => {
@@ -65,7 +65,9 @@ export default function App() {
   const alternarModo = () => config.dados && api.definirModo(projeto, config.dados.modo === 'cientista' ? 'automatico' : 'cientista').then(config.recarregar)
 
   return (
-    <div className="shell">
+    <div className={`shell ${onda ? 'ressoando' : ''}`}>
+      <div className="fundo-vivo" aria-hidden />
+      {onda && <div className="vidro" aria-hidden />}
       <aside className={`sidebar ${recolhida ? 'recolhida' : ''}`}>
         <div className="topo-sidebar">
           <button className="btn-icone" onClick={() => setRecolhida(!recolhida)} aria-label="Alternar menu"><Icone nome="menu" /></button>
@@ -110,8 +112,7 @@ export default function App() {
         </div>
       </aside>
 
-      <div className={`principal ${onda ? 'ressoando' : ''}`}>
-        {onda && <div className={`onda ${onda}`} aria-hidden />}
+      <div className="principal">
         <div className="barra-topo">
           {recolhida && <button className="btn-icone" onClick={() => setRecolhida(false)} aria-label="Abrir menu"><Icone nome="menu" /></button>}
           <h1>{titulo}</h1>
