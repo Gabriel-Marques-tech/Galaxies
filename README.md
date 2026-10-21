@@ -58,6 +58,11 @@ timeline usa essa curva nas idades que o modelo não viu no treino. Relatório c
 [`docs/avaliacao.md`](docs/avaliacao.md), gerado por
 `uv run python -m galaxies relatorio moda-beleza`.
 
+## Documentação técnica
+
+Como cada módulo funciona, por dentro: [`docs/tecnico/`](docs/tecnico/README.md) (visão
+geral e regras fixas, dados, modelagem, serviços e interfaces, UI, operação e extensão).
+
 ## Setup
 
 ```bash
