@@ -154,6 +154,7 @@ class Ciclo(BaseModel):
     pulados: dict[str, str] = {}  # receita → motivo
     tentativas: list[dict] = []  # busca na validação (otimizacao.Tentativa)
     objetivo_validacao: float | None = None
+    pistas: list[dict] = []  # diagnóstico da base depois do ciclo (diagnostico.Pista)
 
 
 RECEITAS_PADRAO = {

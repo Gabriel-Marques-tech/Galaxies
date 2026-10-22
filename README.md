@@ -115,7 +115,10 @@ args = ["--directory", "/caminho/para/Galaxies", "run", "--extra", "multimodal",
 
 Fluxo típico pedido ao agente:
 
-0. `proximo_passo` antes de agir: o roadmap deduzido do estado do projeto por regras (qual
+0. `diagnostico` (também devolvido em `pistas` pelo `otimizar`): o que um cientista olharia
+   antes de culpar o modelo: ruído do setor (teto), controle fraco, canais rasos, setores
+   misturados, camadas incompletas, alvo mais estável, idade, reobservação. Cada pista traz
+   evidência e ação. `proximo_passo` antes de agir: o roadmap deduzido do estado do projeto por regras (qual
    tool chamar, por quê, alternativas). O agente só delibera quando a resposta vem marcada
    como `ambiguo` (decisão de custo ou escopo, ex.: processar mais ganchos).
 1. `criar_projeto` com setores, canais-semente, alvo (`likes` ou `views`) e `modo`.

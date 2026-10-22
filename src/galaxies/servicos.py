@@ -14,6 +14,7 @@ from galaxies import (
     camada_bruta,
     coleta,
     crescimento,
+    diagnostico,
     erros,
     experimentos,
     humano,
@@ -615,7 +616,18 @@ class Framework:
             tentativas=[t.model_dump() for t in busca.tentativas],
             objetivo_validacao=busca.objetivo_validacao,
             motivo=motivo,
+            pistas=[p.model_dump() for p in self.diagnostico(projeto, alvo).pistas],
         )
+
+    def diagnostico(self, projeto: str, alvo: str | None = None) -> diagnostico.Diagnostico:
+        """O que um cientista olharia antes de culpar o modelo: ruído do setor, controle
+        fraco, canais rasos, setores misturados, camadas incompletas, alvo alternativo,
+        idade, reobservação. Cada pista traz a evidência e a ação sugerida."""
+        config = self.obter_projeto(projeto)
+        alvo = alvo or config.alvo
+        with self._abrir_existente(projeto) as banco:
+            ativo = experimentos.ativo(banco, alvo)
+            return diagnostico.diagnosticar(banco, alvo, ativo, config.setores)
 
     # ------------------------------------------------------------ extrator vizinhos
 

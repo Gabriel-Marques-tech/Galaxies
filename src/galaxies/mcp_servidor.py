@@ -30,7 +30,10 @@ Gemini/Whisper: processar_ganchos(leve=True) → rotular_vizinhos (kNN sobre os 
 LLM já leu; avaliar_vizinhos mede a concordância) → receita com extrator 'vizinhos'.
 
 Antes de agir: proximo_passo diz o que o estado do projeto pede agora (regras, com motivo);
-siga-o, e só delibere quando ele devolver certeza='ambiguo'.
+siga-o, e só delibere quando ele devolver certeza='ambiguo'. Depois de otimizar, leia
+`pistas` (ou chame diagnostico): ganho baixo vs baseline pode ser teto do setor (ruído
+dentro do canal), controle fraco, canais rasos ou setores misturados. Pondere e explique ao
+usuário com os números; não culpe o modelo sem olhar o dado.
 
 Modelo: otimizar (job) busca a melhor receita na validação e testa só a escolhida. Use-o
 sempre que houver dados novos. Para testar uma ideia específica: experimentar (job) com
@@ -383,6 +386,14 @@ def criar_servidor(fw: Framework) -> ServidorGalaxies:
         vez por dia: a coleta é a primeira observação e cada rodada acrescenta outra; disso
         sai a curva de crescimento que corrige a timeline nas idades que o modelo não viu."""
         return _texto(fw.observar_recentes(projeto, dias_max))
+
+    @tool
+    def diagnostico(projeto: str, alvo: str | None = None) -> str:
+        """Pistas medidas na base antes de culpar o modelo: setor ruidoso (teto baixo),
+        controle fraco, canais rasos, setores misturados, camadas incompletas, alvo mais
+        estável, idade, reobservação. Cada pista traz evidência e ação. O otimizar devolve
+        as mesmas pistas em `pistas`: leia-as antes de decidir o próximo passo."""
+        return _texto(fw.diagnostico(projeto, alvo))
 
     @tool
     def proximo_passo(projeto: str) -> str:

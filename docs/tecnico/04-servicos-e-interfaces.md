@@ -37,6 +37,11 @@ atributos e previsão).
 **Produção**: `acompanhar(run_id, video_id)`, `atualizar_acompanhamentos`,
 `acompanhamentos`, `observar_recentes(dias_max)`, `crescimento(alvo)`.
 
+**Diagnóstico** (`diagnostico.py`): `diagnostico(projeto, alvo)` mede na base o que explica um
+ganho baixo antes de culpar o modelo (ruído dentro do canal, controle fraco, canais rasos,
+setores misturados, camadas incompletas, alvo alternativo, idade, reobservação) e devolve
+pistas com evidência e ação; o `otimizar` devolve as mesmas em `Ciclo.pistas`.
+
 **Roadmap**: `proximo_passo` (regras sobre o estado → ação, motivo, certeza `regra` ou
 `ambiguo`, alternativas) e `rotina` (reobserva, atualiza acompanhamentos, coleta vídeos
 novos e reotimiza se a base cresceu `LIMIAR_NOVOS_ABSOLUTO = 100` ou
