@@ -12,7 +12,14 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
   const [duracao, setDuracao] = useState(30)
   const [hora, setHora] = useState('18:00')
   const [short, setShort] = useState<Short | null>(null)
-  const [conversas, setConversas] = useState<Conversa[]>([])
+  const [conversas, setConversasBruto] = useState<Conversa[]>(() => {
+    try { return JSON.parse(sessionStorage.getItem(`analises:${projeto}`) ?? '[]') as Conversa[] } catch { return [] }
+  })
+  const setConversas = (f: (c: Conversa[]) => Conversa[]) => setConversasBruto((c) => {
+    const novo = f(c)
+    try { sessionStorage.setItem(`analises:${projeto}`, JSON.stringify(novo.slice(-5))) } catch { /* sem storage: só não lembra */ }
+    return novo
+  })
   const [rodando, setRodando] = useState(false)
   const canalEscolhido = canal || canais.dados?.[0]?.id || ''
   const nomeCanal = (id: string) => canais.dados?.find((c) => c.id === id)?.titulo ?? id
@@ -140,11 +147,37 @@ function Resultado({ a, alvo, projeto }: { a: Analise; alvo: string; projeto: st
   const p = a.previsao_7d
   return (
     <div className="pilha" style={{ minWidth: 0 }}>
-      <p style={{ margin: 0, fontSize: 16 }}>
-        Em 7 dias, o mais provável é <b>{compacto(p.q50)} {alvo}</b>: na metade dos casos fica entre {compacto(p.q25)} e {compacto(p.q75)}; é quase certo (80%) que fique entre {compacto(p.q10)} e {compacto(p.q90)}.
-        A chance de viralizar ({a.limite_viral}× a mediana do canal em {a.dias_viral} dias) é de <b>{pct(a.p_viral, false)}</b>.
-      </p>
-      {a.explicacao && <p className="sub" style={{ margin: 0 }}>{a.explicacao.split('. ').slice(2).join('. ')}</p>}
+      <div className="cartao avaliacao">
+        <div className="linha" style={{ gap: 10, alignItems: 'flex-start' }}>
+          <Icone nome={p.q50 >= a.mediana_canal * 1.3 ? 'trending_up' : p.q50 <= a.mediana_canal * 0.7 ? 'trending_down' : 'trending_flat'} className="destaque-icone" />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h3 style={{ margin: 0 }}>
+              {p.q50 >= a.mediana_canal * 1.3 ? 'Acima do normal do canal' : p.q50 <= a.mediana_canal * 0.7 ? 'Abaixo do normal do canal' : 'No normal do canal'}
+              <span className="sub"> · {compacto(p.q50)} {alvo} em 7 dias (canal costuma fazer {compacto(a.mediana_canal)})</span>
+            </h3>
+            <p style={{ margin: '6px 0 0', fontSize: 15 }}>
+              Na metade dos casos fica entre <b>{compacto(p.q25)} e {compacto(p.q75)}</b>; é quase certo (80%) que fique entre {compacto(p.q10)} e {compacto(p.q90)}.
+              Chance de viralizar ({a.limite_viral}× a mediana em {a.dias_viral} dias): <b>{pct(a.p_viral, false)}</b>.
+            </p>
+            {a.explicacao && <p className="sub" style={{ margin: '8px 0 0' }}>{a.explicacao}</p>}
+          </div>
+        </div>
+        {a.gancho && (
+          <div style={{ marginTop: 12 }}>
+            <div className="campo-texto"><span>O que se vê no gancho</span><span><TextoRico texto={a.gancho.descricao} /></span></div>
+            <div className="campo-texto"><span>O que se fala</span><span>{a.gancho.transcricao || '(sem fala)'}</span></div>
+          </div>
+        )}
+        {a.atributos && (
+          <div className="linha" style={{ flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+            {Object.entries(a.atributos).map(([id, r]) => {
+              const v = r as Record<string, unknown>
+              const texto = v.type === 'noul' ? (Number(v.noul) >= 0.5 ? 'sim' : 'não') : v.type === 'score' ? String(v.score) : String(v.choice ?? '')
+              return <span key={id} className="chip"><span className="mono">{id.replace(/_/g, ' ')}</span>: {texto}</span>
+            })}
+          </div>
+        )}
+      </div>
       <div className="grade-2">
         <div className="cartao">
           <h3>Timeline prevista</h3>
@@ -197,13 +230,6 @@ function Resultado({ a, alvo, projeto }: { a: Analise; alvo: string; projeto: st
         ))}
       </div>
 
-      {a.gancho && (
-        <div className="cartao contorno">
-          <h3>O que o modelo viu no gancho</h3>
-          <p style={{ margin: '4px 0' }}><TextoRico texto={a.gancho.descricao} /></p>
-          <p className="sub" style={{ margin: 0 }}>Fala: {a.gancho.transcricao || '(sem fala)'}</p>
-        </div>
-      )}
       <Publiquei projeto={projeto} runId={a.run_id} />
       <span className="sub mono">modelo {a.experimento_id} · run {a.run_id}</span>
     </div>

@@ -307,6 +307,8 @@ button.chip:hover { background: var(--superficie-3); }
 .destaque-icone { color: var(--primaria); font-size: 24px; }
 .t-cabecalho { border: 1px solid #8ab4f8; border-radius: 10px; padding: 10px 16px; width: fit-content; max-width: 100%; margin-bottom: 8px; }
 :root[data-theme='light'] .t-cabecalho { border-color: #1a73e8; }
+.cartao.avaliacao { border: 1px solid color-mix(in oklab, var(--primaria) 45%, transparent); box-shadow: 0 0 22px color-mix(in oklab, var(--primaria) 18%, transparent); }
+.cartao.avaliacao .campo-texto { margin-top: 6px; }
 .chances { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
 .chance { display: grid; grid-template-columns: minmax(150px, 1.2fr) 2fr 52px; gap: 12px; align-items: center; font-size: 13.5px; }
 .chance .trilho { height: 10px; background: var(--superficie-4); border-radius: 5px; overflow: hidden; }
