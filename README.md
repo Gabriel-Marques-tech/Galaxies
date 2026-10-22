@@ -43,7 +43,7 @@ mais recentes). Baseline = média do canal.
 | moda-beleza | 153 / 54,9k | likes | **−24,4%** | +13% | 58,9% | 73% | [`docs/avaliacao.md`](docs/avaliacao.md) |
 | saude | 42 / 9,4k | likes | **−23,0%** | +8% | 57,1% | 83% | [`docs/avaliacao-saude.md`](docs/avaliacao-saude.md) |
 | fitness | 30 / 13,2k | likes | −7,3% | +3% | 52% | 83% | [`docs/avaliacao-fitness.md`](docs/avaliacao-fitness.md) |
-| automotivo | 45 / 18,3k | likes | **−19,8%** | +2% | 58,6% | 81% | [`docs/avaliacao-automotivo.md`](docs/avaliacao-automotivo.md) |
+| automotivo | 37 / 15,9k (canais em português) | likes | **−19,8%** | +2% | 58,6% | 81% | [`docs/avaliacao-automotivo.md`](docs/avaliacao-automotivo.md) |
 
 Automotivo foi criado em 40 minutos na noite da entrega (busca de canais → coleta → texto →
 otimizar), com jobs rodando dentro da API enquanto a UI seguia em uso; só metadados já
