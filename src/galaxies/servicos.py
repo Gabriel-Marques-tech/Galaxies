@@ -616,7 +616,21 @@ class Framework:
         promovido = None
         with self._abrir_existente(projeto) as banco:
             ativo = experimentos.ativo(banco, alvo)
-        motivo = experimentos.motivo_para_nao_promover(exp, ativo)
+        ganho_ativo = None
+        if ativo is not None and not experimentos.mesma_base(exp, ativo):
+            # a base mudou desde que o ativo foi medido: reavalia a receita dele no teste atual
+            with self._abrir_existente(projeto) as banco, executar(banco, "reavaliar_ativo") as ex:
+                with ex.etapa("avaliar", {"experimento": ativo.id}) as registro:
+                    _, res, _ = experimentos.avaliar(
+                        banco,
+                        alvo,
+                        ativo.receita,
+                        atrib.ler_definicoes(banco),
+                        self._extrator_atual(),
+                    )
+                    ganho_ativo = res.ganho
+                    registro["saida"] = {"ganho": res.ganho, "assinatura": res.assinatura_base}
+        motivo = experimentos.motivo_para_nao_promover(exp, ativo, ganho_ativo)
         if self.obter_projeto(projeto).modo == "automatico" and motivo is None:
             promovido = self.promover(projeto, exp.id).id
         return Ciclo(

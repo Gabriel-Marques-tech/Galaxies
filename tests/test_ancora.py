@@ -30,3 +30,21 @@ def test_ancora_movel_exige_historico(tmp_path):
     framework = projeto(tmp_path)
     with pytest.raises(ErroGalaxies, match="historico"):
         framework.experimentar("moda-beleza", {"camadas": ["metadados"], "ancora": "movel"})
+
+
+def test_trava_reavalia_o_ativo_quando_a_base_muda(tmp_path):
+    from galaxies.experimentos import mesma_base, motivo_para_nao_promover
+
+    framework = projeto(tmp_path)
+    a = framework.experimentar("moda-beleza", {"camadas": ["metadados"]})
+    b = framework.experimentar("moda-beleza", {"camadas": ["metadados", "historico"]})
+    assert a.resultado.assinatura_base and mesma_base(a, b)
+
+    # candidato só de metadados (sem exigência de camadas extras): a referência decide
+    c = framework.experimentar(
+        "moda-beleza", {"camadas": ["metadados"], "params": {"num_leaves": 7}}
+    )
+    assert motivo_para_nao_promover(c, a, ganho_ativo=c.resultado.ganho - 0.05) is None
+    assert "não supera" in (
+        motivo_para_nao_promover(c, a, ganho_ativo=c.resultado.ganho + 0.05) or ""
+    )

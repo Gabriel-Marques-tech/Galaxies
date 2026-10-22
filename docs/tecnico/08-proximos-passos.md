@@ -78,8 +78,9 @@ Necessário para a apresentação e para o uso real, em ordem:
    `rotular_vizinhos`; `otimizar`): é o que pode fazer a camada multimodal entrar no modelo.
    Zero cota; ~4 h de máquina. Depois, `calcular_atributos` com Gemini em 250/dia para
    adensar as sementes.
-3. **Reavaliar o ativo quando a base muda** (trava compara ganhos de testes diferentes):
-   guardar a assinatura do split em cada experimento e reavaliar o ativo antes de comparar.
+3. ~~Reavaliar o ativo quando a base muda~~ feito em 22/10: cada experimento guarda
+   `assinatura_base` (tamanho da base + início do teste); se a do candidato difere da do
+   ativo, o `otimizar` reavalia a receita do ativo no teste atual antes de comparar.
 4. **Rotina diária ligada** (cron ou agente): `rotina` em cada projeto; `observar_recentes`
    é o que calibra a timeline nos primeiros dias.
 5. **Automotivo em português**: a busca trouxe canais internacionais (carwow, Forrest's);

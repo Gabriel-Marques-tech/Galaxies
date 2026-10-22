@@ -82,6 +82,8 @@ class Resultado(BaseModel):
     cobertura_bruta: float = 0.0
     cobertura_80: float = 0.0
     cobertura_50: float = 0.0  # faixa "provável" (q25–q75 derivada da calibrada)
+    # Qual teste mediu isto: só experimentos com a mesma assinatura são comparáveis.
+    assinatura_base: str = ""
     calibracao: float = 1.0  # quanto a faixa foi alargada
     confianca_sobre_controle: float = 0.5  # bootstrap pareado: P(modelo bate o controle)
     melhora_sobre_controle: float = 0.0  # 1 - MAE do modelo / MAE do controle
@@ -124,8 +126,12 @@ def escolher(feitos: list["Experimento"]) -> "Experimento | None":
 TOLERANCIA_VS_ATIVO = 0.0  # só substitui o ativo quem o supera no teste; troca lateral não vale
 
 
-def motivo_para_nao_promover(exp: "Experimento", ativo: "Experimento | None") -> str | None:
-    """Trava da promoção automática: o teste é a palavra final, não a validação."""
+def motivo_para_nao_promover(
+    exp: "Experimento", ativo: "Experimento | None", ganho_ativo: float | None = None
+) -> str | None:
+    """Trava da promoção automática: o teste é a palavra final, não a validação.
+    `ganho_ativo`: ganho do modelo ativo reavaliado no teste atual, quando a base mudou desde
+    que ele foi medido (experimentos de bases diferentes não se comparam)."""
     r = exp.resultado
     if r.ganho <= 0:
         return "não supera a média do canal no teste"
@@ -139,12 +145,22 @@ def motivo_para_nao_promover(exp: "Experimento", ativo: "Experimento | None") ->
             f"no teste, o ganho sobre o controle é indistinguível de acaso (confiança "
             f"{r.confianca_sobre_controle:.0%}, mínimo {CONFIANCA_MINIMA:.0%}); fica como candidato"
         )
-    if ativo is not None and r.ganho <= ativo.resultado.ganho - TOLERANCIA_VS_ATIVO:
-        return (
-            f"ganho no teste ({r.ganho:+.1%}) não supera o modelo ativo "
-            f"({ativo.resultado.ganho:+.1%}); troca lateral não vale o risco; fica como candidato"
-        )
+    if ativo is not None:
+        referencia = ativo.resultado.ganho if ganho_ativo is None else ganho_ativo
+        if r.ganho <= referencia - TOLERANCIA_VS_ATIVO:
+            base = "" if ganho_ativo is None else " reavaliado na base atual"
+            return (
+                f"ganho no teste ({r.ganho:+.1%}) não supera o modelo ativo{base} "
+                f"({referencia:+.1%}); troca lateral não vale o risco; fica como candidato"
+            )
     return None
+
+
+def mesma_base(a: "Experimento", b: "Experimento") -> bool:
+    return (
+        bool(a.resultado.assinatura_base)
+        and a.resultado.assinatura_base == b.resultado.assinatura_base
+    )
 
 
 class Ciclo(BaseModel):
@@ -221,7 +237,7 @@ def avaliar(
     if ("base", alvo) not in cache:
         cache[("base", alvo)] = m.montar_base(banco, alvo)
     base = cache[("base", alvo)]
-    treino, teste, _ = m.dividir(base)
+    treino, teste, split = m.dividir(base)
     if em == "validacao":
         treino, teste, _ = m.dividir(treino)
     setores = sorted(base["setor"].unique())
@@ -269,6 +285,7 @@ def avaliar(
         cobertura_bruta=_cobertura(q, real, 1.0),
         cobertura_80=_cobertura(q, real, k),
         cobertura_50=_cobertura(q, real, k, estreita=True),
+        assinatura_base=f"{len(base)}@{split.inicio_teste.date()}" if em == "teste" else "",
         calibracao=k,
         ganho_por_atributo=_ganho_por_permutacao(
             modelos, x.loc[te], sub_te, canais, escolhidos, resultado_modelo.mae
