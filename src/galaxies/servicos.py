@@ -1072,7 +1072,13 @@ class Framework:
                     "chances": [c.model_dump() for c in resultado["chances"]],
                 }
             with ex.etapa("explicar") as registro:
+                resultado["explicacao"] = (
+                    resultado["explicacao"].replace(" likes ", f" {config.alvo} ", 1)
+                    if config.alvo != "likes"
+                    else resultado["explicacao"]
+                )
                 registro["saida"] = {
+                    "explicacao": resultado["explicacao"],
                     "fatores": [f.model_dump() for f in resultado["fatores"]],
                     "sugestoes": [s.model_dump() for s in resultado["sugestoes"]],
                 }

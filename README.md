@@ -58,6 +58,19 @@ timeline usa essa curva nas idades que o modelo não viu no treino. Relatório c
 [`docs/avaliacao.md`](docs/avaliacao.md), gerado por
 `uv run python -m galaxies relatorio moda-beleza`.
 
+## O que o case pede e onde está
+
+| pedido (TAPI) | onde |
+|---|---|
+| base própria pela YouTube Data API (5k–15k Shorts, 60+ canais) | 46.393 Shorts, 113 canais, 2,8k unidades de cota (`coletar`, `descobrir_canais`) |
+| alvo em log relativo à mediana do canal; vencer a média do canal em split temporal | −24,5% (likes) e −20,5% (views) de erro vs média do canal, teste = 20% mais recentes, validação separada; CV aleatório não existe no código |
+| camada multimodal (frames + SigLIP + Whisper + VLM) com ganho medido sobre só-metadados | 474 ganchos processados; ganho medido nas mesmas linhas: +0,5% a +3,5% sobre o controle, sem poder estatístico (n=103–190); o agente diz quantos ganchos faltam (~2,9k) |
+| atributos em formato Jev (choice/score/noul) | 15 de gancho (LLM) + 4 de título (Laya); Jev oficial com adaptador pronto |
+| explicabilidade: SHAP + explicação em linguagem natural sem o LLM inventar números | `fatores` (contribuições SHAP) e `explicacao` montada só com os números; o agente MCP reescreve, não calcula |
+| consumo como ferramenta (função Python + MCP) | `Framework` (serviços) + servidor MCP com ~40 tools; UI é extra |
+| LightGBM quantílico, Pydantic | sim; faixas de 50% e 80% calibradas |
+| LangGraph, FastMCP, MLflow, GPU | não usados: o agente é o cliente MCP (sem grafo próprio), `mcp` 2.x faz o papel do FastMCP, o registro de experimentos e o trace ficam no DuckDB do projeto (reproduzível e sem serviço extra), e tudo rodou em CPU |
+
 ## Documentação técnica
 
 Como cada módulo funciona, por dentro: [`docs/tecnico/`](docs/tecnico/README.md) (visão

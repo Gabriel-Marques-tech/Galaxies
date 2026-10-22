@@ -99,6 +99,74 @@ class Analise(BaseModel):
     sugestoes: list[Sugestao] = []
     gancho: GanchoAnalisado | None = None
     atributos: dict | None = None
+    explicacao: str = ""  # texto montado só com os números acima; nenhum LLM inventa valor
+
+
+NOMES_DAS_FEATURES = {
+    "hora": "hora de publicação",
+    "dia_semana": "dia da semana",
+    "duracao_s": "duração",
+    "titulo_caracteres": "tamanho do título",
+    "titulo_palavras": "palavras no título",
+    "titulo_pergunta": "título em pergunta",
+    "titulo_numero": "número no título",
+    "titulo_exclamacao": "exclamação no título",
+    "titulo_maiusculas": "maiúsculas no título",
+    "titulo_emojis": "emojis no título",
+    "hashtags": "hashtags",
+    "descricao_caracteres": "tamanho da descrição",
+    "tags": "quantidade de tags",
+    "log_inscritos": "tamanho do canal",
+    "log_mediana_canal": "nível típico do canal",
+    "posts_por_30d": "frequência de postagem",
+    "setor": "setor",
+    "hist_media_10": "últimos 10 vídeos do canal",
+    "hist_media_30": "últimos 30 vídeos do canal",
+    "hist_desvio_10": "variação recente do canal",
+    "hist_tendencia": "tendência do canal",
+    "hist_n": "histórico disponível",
+    "hist_dias_desde_ultimo": "dias desde o último vídeo",
+    "hist_posts_7d": "vídeos nos últimos 7 dias",
+    "hist_rel_10": "momento do canal vs. o normal dele",
+}
+
+
+def nome_da_feature(coluna: str) -> str:
+    if coluna in NOMES_DAS_FEATURES:
+        return NOMES_DAS_FEATURES[coluna]
+    if coluna.startswith(("texto_", "siglip_")):
+        return "conteúdo do texto" if coluna.startswith("texto_") else "visual do gancho"
+    return coluna.replace("=", ": ").replace("_", " ")
+
+
+def explicar(alvo: str, mediana: float, p7: "Faixa", chances: list, fatores: list) -> str:
+    """Explicação em linguagem natural montada só com os números do modelo. Nenhum valor é
+    inventado: um LLM pode reescrever este texto, não os números."""
+
+    def k(v: float) -> str:
+        return f"{v / 1000:.1f}k" if v >= 1000 else f"{v:.0f}"
+
+    frases = [
+        f"O modelo espera cerca de {k(p7.q50)} {alvo} em 7 dias: na metade dos casos entre "
+        f"{k(p7.q25)} e {k(p7.q75)}, e é quase certo (80%) que fique entre {k(p7.q10)} e "
+        f"{k(p7.q90)}. A mediana do canal é {k(mediana)}."
+    ]
+    if chances:
+        frases.append(
+            "Chances em 30 dias: " + "; ".join(f"{c.evento} {c.prob:.0%}" for c in chances) + "."
+        )
+    a_favor = [f for f in fatores if f.impacto > 0][:3]
+    contra = [f for f in fatores if f.impacto < 0][:3]
+    if a_favor:
+        frases.append(
+            "Puxam para cima: " + ", ".join(nome_da_feature(f.feature) for f in a_favor) + "."
+        )
+    if contra:
+        frases.append(
+            "Puxam para baixo: " + ", ".join(nome_da_feature(f.feature) for f in contra) + "."
+        )
+    frases.append("Os fatores são associações aprendidas na base, não causas.")
+    return " ".join(frases)
 
 
 def linha_do_video(video: VideoNovo, canal: dict, setor: str, inscritos: int) -> pd.DataFrame:
@@ -241,9 +309,11 @@ def prever(
         Fator(feature=x7.columns[i], valor=float(x7.iloc[0, i]), impacto=float(contrib[i]))
         for i in ordem[:N_FATORES]
     ]
+    p7 = Faixa(**timeline[i7].model_dump(exclude={"dias"}))
     return {
         "mediana_canal": mediana,
-        "previsao_7d": Faixa(**timeline[i7].model_dump(exclude={"dias"})),
+        "explicacao": explicar(meta.get("alvo", "likes"), mediana, p7, chances, fatores),
+        "previsao_7d": p7,
         "timeline": timeline,
         "limite_viral": limite_viral,
         "p_viral": chances[-1].prob,

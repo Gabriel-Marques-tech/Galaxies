@@ -129,3 +129,13 @@ def test_avaliacao_mede_o_acerto_em_pares_do_mesmo_canal(treinado):
 
     assert exp.resultado.baseline.acerto_pares == 0.5  # média do canal não ordena nada
     assert exp.resultado.modelo.acerto_pares > 0.6
+
+
+def test_explicacao_usa_so_os_numeros_do_modelo(treinado):
+    a = treinado.analisar("moda-beleza", PERGUNTA, canal_id="canal2")
+
+    assert a.explicacao.startswith("O modelo espera cerca de ")
+    assert "não causas" in a.explicacao
+    for valor in (a.previsao_7d.q50, a.previsao_7d.q10, a.previsao_7d.q90):
+        esperado = f"{valor / 1000:.1f}k" if valor >= 1000 else f"{valor:.0f}"
+        assert esperado in a.explicacao

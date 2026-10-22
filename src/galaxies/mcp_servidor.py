@@ -335,7 +335,8 @@ def criar_servidor(fw: Framework) -> ServidorGalaxies:
         """Prevê um Short ainda não publicado de um canal da base. video: titulo, descricao,
         tags, duracao_s, publicar_em (ISO), fonte (arquivo local ou link, opcional: com ela
         roda o gancho e os atributos). Devolve faixa em 7 dias, timeline 1/3/7/14/30 dias,
-        P(viral) e os fatores que mais pesaram."""
+        P(viral), os fatores que mais pesaram (SHAP) e `explicacao`: texto montado só com
+        esses números. Ao explicar ao usuário, reescreva o texto; nunca invente valores."""
         return _texto(fw.analisar(projeto, video, canal_id))
 
     @tool

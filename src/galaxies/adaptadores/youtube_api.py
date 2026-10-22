@@ -72,7 +72,12 @@ class YouTubeAPI:
             id=",".join(ids),
             maxHeight=1080,
         )
-        return [self._video(item) for item in dados.get("items", [])]
+        return self._videos_de(dados.get("items", []))
+
+    @classmethod
+    def _videos_de(cls, itens: list[dict]) -> list[dict]:
+        # Estreia agendada ou live vem sem duration: não é Short, pula o item.
+        return [cls._video(i) for i in itens if "duration" in i.get("contentDetails", {})]
 
     @staticmethod
     def _video(item: dict) -> dict:

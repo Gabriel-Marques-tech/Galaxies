@@ -68,6 +68,7 @@ export type Analise = {
   sugestoes: { mudanca: string; previsto_7d: number; ganho: number; p_viral: number; delta_p_viral: number }[]
   chances: { evento: string; multiplo: number; prob: number }[]
   gancho: { descricao: string; transcricao: string } | null
+  explicacao: string
   atributos: Record<string, Record<string, unknown>> | null
 }
 export type VideoNovo = { titulo: string; descricao?: string; tags?: string[]; duracao_s?: number; publicar_em?: string; fonte?: string }
