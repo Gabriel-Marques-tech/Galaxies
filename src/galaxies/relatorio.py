@@ -171,12 +171,10 @@ def gerar(
         "",
         "- Previsão antes de publicar tem teto natural: algoritmo e acaso pesam muito. O modelo "
         "serve para expectativa, triagem e priorizar testes, não para cravar números.",
-        "- O período de teste derivou: os vídeos novos rendem ~18% menos em relação à mediana "
-        "histórica do canal do que o treino sugeria. Não é crescimento pendente (a curva "
-        "observada mostra likes estáveis a partir de ~10 dias). Com a âncora fixa a faixa de "
-        "80% cobria ~75% no teste; a âncora móvel (média dos últimos 10 vídeos do canal) segue "
-        "a deriva e fechou a cobertura. O ciclo de reotimização com a base atualizada continua "
-        "sendo o remédio de longo prazo.",
+        "- A base é uma foto só: o período de teste pode render diferente da mediana histórica "
+        "do canal (deriva). A âncora móvel (média dos últimos 10 vídeos do canal) segue esse "
+        "movimento; a reobservação diária mede a curva de crescimento; e a reotimização com a "
+        "base atualizada é o remédio de longo prazo.",
         "- Sugestões vêm de associação aprendida na base, não de causa.",
         "- Camadas de gancho e atributos cobrem só os vídeos com camada bruta; comparações nelas "
         "usam menos linhas de teste.",
