@@ -29,6 +29,11 @@ class ItemRevisao(BaseModel):
     discordancia: bool = False  # extratores discordam: caso difícil, vai primeiro na fila
 
 
+class ContagemRevisao(BaseModel):
+    pendentes: int  # vídeos com resposta e ainda sem revisão neste atributo
+    discordantes: int  # desses, em quantos os extratores divergem
+
+
 class Concordancia(BaseModel):
     atributo_id: str
     revisados: int
@@ -94,6 +99,16 @@ def amostra(
         )
     itens.sort(key=lambda i: not i.discordancia)  # estável: mantém a ordem espalhada
     return itens[:n]
+
+
+def contagem(
+    banco: duckdb.DuckDBPyConnection, atributo: atrib.Atributo, extrator: str | None
+) -> ContagemRevisao:
+    """Quantos vídeos esperam revisão neste atributo e em quantos os extratores discordam."""
+    itens = amostra(banco, atributo, extrator, n=10**9)
+    return ContagemRevisao(
+        pendentes=len(itens), discordantes=sum(1 for i in itens if i.discordancia)
+    )
 
 
 def _discordam(atributo: atrib.Atributo, a: float | str, b: float | str) -> bool:

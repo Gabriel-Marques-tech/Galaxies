@@ -26,15 +26,15 @@ ganchos, Laya como extrator do gancho respondeu "sim" a quase tudo (rosto 96%, f
 produto 93%) e piorou o modelo em todos os pares; por isso ficou de reserva nesse papel
 (`ATRIBUTOS_MODELO=laya`) e ganhou o papel de volume.
 
-## Resultados (moda e beleza, 46.393 Shorts de 113 canais)
+## Resultados (moda e beleza, 54.880 Shorts de 153 canais)
 
 Modelos encontrados pelo agente com `otimizar`, medidos uma vez no teste (os 20% de vídeos
 mais recentes). Baseline = média do canal.
 
 | Alvo | Receita escolhida pelo agente | Erro vs baseline | Acerto A vs B no canal | Faixa de 80% cobre |
 |---|---|---|---|---|
-| likes | metadados + histórico, âncora móvel | **−24,5%** (MAE 0,652 vs 0,863) | 58,7% (acaso: 50%) | 80% |
-| views | metadados + histórico, âncora móvel | **−20,5%** (MAE 0,680 vs 0,856) | 54% | 74% |
+| likes | metadados + histórico, âncora móvel | **−24,4%** (MAE 0,649 vs 0,859) | 58,9% (acaso: 50%) | 73% |
+| views | metadados + histórico + texto, âncora móvel | **−21,1%** (MAE 0,690 vs 0,874) | 56,7% | 75% |
 
 Camadas de gancho e atributos (474 ganchos, 190 no teste) ainda não entram no modelo final:
 com 22 linhas na validação não há poder estatístico, e o agente agora diz quantos vídeos
@@ -45,10 +45,11 @@ vem depois da validação).
 
 O que isso quer dizer na prática: o erro típico cai de ~2,4× para ~1,9×; de dois vídeos
 do mesmo canal, o modelo aponta o melhor em ~58% dos casos; a faixa prometida de 80% contém
-80% dos resultados reais em likes (74% em views). A âncora móvel foi o que fechou a faixa:
-o período de teste rende ~18% abaixo da mediana histórica dos canais, e o alvo relativo à
-média dos últimos 10 vídeos segue esse movimento (com a mediana fixa, likes ficavam em
-−19,7% e a faixa em 75%). Serve para expectativa, triagem e priorizar testes, não
+73–75% dos resultados reais (na base anterior, de 113 canais, chegou a 80% em likes). A
+âncora móvel foi o maior ganho: o período de teste rende ~18% abaixo da mediana histórica
+dos canais, e o alvo relativo à média dos últimos 10 vídeos segue esse movimento (com a
+mediana fixa, likes ficavam em −19,7%). Os números acima são da base expandida em 21/10
+(+40 canais, +8,5k Shorts); o teste tem 3,0k linhas. Serve para expectativa, triagem e priorizar testes, não
 para cravar números.
 
 A base é uma foto só, então o framework **reobserva os vídeos recentes** (`observar_recentes`,
@@ -62,8 +63,8 @@ timeline usa essa curva nas idades que o modelo não viu no treino. Relatório c
 
 | pedido (TAPI) | onde |
 |---|---|
-| base própria pela YouTube Data API (5k–15k Shorts, 60+ canais) | 46.393 Shorts, 113 canais, 2,8k unidades de cota (`coletar`, `descobrir_canais`) |
-| alvo em log relativo à mediana do canal; vencer a média do canal em split temporal | −24,5% (likes) e −20,5% (views) de erro vs média do canal, teste = 20% mais recentes, validação separada; CV aleatório não existe no código |
+| base própria pela YouTube Data API (5k–15k Shorts, 60+ canais) | 54.880 Shorts, 153 canais, 4,3k unidades de cota (`coletar`, `descobrir_canais`) |
+| alvo em log relativo à mediana do canal; vencer a média do canal em split temporal | −24,4% (likes) e −21,1% (views) de erro vs média do canal, teste = 20% mais recentes, validação separada; CV aleatório não existe no código |
 | camada multimodal (frames + SigLIP + Whisper + VLM) com ganho medido sobre só-metadados | 474 ganchos processados; ganho medido nas mesmas linhas: +0,5% a +3,5% sobre o controle, sem poder estatístico (n=103–190); o agente diz quantos ganchos faltam (~2,9k) |
 | atributos em formato Jev (choice/score/noul) | 15 de gancho (LLM) + 4 de título (Laya); Jev oficial com adaptador pronto |
 | explicabilidade: SHAP + explicação em linguagem natural sem o LLM inventar números | `fatores` (contribuições SHAP) e `explicacao` montada só com os números; o agente MCP reescreve, não calcula |

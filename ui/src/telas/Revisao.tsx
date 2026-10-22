@@ -8,6 +8,7 @@ export default function Revisao({ projeto }: { projeto: string }) {
   const [atributo, setAtributo] = useState('')
   const [itens, setItens] = useState<ItemRevisao[] | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+  const [contagem, setContagem] = useState<{ pendentes: number; discordantes: number } | null>(null)
   const definicao = atributos.dados?.find((a) => a.id === atributo)
   const porAtributo = new Map((concordancia.dados ?? []).map((c) => [c.atributo_id, c]))
 
@@ -18,6 +19,7 @@ export default function Revisao({ projeto }: { projeto: string }) {
     if (!atributo) return
     setItens(null)
     api.amostra(projeto, atributo).then(setItens).catch((e: Error) => setErro(e.message))
+    api.contagemRevisao(projeto, atributo).then(setContagem).catch(() => setContagem(null))
   }, [projeto, atributo])
 
   const responder = (item: ItemRevisao, valor: unknown) =>
@@ -51,6 +53,11 @@ export default function Revisao({ projeto }: { projeto: string }) {
             <div>
               <h3 style={{ margin: 0, fontWeight: 500 }}>{definicao.instrucoes}</h3>
               <span className="sub">{definicao.tipo === 'noul' ? 'sim ou não' : definicao.tipo === 'choice' ? 'escolha uma opção' : 'escala'}</span>
+              {contagem && (
+                <span className="sub" style={{ display: 'block', marginTop: 4 }}>
+                  {contagem.pendentes} vídeos a revisar · {contagem.discordantes} com extratores discordando ({contagem.pendentes ? Math.round(contagem.discordantes / contagem.pendentes * 100) : 0}%). A fila mostra as discordâncias primeiro: são os casos que o seu voto decide.
+                </span>
+              )}
             </div>
           )}
           {!itens && <div className="carregando" />}

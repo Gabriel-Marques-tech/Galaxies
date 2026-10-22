@@ -176,6 +176,10 @@ def criar_app(fw: Framework) -> FastAPI:
     def amostra(projeto: str, atributo_id: str, n: int = 20, extrator: str | None = None):
         return _json(fw.amostra_para_revisao(projeto, atributo_id, n, extrator))
 
+    @app.get("/projetos/{projeto}/revisao/{atributo_id}/contagem")
+    def contagem_revisao(projeto: str, atributo_id: str, extrator: str | None = None):
+        return _json(fw.contagem_revisao(projeto, atributo_id, extrator))
+
     @app.post("/projetos/{projeto}/revisao/{atributo_id}/{video_id}")
     def revisar(projeto: str, atributo_id: str, video_id: str, valor: Any = Body(embed=True)):
         fw.revisar(projeto, video_id, atributo_id, valor)

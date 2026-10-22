@@ -132,6 +132,7 @@ export const api = {
   promover: (pr: string, id: string) => pedir<Experimento>(`${p(pr)}/experimentos/${id}/promover`, {}),
   decidir: (pr: string, id: string, aprovar: boolean, nota: string) =>
     pedir<Experimento>(`${p(pr)}/experimentos/${id}/decisao`, { aprovar, nota }),
+  contagemRevisao: (pr: string, atributo: string) => pedir<{ pendentes: number; discordantes: number }>(`${p(pr)}/revisao/${atributo}/contagem`),
   amostra: (pr: string, atributo: string, n = 10) => pedir<ItemRevisao[]>(`${p(pr)}/revisao/${atributo}?n=${n}`),
   revisar: (pr: string, atributo: string, video: string, valor: unknown) =>
     pedir<{ ok: boolean }>(`${p(pr)}/revisao/${atributo}/${video}`, { valor }),

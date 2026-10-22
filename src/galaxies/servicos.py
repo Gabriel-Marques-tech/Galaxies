@@ -440,6 +440,13 @@ class Framework:
             atributo = self._atributo(banco, atributo_id)
             return humano.amostra(banco, atributo, extrator or self._extrator_atual(), n)
 
+    def contagem_revisao(
+        self, projeto: str, atributo_id: str, extrator: str | None = None
+    ) -> humano.ContagemRevisao:
+        with self._abrir_existente(projeto) as banco:
+            atributo = self._atributo(banco, atributo_id)
+            return humano.contagem(banco, atributo, extrator or self._extrator_atual())
+
     def revisar(self, projeto: str, video_id: str, atributo_id: str, valor) -> None:
         with self._abrir_existente(projeto) as banco:
             atributo = self._atributo(banco, atributo_id)
