@@ -11,6 +11,7 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
   const [canal, setCanal] = useState('')
   const [duracao, setDuracao] = useState(30)
   const [hora, setHora] = useState('18:00')
+  const [data, setData] = useState('')  // vazio = hoje; data real para avaliar um vídeo já publicado
   const [short, setShort] = useState<Short | null>(null)
   const [conversas, setConversasBruto] = useState<Conversa[]>(() => {
     try { return JSON.parse(sessionStorage.getItem(`analises:${projeto}`) ?? '[]') as Conversa[] } catch { return [] }
@@ -26,7 +27,7 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
 
   const enviar = () => {
     if (!titulo.trim() || !canalEscolhido || rodando) return
-    const publicar = new Date(); const [h, m] = hora.split(':').map(Number)
+    const publicar = data ? new Date(`${data}T00:00:00`) : new Date(); const [h, m] = hora.split(':').map(Number)
     publicar.setHours(h, m, 0, 0)
     const pergunta = titulo
     setRodando(true); setTitulo('')
@@ -73,6 +74,7 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
             <select value={canalEscolhido} onChange={(e) => setCanal(e.target.value)} aria-label="Canal">
               {canais.dados?.map((c) => <option key={c.id} value={c.id}>{c.titulo} · {c.setor}</option>)}
             </select>
+            <input type="date" value={data} onChange={(e) => setData(e.target.value)} aria-label="Data de publicação (vazio = hoje)" title="Data de publicação: vazio = hoje. Para um vídeo já publicado, use a data real: o histórico do canal é o daquele dia." />
             <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} aria-label="Horário de publicação" />
             <select value={duracao} onChange={(e) => setDuracao(Number(e.target.value))} aria-label="Duração">
               {[15, 30, 45, 60, 90, 120, 180].map((d) => <option key={d} value={d}>{d}s</option>)}
