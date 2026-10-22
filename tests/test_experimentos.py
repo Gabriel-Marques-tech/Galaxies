@@ -185,7 +185,7 @@ def test_ciclo_automatico_e_recusado_no_modo_cientista(tmp_path):
         framework.ciclo_automatico("moda-beleza")
 
 
-def _exp(camadas, ganho, melhora):
+def _exp(camadas, ganho, melhora, confianca=0.99):
     from galaxies.experimentos import Experimento, Receita, Resultado
     from galaxies.modelagem import Metricas, agora
 
@@ -202,6 +202,7 @@ def _exp(camadas, ganho, melhora):
             controle_metadados=metricas,
             modelo=metricas,
             ganho=ganho,
+            confianca_sobre_controle=confianca,
             melhora_sobre_controle=melhora,
         ),
         criado_em=agora(),
@@ -314,11 +315,12 @@ def test_otimizar_nao_promove_receita_que_so_brilha_na_validacao():
 
     ativo = _exp(["metadados"], ganho=0.19, melhora=0.0)
     fraco = _exp(["metadados", "atributos"], ganho=0.069, melhora=0.005)
-    bom = _exp(["metadados", "historico"], ganho=0.185, melhora=0.04)
+    ruido = _exp(["metadados", "historico"], ganho=0.20, melhora=0.04, confianca=0.6)
+    lateral = _exp(["metadados", "historico"], ganho=0.185, melhora=0.04)
+    bom = _exp(["metadados", "historico"], ganho=0.21, melhora=0.04)
 
     assert "controle" in motivo_para_nao_promover(fraco, ativo)
+    assert "indistinguível" in motivo_para_nao_promover(ruido, ativo)
+    assert "não supera o modelo ativo" in motivo_para_nao_promover(lateral, ativo)
     assert motivo_para_nao_promover(bom, ativo) is None
-    assert "abaixo do modelo ativo" in motivo_para_nao_promover(
-        _exp(["metadados", "historico"], ganho=0.10, melhora=0.04), ativo
-    )
-    assert motivo_para_nao_promover(bom, None) is None
+    assert motivo_para_nao_promover(lateral, None) is None

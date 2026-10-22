@@ -6,7 +6,7 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 
 - 46.393 Shorts de 113 canais (YouTube Data API. 2.807 unidades de cota gratuita).
 - 474 ganchos (primeiros 5s) com frames, descrição, fala e embedding.
-- Atributos por extrator: laya (1151), @cf/meta/llama-3.1-8b-instruct-fast (474).
+- Atributos por extrator: laya (9398), @cf/meta/llama-3.1-8b-instruct-fast (474).
 
 ## Regras fixas (o agente não altera)
 
@@ -28,9 +28,9 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 | id | receita | n teste | MAE | só meta | baseline | vs baseline | vs controle | A vs B | faixa 80% |
 |---|---|---|---|---|---|---|---|---|---|
 | `de689c3026` | metadados | 2041 | 0.740 | 0.740 | 0.863 | +14.3% | +0.0% | 50.0% | — |
-| `9710bd4332` | metadados + multimodal | 103 | 1.021 | 1.045 | 1.114 | +8.4% | +0.0% | 50.0% | — |
-| `66d17cd226` | metadados + atributos | 103 | 1.043 | 1.045 | 1.114 | +6.3% | +0.0% | 50.0% | — |
-| `0a14455e7b` | metadados + multimodal + atributos | 103 | 1.009 | 1.045 | 1.114 | +9.4% | +0.0% | 50.0% | — |
+| `9710bd4332` | metadados + multimodal | 103 | 1.021 | 1.045 | 1.114 | +8.4% | +0.0% | — | — |
+| `66d17cd226` | metadados + atributos | 103 | 1.043 | 1.045 | 1.114 | +6.3% | +0.0% | — | — |
+| `0a14455e7b` | metadados + multimodal + atributos | 103 | 1.009 | 1.045 | 1.114 | +9.4% | +0.0% | — | — |
 | `abea55d121` | metadados | 2041 | 0.748 | 0.748 | 0.863 | +13.3% | +0.0% | 58.5% | — |
 | `768ddace71` | metadados + multimodal | 103 | 1.021 | 1.045 | 1.114 | +8.4% | +2.3% | 60.6% | — |
 | `748469517b` | metadados + atributos (llama-3.1-8b-instruct-fast) | 103 | 1.043 | 1.045 | 1.114 | +6.3% | +0.1% | 50.7% | — |
@@ -41,6 +41,7 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 | `275468c32d` | metadados + historico + texto + multimodal + atributos (llama-3.1-8b-instruct-fast) | 190 | 0.909 | 0.914 | 0.977 | +6.9% | +0.5% | 58.7% | 74.2% |
 | `1db5263c59` | metadados + historico | 2041 | 0.700 | 0.740 | 0.863 | +19.0% | +5.4% | 58.5% | 74.2% |
 | `6e7808ded3` | metadados + historico, âncora móvel **← ativo** | 2041 | 0.652 | 0.738 | 0.863 | +24.5% | +11.8% | 58.7% | 80.1% |
+| `988e19ff1a` | metadados + historico, âncora móvel | 2041 | 0.658 | 0.735 | 0.863 | +23.8% | +10.4% | 58.6% | 79.8% |
 
 ## Views
 
@@ -62,24 +63,23 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 | `977ae6bc8a` | metadados + historico + texto | 2062 | 0.697 | 0.732 | 0.856 | +18.5% | +4.8% | 57.3% | 72.2% |
 | `c149994b1f` | metadados + historico + texto | 2062 | 0.697 | 0.726 | 0.856 | +18.6% | +4.1% | 56.7% | 71.5% |
 | `db8c565807` | metadados + historico, âncora móvel **← ativo** | 2062 | 0.680 | 0.728 | 0.856 | +20.5% | +6.5% | 54.4% | 73.8% |
+| `1ee4ea6866` | metadados + historico, âncora móvel | 2062 | 0.686 | 0.725 | 0.856 | +19.8% | +5.4% | 52.8% | 74.3% |
 
 ## Busca do agente (likes, validação)
 
 | origem | camadas | melhora sobre o controle | ganho real? | n validação |
 |---|---|---|---|---|
-| padrão: metadados | metadados | +0.0% | indistinguível (50%) | 2144 |
-| padrão: historico | metadados + historico | +1.1% | sim (94%) | 2144 |
-| padrão: texto | metadados + texto | -0.1% | indistinguível (42%) | 2144 |
-| padrão: historico+texto | metadados + historico + texto | +0.9% | indistinguível (88%) | 2144 |
+| padrão: metadados | metadados | +0.0% | indistinguível (50%) | 2172 |
+| padrão: historico | metadados + historico | +2.4% | sim (100%) | 2172 |
+| padrão: texto | metadados + texto | +1.0% | sim (98%) | 2172 |
+| padrão: titulo | metadados + historico + titulo | +2.4% | sim (100%) | 2172 |
+| padrão: movel | metadados + historico | +3.9% | sim (100%) | 2172 |
+| padrão: historico+texto | metadados + historico + texto | +3.1% | sim (100%) | 2172 |
 | padrão: historico+texto+multimodal | metadados + historico + texto + multimodal | — | sem poder estatístico: 22 linhas na validação (mínimo 300); precisa de ~2891 vídeos com essas camadas para medir a difer | 22 |
 | padrão: completo | metadados + historico + texto + multimodal + atributos | — | sem poder estatístico: 22 linhas na validação (mínimo 300); precisa de ~2891 vídeos com essas camadas para medir a difer | 22 |
 | padrão: completo | metadados + historico + texto + multimodal + atributos | — | sem poder estatístico: 22 linhas na validação (mínimo 300); precisa de ~2891 vídeos com essas camadas para medir a difer | 22 |
-| min_data_in_leaf=10 | metadados + historico | +1.4% | sim (98%) | 2144 |
-| meia_vida_dias=730 | metadados + historico | +0.5% | indistinguível (75%) | 2144 |
-| rodadas=1000 | metadados + historico | +0.8% | indistinguível (87%) | 2144 |
-| meia_vida_dias=180 | metadados + historico | -0.5% | indistinguível (26%) | 2144 |
-| learning_rate=0.0167 | metadados + historico | +0.8% | indistinguível (89%) | 2144 |
 | com multimodal | metadados + historico + multimodal | — | sem poder estatístico: 22 linhas na validação (mínimo 300); precisa de ~2891 vídeos com essas camadas para medir a difer | 22 |
+| min_data_in_leaf=40 | metadados + historico | +3.3% | sim (100%) | 2172 |
 
 ## Crescimento observado
 

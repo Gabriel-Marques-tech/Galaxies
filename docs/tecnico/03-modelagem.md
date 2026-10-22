@@ -81,8 +81,9 @@ receita, hipótese, resultado, status (`candidato`, `aguardando_aprovacao`, `ati
 `aposentado`, `rejeitado`) e `nota_humana`.
 
 **Trava** (`motivo_para_nao_promover(exp, ativo)`), nesta ordem: ganho ≤ 0; camadas extras
-com melhora < `MARGEM_SOBRE_CONTROLE = 1%`; confiança < `CONFIANCA_MINIMA = 90%`; ganho
-mais de `TOLERANCIA_VS_ATIVO = 2 pontos` abaixo do ativo. `ativar` aposenta o anterior.
+com melhora < `MARGEM_SOBRE_CONTROLE = 1%`; confiança < `CONFIANCA_MINIMA = 90%`; ganho no
+teste que não supera o do ativo (uma troca lateral não vale o risco; aprendido quando o
+`otimizar` substituiu −24,5% por −23,8% dentro de uma tolerância de 2 pontos). `ativar` aposenta o anterior.
 
 ## `otimizacao.py` — a busca do agente
 

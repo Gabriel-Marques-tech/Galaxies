@@ -121,7 +121,7 @@ def escolher(feitos: list["Experimento"]) -> "Experimento | None":
     return max(simples, key=lambda e: e.resultado.ganho) if simples else None
 
 
-TOLERANCIA_VS_ATIVO = 0.02  # novo pode ficar até 2 pontos abaixo do ativo vs baseline
+TOLERANCIA_VS_ATIVO = 0.0  # só substitui o ativo quem o supera no teste; troca lateral não vale
 
 
 def motivo_para_nao_promover(exp: "Experimento", ativo: "Experimento | None") -> str | None:
@@ -139,10 +139,10 @@ def motivo_para_nao_promover(exp: "Experimento", ativo: "Experimento | None") ->
             f"no teste, o ganho sobre o controle é indistinguível de acaso (confiança "
             f"{r.confianca_sobre_controle:.0%}, mínimo {CONFIANCA_MINIMA:.0%}); fica como candidato"
         )
-    if ativo is not None and r.ganho < ativo.resultado.ganho - TOLERANCIA_VS_ATIVO:
+    if ativo is not None and r.ganho <= ativo.resultado.ganho - TOLERANCIA_VS_ATIVO:
         return (
-            f"ganho no teste ({r.ganho:+.1%}) fica abaixo do modelo ativo "
-            f"({ativo.resultado.ganho:+.1%}); fica como candidato"
+            f"ganho no teste ({r.ganho:+.1%}) não supera o modelo ativo "
+            f"({ativo.resultado.ganho:+.1%}); troca lateral não vale o risco; fica como candidato"
         )
     return None
 

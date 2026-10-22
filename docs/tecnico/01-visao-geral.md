@@ -78,7 +78,7 @@ adaptadores só implementam portas. `ambiente.framework()` monta tudo a partir d
 | baseline = média do canal; controle = só metadados com hiperparâmetros padrão, nas mesmas linhas | `experimentos.avaliar` | toda receita é comparada com os dois |
 | métricas: MAE no log, acerto A vs B em pares do mesmo canal, Spearman no canal, cobertura real das faixas | `modelagem.medir`, `experimentos._cobertura` | erro, ranking e honestidade da faixa |
 | bootstrap pareado modelo × controle (1000 reamostras) | `modelagem.confianca_pareada` | separa ganho real de ruído |
-| trava de promoção: ganho > 0; camadas extras exigem ≥ 1% sobre o controle e confiança ≥ 90% no teste; não cair mais de 2 pontos abaixo do ativo | `experimentos.motivo_para_nao_promover` | a validação propõe, o teste decide |
+| trava de promoção: ganho > 0; camadas extras exigem ≥ 1% sobre o controle e confiança ≥ 90% no teste; só substitui o ativo quem o supera no teste (troca lateral não vale) | `experimentos.motivo_para_nao_promover` | a validação propõe, o teste decide |
 
 ## Glossário
 
