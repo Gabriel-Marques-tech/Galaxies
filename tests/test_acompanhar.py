@@ -67,3 +67,17 @@ def test_comparacao_tem_a_faixa_provavel_dentro_da_quase_certa(pronto):
     assert u.previsto_q10 <= u.previsto_q25 <= u.previsto_q50 <= u.previsto_q75 <= u.previsto_q90
     assert u.dentro_da_faixa_50 == (u.previsto_q25 <= u.real <= u.previsto_q75)
     assert not u.dentro_da_faixa_50 or u.dentro_da_faixa  # a provável está dentro da quase certa
+
+
+def test_historico_de_analises_traz_previsao_explicacao_e_acompanhamento(pronto):
+    analise = pronto.analisar("moda-beleza", VIDEO, canal_id="canal1")
+    publicado = next(v for v in pronto.videos("moda-beleza") if v.canal_id == "canal1")
+    pronto.acompanhar("moda-beleza", analise.run_id, publicado.id)
+
+    (item,) = pronto.analises("moda-beleza")
+
+    assert item["run_id"] == analise.run_id and item["status"] == "ok"
+    assert item["titulo"] == VIDEO["titulo"] and item["canal_id"] == "canal1"
+    assert item["previsao_7d"]["dias"] == 7 and item["previsao_7d"]["q50"] > 0
+    assert item["explicacao"].startswith("O modelo espera")
+    assert item["acompanhamento"]["video_id"] == publicado.id

@@ -10,19 +10,21 @@ import Projetos from './telas/Projetos'
 import Revisao from './telas/Revisao'
 import Terminal from './telas/Terminal'
 import Trace from './telas/Trace'
+import Analises from './telas/Analises'
 
-export type Tela = 'projetos' | 'inicio' | 'modelos' | 'analisar' | 'revisao' | 'erros' | 'trace' | 'terminal'
+export type Tela = 'projetos' | 'inicio' | 'modelos' | 'analisar' | 'analises' | 'revisao' | 'erros' | 'trace' | 'terminal'
 
 const NAV: { id: Tela; nome: string; icone: string; titulo: string }[] = [
   { id: 'inicio', nome: 'Início', icone: 'home', titulo: 'Visão geral' },
   { id: 'analisar', nome: 'Analisar vídeo', icone: 'auto_awesome', titulo: 'Analisar vídeo' },
+  { id: 'analises', nome: 'Vídeos analisados', icone: 'history', titulo: 'Vídeos analisados' },
   { id: 'modelos', nome: 'Modelos', icone: 'model_training', titulo: 'Modelos e experimentos' },
   { id: 'revisao', nome: 'Revisão de atributos', icone: 'fact_check', titulo: 'Revisão de atributos' },
   { id: 'erros', nome: 'Erros', icone: 'troubleshoot', titulo: 'Erros e triagem' },
   { id: 'trace', nome: 'Trace', icone: 'account_tree', titulo: 'Trace' },
 ]
 
-const TELAS: Tela[] = ['projetos', 'inicio', 'modelos', 'analisar', 'revisao', 'erros', 'trace', 'terminal']
+const TELAS: Tela[] = ['projetos', 'inicio', 'modelos', 'analisar', 'analises', 'revisao', 'erros', 'trace', 'terminal']
 
 function lerTema(): 'dark' | 'light' {
   try { return (localStorage.getItem('tema') as 'dark' | 'light') ?? 'dark' } catch { return 'dark' }
@@ -151,6 +153,7 @@ export default function App() {
                 {tela === 'inicio' && <Inicio projeto={projeto} config={config.dados} ir={ir} aoMudarModo={config.recarregar} />}
                 {tela === 'analisar' && <Analisar projeto={projeto} config={config.dados} />}
                 {tela === 'modelos' && <Modelos projeto={projeto} config={config.dados} aoMudar={experimentos.recarregar} />}
+                {tela === 'analises' && <Analises projeto={projeto} alvo={config.dados.alvo} />}
                 {tela === 'revisao' && <Revisao projeto={projeto} />}
                 {tela === 'erros' && <Erros projeto={projeto} />}
                 {tela === 'trace' && <Trace projeto={projeto} />}

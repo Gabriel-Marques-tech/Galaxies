@@ -73,6 +73,14 @@ export type Analise = {
 }
 export type VideoNovo = { titulo: string; descricao?: string; tags?: string[]; duracao_s?: number; publicar_em?: string; fonte?: string }
 
+export type AnaliseResumo = {
+  run_id: string; inicio: string; status: 'rodando' | 'ok' | 'falhou'
+  titulo: string | null; canal_id: string | null; canal: string | null; duracao_s: number | null; fonte: string | null
+  experimento: string | null; previsao_7d: (Faixa & { dias: number }) | null
+  chances: { evento: string; multiplo: number; prob: number }[]
+  explicacao: string | null; gancho: string | null; fala: string | null; erro: string | null
+  acompanhamento: Acompanhamento | null
+}
 export type Acompanhamento = {
   video_id: string; run_id: string; canal_id: string; alvo: string; publicado_em: string
   observacoes: { quando: string; idade_dias: number; likes: number | null; views: number | null }[]
@@ -122,6 +130,7 @@ export const api = {
     if (!r.ok) throw new Error(dados.erro ?? r.statusText)
     return dados as { fonte: string; nome: string }
   },
+  analises: (pr: string) => pedir<AnaliseResumo[]>(`${p(pr)}/analises`),
   acompanhar: (pr: string, run_id: string, video_id: string) => pedir<Acompanhamento>(`${p(pr)}/acompanhar`, { run_id, video_id }),
   atualizarAcompanhamentos: (pr: string) => pedir<{ atualizados: number; sem_dados: string[] }>(`${p(pr)}/acompanhamentos/atualizar`, {}),
   acompanhamentos: (pr: string) => pedir<ListaAcompanhamentos>(`${p(pr)}/acompanhamentos`),

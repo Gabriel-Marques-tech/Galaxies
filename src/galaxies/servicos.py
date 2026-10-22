@@ -798,6 +798,48 @@ class Framework:
             atualizados=len(vistos), sem_dados=[v for v in pendentes if v not in vistos]
         )
 
+    def analises(self, projeto: str, limite: int = 50) -> list[dict]:
+        """Histórico das análises do projeto (runs de analisar), com previsão, explicação, o
+        que o gancho mostrou e, se o vídeo foi acompanhado, previsto × real."""
+        with self._abrir_existente(projeto) as banco:
+            runs = [r for r in listar_runs(banco) if r.operacao == "analisar"][-limite:]
+            acomp = {a.run_id: a for a in acompanhamento.listar(banco).videos}
+            canais = dict(banco.execute("SELECT id, titulo FROM canais").fetchall())
+            saida = []
+            for run in reversed(runs):
+                etapas = {e.nome: e for e in ler_trace(banco, run.id)}
+                prever = etapas.get("prever")
+                entrada = (prever.entrada if prever else {}) or {}
+                previsao = (prever.saida if prever else {}) or {}
+                explicar = (etapas.get("explicar").saida if etapas.get("explicar") else {}) or {}
+                descrever = etapas.get("descrever_gancho")
+                transcrever = etapas.get("transcrever_gancho")
+                erro = next((e.erro for e in etapas.values() if e.erro), None)
+                timeline = previsao.get("timeline") or []
+                p7 = next((p for p in timeline if p.get("dias") == 7), None)
+                a = acomp.get(run.id)
+                saida.append(
+                    {
+                        "run_id": run.id,
+                        "inicio": run.inicio,
+                        "status": run.status,
+                        "titulo": entrada.get("titulo"),
+                        "canal_id": entrada.get("canal_id"),
+                        "canal": canais.get(entrada.get("canal_id")),
+                        "duracao_s": entrada.get("duracao_s"),
+                        "fonte": entrada.get("fonte"),
+                        "experimento": previsao.get("experimento"),
+                        "previsao_7d": p7,
+                        "chances": previsao.get("chances") or [],
+                        "explicacao": explicar.get("explicacao"),
+                        "gancho": descrever.saida if descrever else None,
+                        "fala": transcrever.saida if transcrever else None,
+                        "erro": erro,
+                        "acompanhamento": a.model_dump() if a else None,
+                    }
+                )
+            return saida
+
     def acompanhamentos(self, projeto: str) -> acompanhamento.ListaAcompanhamentos:
         """Previsto × real dos vídeos acompanhados, com cobertura da faixa e erro típico."""
         with self._abrir_existente(projeto) as banco:
@@ -1186,7 +1228,9 @@ class Framework:
                     registro["saida"] = titulo_resp
             curva = crescimento.curva(banco, config.alvo)
             idade_minima = crescimento.idade_minima_vista(banco)
-            with ex.etapa("prever", video.model_dump(mode="json")) as registro:
+            with ex.etapa(
+                "prever", {**video.model_dump(mode="json"), "canal_id": canal_id}
+            ) as registro:
                 resultado = prever(
                     modelos,
                     meta,

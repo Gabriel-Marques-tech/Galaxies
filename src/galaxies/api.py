@@ -124,6 +124,10 @@ def criar_app(fw: Framework) -> FastAPI:
     ):
         return _json(fw.comparar(projeto, video_a, video_b, canal_id))
 
+    @app.get("/projetos/{projeto}/analises")
+    def analises(projeto: str, limite: int = 50):
+        return _json(fw.analises(projeto, limite))
+
     @app.post("/projetos/{projeto}/acompanhar")
     def acompanhar(projeto: str, run_id: str = Body(), video_id: str = Body()):
         return _json(fw.acompanhar(projeto, run_id, video_id))
