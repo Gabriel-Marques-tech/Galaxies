@@ -8,6 +8,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+import duckdb
 from fastapi import Body, FastAPI, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -45,6 +46,18 @@ def criar_app(fw: Framework) -> FastAPI:
     @app.exception_handler(ValueError)
     def _valor_invalido(_: Request, erro: ValueError):
         return JSONResponse(status_code=400, content={"erro": str(erro)})
+
+    @app.exception_handler(duckdb.IOException)
+    def _banco_ocupado(_: Request, erro: duckdb.IOException):
+        # outro processo (CLI, MCP) está escrevendo neste projeto: um escritor por vez
+        if "lock" in str(erro).lower():
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "erro": "projeto ocupado por um job em outro processo; tente em instantes"
+                },
+            )
+        return JSONResponse(status_code=500, content={"erro": str(erro)})
 
     # ------------------------------------------------------------ projeto
 

@@ -149,7 +149,7 @@ export default function App() {
               <Projetos projetos={projetos.dados} abrir={abrirProjeto} aoCriar={projetos.recarregar} />
             )}
             {tela !== 'projetos' && projeto && config.erro && (
-              <Aviso texto={`Projeto "${projeto}" indisponível agora: ${config.erro}. Se um job (otimizar, coleta) estiver rodando nele, espere terminar ou escolha outro projeto em Projetos.`} />
+              <Aviso texto={`Projeto "${projeto}": ${config.erro}. Enquanto um job roda nele por fora da API, escolha outro projeto em Projetos; volta sozinho quando o job acabar.`} />
             )}
             {tela !== 'projetos' && projeto && config.dados && (
               <>
