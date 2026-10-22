@@ -7,6 +7,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
   const [aberto, setAberto] = useState<string | null>(null)
   const [vista, setVista] = useState<'simples' | 'avancada'>(config.modo === 'cientista' ? 'avancada' : 'simples')
   const [acaoErro, setAcaoErro] = useState<string | null>(null)
+  const buscas = useCarga(() => api.buscas(projeto), [projeto])  // hooks sempre antes dos returns
   const agir = (p: Promise<unknown>) =>
     p.then(() => { recarregar(); aoMudar(); setAcaoErro(null) }).catch((e: Error) => setAcaoErro(e.message))
 
@@ -18,7 +19,6 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
   const pendentes = dados.filter((e) => e.status === 'aguardando_aprovacao')
   const selecionado = dados.find((e) => e.id === aberto)
   const ordenados = [...dados].reverse()
-  const buscas = useCarga(() => api.buscas(projeto), [projeto])
 
   return (
     <div className="pilha">
