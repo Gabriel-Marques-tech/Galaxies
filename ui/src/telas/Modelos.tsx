@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { api, type Experimento, type Projeto, receitaTexto } from '../api'
+import { api, type Busca, type Experimento, type Projeto, receitaTexto } from '../api'
 import { Aviso, BarrasMae, ChipStatus, Dica, Icone, Metrica, num, pct, useCarga, Vazio, pctOu } from '../componentes'
 
 export default function Modelos({ projeto, config, aoMudar }: { projeto: string; config: Projeto; aoMudar: () => void }) {
@@ -18,6 +18,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
   const pendentes = dados.filter((e) => e.status === 'aguardando_aprovacao')
   const selecionado = dados.find((e) => e.id === aberto)
   const ordenados = [...dados].reverse()
+  const buscas = useCarga(() => api.buscas(projeto), [projeto])
 
   return (
     <div className="pilha">
@@ -42,6 +43,8 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
           <button className={vista === 'avancada' ? 'ativo' : ''} onClick={() => setVista('avancada')} role="radio" aria-checked={vista === 'avancada'}><Icone nome="query_stats" /> Avançada</button>
         </div>
       </div>
+
+      {buscas.dados?.map((b) => <BuscaDoAgente key={b.alvo} b={b} vista={vista} />)}
 
       <div className="cartao" style={{ padding: '8px 8px' }}>
         <div className="rolagem-x">
@@ -176,6 +179,47 @@ function Painel({ e, fechar, promover, decidir }: {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// O que o agente tentou antes de escolher: só a escolhida vai ao teste e vira modelo; as
+// outras ficam aqui, com o motivo de terem ficado de fora.
+function BuscaDoAgente({ b, vista }: { b: Busca; vista: 'simples' | 'avancada' }) {
+  const medidas = b.tentativas.filter((t) => t.objetivo !== null)
+  const semPoder = b.tentativas.length - medidas.length
+  const reais = medidas.filter((t) => (t.confianca ?? 0) >= 0.9).length
+  const melhor = medidas.reduce<typeof medidas[number] | null>((m, t) => (m === null || (t.objetivo ?? -1) > (m.objetivo ?? -1) ? t : m), null)
+  return (
+    <div className="cartao">
+      <div className="linha" style={{ gap: 10 }}>
+        <Icone nome="travel_explore" className="destaque-icone" />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h3 style={{ margin: 0 }}>Busca do agente · {b.alvo}</h3>
+          <p className="descricao" style={{ margin: '4px 0 0' }}>
+            Testou <b>{b.tentativas.length} receitas</b> na validação ({new Date(b.inicio).toLocaleDateString('pt-BR')}): {reais} com ganho real sobre só-metadados, {medidas.length - reais} indistinguíveis de acaso{semPoder ? `, ${semPoder} sem poder estatístico` : ''}.
+            {melhor && <> A melhor foi <b>{melhor.origem}</b> ({melhor.objetivo !== null ? `${melhor.objetivo >= 0 ? '+' : ''}${(melhor.objetivo * 100).toFixed(1)}%` : '—'}); só ela foi ao teste e virou o modelo{b.escolhido ? ` ${b.escolhido}` : ''}.</>}
+          </p>
+        </div>
+      </div>
+      {vista === 'avancada' && (
+        <div className="rolagem-x" style={{ marginTop: 10 }}>
+          <table className="tabela">
+            <thead><tr><th>origem</th><th>camadas</th><th className="n">vs controle (validação)</th><th>ganho real?</th><th className="n">n</th></tr></thead>
+            <tbody>
+              {b.tentativas.map((t, i) => (
+                <tr key={i}>
+                  <td className="mono">{t.origem}</td>
+                  <td>{receitaTexto(t.receita)}</td>
+                  <td className="n">{t.objetivo === null ? '—' : `${t.objetivo >= 0 ? '+' : ''}${(t.objetivo * 100).toFixed(1)}%`}</td>
+                  <td>{t.objetivo === null ? <span className="sub">{t.erro.slice(0, 90)}</span> : t.confianca === null ? '—' : (t.confianca >= 0.9 ? <span className="bom-t">sim ({Math.round(t.confianca * 100)}%)</span> : <span className="sub">indistinguível ({Math.round(t.confianca * 100)}%)</span>)}</td>
+                  <td className="n">{t.n_validacao}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

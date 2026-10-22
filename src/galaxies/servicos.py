@@ -980,11 +980,12 @@ class Framework:
         with self._abrir_existente(projeto) as banco:
             return crescimento.curva(banco, alvo or config.alvo)
 
-    def relatorio(self, projeto: str) -> str:
-        """Relatório de avaliação em Markdown, reproduzível a partir do banco."""
+    def buscas(self, projeto: str) -> list[dict]:
+        """A última busca do agente por alvo: cada receita tentada na validação, com objetivo,
+        confiança e o motivo de ter ficado de fora. É o que o 'Modelos' não mostra sozinho."""
         config = self.obter_projeto(projeto)
         exps = self.experimentos(projeto)
-        otimizacoes = []
+        buscas: list[dict] = []
         with self._abrir_existente(projeto) as banco:
             for run in reversed(listar_runs(banco)):
                 if run.operacao != "otimizar" or run.status != "ok":
@@ -996,8 +997,25 @@ class Framework:
                 ]
                 inicio = run.inicio if run.inicio.tzinfo else run.inicio.replace(tzinfo=UTC)
                 alvo = next((x.alvo for x in exps if x.criado_em >= inicio), config.alvo)
-                if tentativas and alvo not in {a for a, _ in otimizacoes}:
-                    otimizacoes.append((alvo, tentativas))
+                if tentativas and alvo not in {b["alvo"] for b in buscas}:
+                    escolhido = next((x.id for x in exps if x.criado_em >= inicio), None)
+                    buscas.append(
+                        {
+                            "alvo": alvo,
+                            "run_id": run.id,
+                            "inicio": inicio,
+                            "escolhido": escolhido,
+                            "tentativas": tentativas,
+                        }
+                    )
+        return buscas
+
+    def relatorio(self, projeto: str) -> str:
+        """Relatório de avaliação em Markdown, reproduzível a partir do banco."""
+        config = self.obter_projeto(projeto)
+        exps = self.experimentos(projeto)
+        otimizacoes = [(b["alvo"], b["tentativas"]) for b in self.buscas(projeto)]
+        with self._abrir_existente(projeto) as banco:
             curvas = {alvo: crescimento.curva(banco, alvo) for alvo in ("likes", "views")}
             idade_minima = crescimento.idade_minima_vista(banco)
         return relatorio_md.gerar(
