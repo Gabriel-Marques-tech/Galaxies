@@ -36,6 +36,20 @@ mais recentes). Baseline = média do canal.
 | likes | metadados + histórico, âncora móvel | **−24,4%** (MAE 0,649 vs 0,859) | 58,9% (acaso: 50%) | 73% |
 | views | metadados + histórico + texto, âncora móvel | **−21,1%** (MAE 0,690 vs 0,874) | 56,7% | 75% |
 
+### Replicação por setor (mesma régua, 21/10/2026)
+
+| projeto | canais / Shorts | alvo | erro vs média do canal | sobre o controle | A vs B | faixa 80% | relatório |
+|---|---|---|---|---|---|---|---|
+| moda-beleza | 153 / 54,9k | likes | **−24,4%** | +13% | 58,9% | 73% | [`docs/avaliacao.md`](docs/avaliacao.md) |
+| saude | 42 / 9,4k | likes | **−23,0%** | +8% | 57,1% | 83% | [`docs/avaliacao-saude.md`](docs/avaliacao-saude.md) |
+| fitness | 30 / 13,2k | likes | −7,3% | +3% | 52% | 83% | [`docs/avaliacao-fitness.md`](docs/avaliacao-fitness.md) |
+
+Fitness e saúde começaram como um projeto só (−12,4%). O `diagnostico` apontou setores
+misturados (saúde errava mais que fitness) e canais rasos; separados, saúde ficou quase no
+nível de moda e fitness mostrou ser ruído (likes dependem pouco do canal e do título: só
+metadados fica a 4% do baseline). O framework não inventa acerto onde o dado não tem, e acha
+onde tem. Cada projeto novo custa 30–40 min e ~1–3k unidades de cota.
+
 Camadas de gancho e atributos (474 ganchos, 190 no teste) ainda não entram no modelo final:
 com 22 linhas na validação não há poder estatístico, e o agente agora diz quantos vídeos
 faltam (~2.900 com gancho) antes de insistir. Toda comparação com o controle traz um

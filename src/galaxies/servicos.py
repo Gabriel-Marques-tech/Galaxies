@@ -149,8 +149,15 @@ class Framework:
                 ).fetchall()
             )
             return {
-                "canais": contar("SELECT count(*) FROM canais"),
-                "videos": contar("SELECT count(*) FROM videos"),
+                "canais": contar(
+                    "SELECT count(*) FROM canais "
+                    "WHERE id NOT IN (SELECT id FROM excluidos WHERE tipo = 'canal')"
+                ),
+                "videos": contar(
+                    "SELECT count(*) FROM videos "
+                    "WHERE id NOT IN (SELECT id FROM excluidos WHERE tipo = 'video') "
+                    "AND canal_id NOT IN (SELECT id FROM excluidos WHERE tipo = 'canal')"
+                ),
                 "ganchos": contar("SELECT count(*) FROM camada_bruta"),
                 "falhas": contar("SELECT count(*) FROM falhas"),
                 "excluidos": contar("SELECT count(*) FROM excluidos"),
