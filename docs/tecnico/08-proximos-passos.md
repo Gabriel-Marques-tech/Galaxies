@@ -34,6 +34,11 @@ tentar, com estimativa de ganho e esforço. É o roadmap técnico depois da entr
   sugestões de atributos novos.
 - **Bootstrap iid com dados agrupados.** As linhas vêm de ~100 canais; reamostrar linhas
   superestima a confiança ("98%" para +1,4%). Reamostrar canais é o correto.
+- **Experimentos de bases diferentes não são comparáveis.** Quando a base cresce (coleta
+  nova), o split muda e o teste muda; o `ganho` do modelo ativo foi medido em outro teste. A
+  trava compara `ganho` do candidato com `ganho` do ativo como se fossem a mesma régua.
+  Correto: ao detectar base nova, reavaliar o ativo no teste atual antes de comparar (ou
+  guardar a assinatura do split em cada experimento e só comparar iguais).
 - **Teto de 300 por canal** descarta ~70% dos 46k Shorts e, por manter os mais recentes,
   empurra canais prolíficos para o teste. Peso `300/n_canal` em vez de truncar preservaria a
   intenção sem jogar dado fora. Decisão de regra fixa: humana.

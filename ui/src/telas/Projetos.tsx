@@ -61,6 +61,7 @@ export default function Projetos({ projetos, abrir, aoCriar }: {
 
 function CartaoProjeto({ c, emFoco, abrir, criar }: { c: Cartao; emFoco: boolean; abrir: () => void; criar: () => void }) {
   const ganho = c.ativo?.resultado.ganho
+  const minis = useCarga(() => api.miniaturas(c.nome, 12), [c.nome])
   const [dx, setDx] = useState(0)
   const inicio = useRef<number | null>(null)
   const arrastou = useRef(false)
@@ -74,6 +75,12 @@ function CartaoProjeto({ c, emFoco, abrir, criar }: { c: Cartao; emFoco: boolean
       onPointerLeave={() => { setDx(0); inicio.current = null }}
       onClick={() => { if (!arrastou.current) abrir() }}
     >
+      {/* mosaico das miniaturas dos vídeos analisados, desfocado e acinzentado: ambiente, não conteúdo */}
+      {minis.dados && minis.dados.length > 0 && (
+        <span className="mosaico" aria-hidden>
+          {minis.dados.map((id) => <img key={id} src={`https://i.ytimg.com/vi/${id}/mqdefault.jpg`} alt="" loading="lazy" />)}
+        </span>
+      )}
       <span className="icone-proj"><Icone nome="smart_display" cheio /></span>
       <span className="nome-proj">{c.nome}</span>
       <span className="sub">{c.total} experimento{c.total === 1 ? '' : 's'}</span>

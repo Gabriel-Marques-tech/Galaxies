@@ -12,7 +12,7 @@ from fastapi import Body, FastAPI, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from galaxies import ErroGalaxies, Framework, ProjetoNaoEncontrado
+from galaxies import ErroGalaxies, Framework, ProjetoNaoEncontrado, coleta
 from galaxies.serializar import para_json as _json
 
 JSONLivre = dict[str, Any]
@@ -53,6 +53,11 @@ def criar_app(fw: Framework) -> FastAPI:
     @app.get("/projetos/{projeto}/insights")
     def insights(projeto: str, alvo: str | None = None):
         return fw.insights(projeto, alvo)
+
+    @app.get("/projetos/{projeto}/miniaturas")
+    def miniaturas(projeto: str, n: int = 12) -> list[str]:
+        with fw._abrir_existente(projeto) as banco:  # leitura simples: não vira serviço
+            return coleta.ids_para_miniaturas(banco, n)
 
     @app.get("/projetos/{projeto}/canais")
     def canais(projeto: str):

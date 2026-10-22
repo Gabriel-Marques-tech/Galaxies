@@ -387,8 +387,12 @@ button.chip.alternar:hover .seta { transform: rotate(180deg); color: var(--prima
 /* projetos: carrossel com o "+" no meio e o alcance estimado ao lado */
 .projetos-grade { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: stretch; }
 .carrossel { display: flex; align-items: center; gap: 16px; overflow-x: auto; padding: 16px 4px 20px; min-height: 300px; }
-.cartao-projeto { flex-shrink: 0; width: 200px; height: 250px; border-radius: var(--raio-l); background: var(--superficie-2); padding: 20px; display: flex; flex-direction: column; text-align: left; border: 0; cursor: pointer; color: inherit; transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s; }
+.cartao-projeto { position: relative; overflow: hidden; flex-shrink: 0; width: 200px; height: 250px; border-radius: var(--raio-l); background: var(--superficie-2); padding: 20px; display: flex; flex-direction: column; text-align: left; border: 0; cursor: pointer; color: inherit; transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s; }
 .cartao-projeto:hover { transform: translateY(-4px); box-shadow: 0 0 0 1px color-mix(in srgb, var(--primaria) 55%, transparent), 0 0 26px var(--brilho); }
+.cartao-projeto .mosaico { position: absolute; inset: 0; z-index: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; gap: 0; overflow: hidden; border-radius: inherit; filter: blur(7px) grayscale(0.7) brightness(0.42) saturate(0.6); transform: scale(1.08); pointer-events: none; }
+.cartao-projeto .mosaico img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cartao-projeto .mosaico::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in oklab, var(--superficie-2) 35%, transparent) 0%, color-mix(in oklab, var(--superficie-2) 78%, transparent) 55%, var(--superficie-2) 100%); }
+.cartao-projeto > *:not(.mosaico) { position: relative; z-index: 1; }
 .cartao-projeto .icone-proj { width: 40px; height: 40px; border-radius: var(--raio-s); background: var(--primaria-container); color: var(--sobre-primaria-container); display: grid; place-items: center; }
 .cartao-projeto .nome-proj { margin-top: 16px; font-size: 16px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cartao-projeto .grande { margin-top: auto; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; }

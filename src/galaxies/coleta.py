@@ -113,6 +113,24 @@ def _salvar_video(banco, video: dict, agora: datetime):
     )
 
 
+def ids_para_miniaturas(banco: duckdb.DuckDBPyConnection, n: int = 12) -> list[str]:
+    """Ids de vídeos para o mosaico do card do projeto: primeiro os com gancho analisado,
+    depois os mais recentes. A miniatura vem do próprio YouTube (i.ytimg.com), sem cota."""
+    return [
+        v
+        for (v,) in banco.execute(
+            """
+            SELECT v.id FROM videos v
+            LEFT JOIN camada_bruta b ON b.video_id = v.id
+            WHERE v.id NOT IN (SELECT id FROM excluidos WHERE tipo = 'video')
+            ORDER BY (b.video_id IS NOT NULL) DESC, v.publicado_em DESC
+            LIMIT ?
+            """,
+            [n],
+        ).fetchall()
+    ]
+
+
 def listar_videos(banco: duckdb.DuckDBPyConnection) -> list[Video]:
     colunas = list(Video.model_fields)
     linhas = banco.execute(

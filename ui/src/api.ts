@@ -109,6 +109,7 @@ export const api = {
   resumo: (pr: string) => pedir<Resumo>(`${p(pr)}/resumo`),
   insights: (pr: string) => pedir<Insights>(`${p(pr)}/insights`),
   canais: (pr: string) => pedir<Canal[]>(`${p(pr)}/canais`),
+  miniaturas: (pr: string, n = 12) => pedir<string[]>(`${p(pr)}/miniaturas?n=${n}`),
   definirModo: (pr: string, modo: Projeto['modo']) => pedir<Projeto>(`${p(pr)}/modo`, { modo }),
   analisar: (pr: string, video: VideoNovo, canal_id: string) => pedir<Analise>(`${p(pr)}/analisar`, { video, canal_id }),
   upload: async (pr: string, arquivo: File) => {
