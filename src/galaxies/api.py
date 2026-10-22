@@ -13,13 +13,35 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from galaxies import ErroGalaxies, Framework, ProjetoNaoEncontrado, coleta
+from galaxies.mcp_servidor import Jobs
 from galaxies.serializar import para_json as _json
+
+# Jobs longos rodam numa thread DESTE processo: o DuckBD aceita várias conexões no mesmo
+# processo, então a UI continua lendo e escrevendo enquanto o job roda. Um job de linha de
+# comando (outro processo) travaria o projeto.
+OPERACOES_EM_JOB = {
+    "coletar",
+    "calcular_texto",
+    "calcular_titulos",
+    "calcular_atributos",
+    "processar_ganchos",
+    "otimizar",
+    "experimentar",
+    "ciclo_automatico",
+    "observar_recentes",
+    "rotina",
+    "aplicar_pistas",
+    "rotular_vizinhos",
+    "atualizar_acompanhamentos",
+    "reprocessar",
+}
 
 JSONLivre = dict[str, Any]
 
 
 def criar_app(fw: Framework) -> FastAPI:
     app = FastAPI(title="Galaxies", description="Console humano do framework Galaxies")
+    jobs = Jobs()
     app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["*"])
 
     @app.exception_handler(ErroGalaxies)
@@ -165,6 +187,23 @@ def criar_app(fw: Framework) -> FastAPI:
     @app.get("/projetos/{projeto}/proximo-passo")
     def proximo_passo(projeto: str):
         return _json(fw.proximo_passo(projeto))
+
+    @app.post("/projetos/{projeto}/jobs")
+    def iniciar_job(projeto: str, operacao: str = Body(), argumentos: JSONLivre = Body(default={})):
+        if operacao not in OPERACOES_EM_JOB:
+            raise ErroGalaxies(
+                f"operação '{operacao}' não roda como job (aceitas: {sorted(OPERACOES_EM_JOB)})"
+            )
+        fw.obter_projeto(projeto)
+        return jobs.iniciar(operacao, projeto, getattr(fw, operacao), projeto, **argumentos)
+
+    @app.get("/jobs")
+    def listar_jobs():
+        return _json(jobs.status())
+
+    @app.get("/jobs/{job_id}")
+    def status_job(job_id: str):
+        return _json(jobs.status(job_id))
 
     @app.get("/projetos/{projeto}/andamento")
     def andamento(projeto: str):
