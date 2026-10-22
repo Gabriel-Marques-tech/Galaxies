@@ -16,24 +16,17 @@ from galaxies import ErroGalaxies, Framework, ProjetoNaoEncontrado, coleta
 from galaxies.mcp_servidor import Jobs
 from galaxies.serializar import para_json as _json
 
-# Jobs longos rodam numa thread DESTE processo: o DuckBD aceita várias conexões no mesmo
-# processo, então a UI continua lendo e escrevendo enquanto o job roda. Um job de linha de
-# comando (outro processo) travaria o projeto.
+# Jobs de REDE rodam numa thread deste processo: o DuckDB aceita várias conexões no mesmo
+# processo, então a UI continua lendo e escrevendo enquanto o job roda. Jobs de CPU (Laya,
+# SigLIP, Whisper, LightGBM) NÃO: medido em 21/10, títulos pelo Laya dentro da API ficaram
+# ~100× mais lentos que na linha de comando (torch numa thread secundária) e seguraram o
+# lock do projeto por horas. Esses rodam pelo MCP ou pela CLI.
 OPERACOES_EM_JOB = {
     "coletar",
-    "calcular_texto",
-    "calcular_titulos",
-    "calcular_atributos",
-    "processar_ganchos",
-    "otimizar",
-    "experimentar",
-    "ciclo_automatico",
     "observar_recentes",
-    "rotina",
-    "aplicar_pistas",
-    "rotular_vizinhos",
     "atualizar_acompanhamentos",
-    "reprocessar",
+    "descobrir_canais",
+    "adicionar_canal",
 }
 
 JSONLivre = dict[str, Any]

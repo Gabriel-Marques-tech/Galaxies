@@ -84,6 +84,13 @@ roadmap (`proximo-passo`, `andamento`), auditoria (`runs`, `runs/{id}/trace`, `f
 `erros`), humano (`revisao/{atributo}`, `revisao`, `concordancia`, `notas`). Erros do
 domínio viram 404/400 com `{"erro": ...}`. CORS liberado para `localhost:5173`.
 
+**Jobs pela API** (`POST /projetos/{p}/jobs {operacao, argumentos}`, `GET /jobs[/{id}]`): só
+operações de rede (coletar, observar, acompanhamentos, descobrir/adicionar canal). Rodam numa
+thread do processo da API, e como o DuckDB aceita várias conexões no mesmo processo, a UI
+segue lendo e escrevendo. Jobs de CPU (Laya, SigLIP, Whisper, treino) ficaram ~100× mais
+lentos dentro da API (torch em thread secundária) e seguraram o lock do projeto por horas:
+esses rodam pelo MCP ou pela CLI, e enquanto rodam a UI daquele projeto fica indisponível.
+
 Em desenvolvimento a API roda sobre um snapshot do banco (`GALAXIES_DADOS` apontando para
 uma cópia), para não disputar o arquivo com jobs do MCP/CLI; o `andamento.json` é lido da
 pasta do projeto (symlink), por isso o banner de progresso funciona mesmo assim.

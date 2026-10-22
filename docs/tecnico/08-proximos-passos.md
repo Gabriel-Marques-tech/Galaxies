@@ -85,9 +85,12 @@ Necessário para a apresentação e para o uso real, em ordem:
 5. **Automotivo em português**: a busca trouxe canais internacionais (carwow, Forrest's);
    filtrar por idioma do título ou excluir os que não são BR.
 6. **Títulos (Laya) completos** em fitness, saúde e automotivo (hoje parciais).
-7. **Erro de lock amigável na API** quando um processo externo escreve no projeto (hoje
+7. **Jobs de CPU sem travar a UI**: hoje job de CPU é outro processo e tranca o projeto.
+   Saída: rodar o job numa cópia do banco e mesclar as tabelas novas ao fim (feito à mão em
+   22/10 para os ganchos leves), ou um processo de jobs dedicado que a API consulta.
+8. **Erro de lock amigável na API** quando um processo externo escreve no projeto (hoje
    devolve HTML 500; a UI mostra "JSON.parse"): traduzir para `{"erro": ...}`.
-8. **Suíte completa** depois das mudanças da noite (rodou só o ciclo rápido e os arquivos
+9. **Suíte completa** depois das mudanças da noite (rodou só o ciclo rápido e os arquivos
    tocados): `uv run pytest` sozinho na máquina.
 
 ## Além do modelo
