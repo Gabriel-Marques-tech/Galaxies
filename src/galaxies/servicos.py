@@ -20,6 +20,7 @@ from galaxies import (
     modelagem,
     otimizacao,
     treino,
+    vizinhos,
 )
 from galaxies import atributos as atrib
 from galaxies import relatorio as relatorio_md
@@ -188,7 +189,8 @@ class Framework:
         return novos
 
     def calcular_atributos(self, projeto: str) -> camada_bruta.ResumoGanchos:
-        """Pergunta ao Jev só o que falta: atributos novos ou alterados, por vídeo."""
+        """Pergunta ao Jev só o que falta: atributos novos ou alterados, por vídeo. Ganchos
+        leves (sem descrição) ficam de fora: o LLM só leria título e tags."""
         jev = self._exigir(self.dependencias.jev, "jev")
         extrator = identificar(jev)
         resumo = camada_bruta.ResumoGanchos()
@@ -196,6 +198,9 @@ class Framework:
             definicoes = atrib.ler_definicoes(banco)
             videos = {v.id: v for v in coleta.listar_videos(banco)}
             for bruta in camada_bruta.listar(banco):
+                if bruta.descricao == "":
+                    resumo.incompletos += 1
+                    continue
                 faltam = atrib.faltantes(banco, bruta.video_id, definicoes, extrator)
                 if not faltam:
                     continue
@@ -325,23 +330,31 @@ class Framework:
         limite_por_canal: int | None = None,
         canais: list[str] | None = None,
         desde: date | None = None,
+        leve: bool = False,
     ) -> camada_bruta.ResumoGanchos:
         """Calcula a camada bruta dos vídeos que ainda não a têm. limite_por_canal restringe a
-        um subconjunto espaçado no tempo (a camada é cara)."""
+        um subconjunto espaçado no tempo (a camada é cara). leve=True só extrai frames e
+        embedding (sem Gemini nem Whisper): escala a base do extrator `vizinhos`; uma rodada
+        completa depois preenche descrição e fala dos ganchos leves."""
         deps = self.dependencias
-        for nome in ("extrator", "descritor", "transcritor", "embedder"):
+        exigidas = ("extrator", "embedder") + (() if leve else ("descritor", "transcritor"))
+        for nome in exigidas:
             self._exigir(getattr(deps, nome), nome)
         with self._abrir_existente(projeto) as banco, executar(banco, "processar_ganchos") as ex:
-            ids = camada_bruta.pendentes(banco, limite_por_canal, canais, desde)
-            return self._processar_lista(projeto, banco, ex, ids)
+            ids = camada_bruta.pendentes(banco, limite_por_canal, canais, desde, leve=leve)
+            return self._processar_lista(projeto, banco, ex, ids, leve=leve)
 
-    def _processar_lista(self, projeto, banco, ex, video_ids) -> camada_bruta.ResumoGanchos:
+    def _processar_lista(
+        self, projeto, banco, ex, video_ids, leve: bool = False
+    ) -> camada_bruta.ResumoGanchos:
         resumo = camada_bruta.ResumoGanchos()
         for video_id in video_ids:
             pasta = self._pasta_do_projeto(projeto) / "ganchos" / video_id
             ex.ultima_falha = None
             try:
-                camada_bruta.processar(banco, self.dependencias, ex, video_id, video_id, pasta)
+                camada_bruta.processar(
+                    banco, self.dependencias, ex, video_id, video_id, pasta, leve=leve
+                )
                 resumo.processados += 1
             except erros.CotaEsgotada:
                 resumo.interrompido_por_cota = True  # retoma amanhã de onde parou
@@ -597,6 +610,32 @@ class Framework:
             motivo=motivo,
         )
 
+    # ------------------------------------------------------------ extrator vizinhos
+
+    def rotular_vizinhos(
+        self, projeto: str, k: int = vizinhos.K_PADRAO, extrator_fonte: str | None = None
+    ) -> vizinhos.ResumoVizinhos:
+        """Responde os atributos de todo gancho com embedding que o LLM não leu, pelo voto dos
+        k vizinhos mais parecidos (SigLIP) entre os que ele leu. Local e sem cota."""
+        with self._abrir_existente(projeto) as banco, executar(banco, "rotular_vizinhos") as ex:
+            definicoes = atrib.ler_definicoes(banco)
+            with ex.etapa("rotular", {"k": k, "extrator_fonte": extrator_fonte}) as registro:
+                resumo = vizinhos.rotular(banco, definicoes, k, extrator_fonte)
+                registro["saida"] = resumo.model_dump()
+        return resumo
+
+    def avaliar_vizinhos(
+        self, projeto: str, k: int = vizinhos.K_PADRAO, extrator_fonte: str | None = None
+    ) -> vizinhos.AvaliacaoVizinhos:
+        """Leave-one-out nas sementes: concordância kNN × LLM por atributo, e quanto ela sobe
+        quando os vizinhos concordam entre si (confidence ≥ limiar)."""
+        with self._abrir_existente(projeto) as banco, executar(banco, "avaliar_vizinhos") as ex:
+            definicoes = atrib.ler_definicoes(banco)
+            with ex.etapa("leave_one_out", {"k": k, "extrator_fonte": extrator_fonte}) as registro:
+                avaliacao = vizinhos.avaliar(banco, definicoes, k, extrator_fonte)
+                registro["saida"] = avaliacao.model_dump(exclude={"atributos"})
+        return avaliacao
+
     def insights(self, projeto: str, alvo: str | None = None) -> dict:
         """Analytics rápidas do projeto: o que funciona no setor, medido na base (não no modelo).
         Efeitos são a mediana do alvo relativo ao canal, em %, por grupo."""
@@ -803,11 +842,11 @@ class Framework:
             return passo("descobrir_canais", "o projeto não tem canais", alt=["adicionar_canal"])
         if e["videos"] == 0:
             return passo("coletar", "canais sem vídeos coletados")
-        if self.dependencias.texto is not None and e["com_texto"] < 0.9 * e["videos"]:
+        if e["com_texto"] < 0.9 * e["videos"]:  # estado do projeto, não do processo atual
             return passo(
                 "calcular_texto", f"{e['videos'] - e['com_texto']} vídeos sem embedding de texto"
             )
-        if self.dependencias.rapido is not None and e["com_titulo"] < 0.9 * base_modelo:
+        if e["com_titulo"] < 0.9 * base_modelo:
             return passo(
                 "calcular_titulos",
                 f"{base_modelo - e['com_titulo']} vídeos da base sem perguntas de título (local)",
@@ -985,7 +1024,10 @@ class Framework:
         modelos, meta = modelagem.carregar_modelos(pasta)
         if canal_id not in {c["canal_id"] for c in meta["canais"]}:
             raise CanalForaDaBase(canal_id)
-        if "atributos" in meta and self.dependencias.jev is not None:
+        # Modelo treinado com rótulos dos vizinhos: os atributos saem do kNN sobre o embedding
+        # do gancho, sem LLM; o extrator configurado em ATRIBUTOS_MODELO não importa.
+        usa_vizinhos = "atributos" in meta and meta.get("extrator") == vizinhos.EXTRATOR
+        if "atributos" in meta and not usa_vizinhos and self.dependencias.jev is not None:
             atual = identificar(self.dependencias.jev)
             if meta.get("extrator") not in (None, atual):
                 raise erros.ErroGalaxies(
@@ -1005,6 +1047,11 @@ class Framework:
             ).fetchone()
             gancho = respostas = bruta = None
             if video.fonte:
+                # Sem descritor ou transcritor configurados, o modelo dos vizinhos ainda
+                # responde: só precisa do embedding (gancho leve).
+                leve = usa_vizinhos and (
+                    self.dependencias.descritor is None or self.dependencias.transcritor is None
+                )
                 bruta = camada_bruta.processar(
                     banco,
                     self.dependencias,
@@ -1013,9 +1060,16 @@ class Framework:
                     video.fonte,
                     self._pasta_do_projeto(projeto) / "analises" / ex.run_id,
                     salvar=False,
+                    leve=leve,
                 )
                 gancho = GanchoAnalisado(descricao=bruta.descricao, transcricao=bruta.transcricao)
-                if self.dependencias.jev is not None:
+                if usa_vizinhos:
+                    definicoes = [atrib.Atributo.model_validate(a) for a in meta["atributos"]]
+                    with ex.etapa("responder_vizinhos", {"k": vizinhos.K_PADRAO}) as registro:
+                        fonte = vizinhos.rotulos_fonte(banco, definicoes)
+                        respostas = vizinhos.responder(bruta.embedding, fonte, definicoes)
+                        registro["saida"] = {"sementes": len(fonte.video_ids), **respostas}
+                elif self.dependencias.jev is not None:
                     definicoes = atrib.ler_definicoes(banco)
                     if "atributos" in meta:
                         definicoes = [atrib.Atributo.model_validate(a) for a in meta["atributos"]]

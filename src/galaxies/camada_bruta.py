@@ -17,6 +17,7 @@ class ResumoGanchos(BaseModel):
     processados: int = 0
     falhas: int = 0
     interrompido_por_cota: bool = False
+    incompletos: int = 0  # ganchos leves (sem descrição) que calcular_atributos pulou
 
 
 class Falha(BaseModel):
@@ -47,18 +48,21 @@ def pendentes(
     limite_por_canal: int | None = None,
     canais: list[str] | None = None,
     desde: date | None = None,
+    leve: bool = False,
 ) -> list[str]:
     """Vídeos sem camada bruta, sem falha registrada (falhas só voltam via reprocessar) e
-    fora da lista de excluídos.
+    fora da lista de excluídos. No modo completo (leve=False), ganchos leves (descrição vazia)
+    também contam como pendentes: a rodada completa os preenche.
 
     Com limite_por_canal, a amostra de cada canal é espaçada igualmente no tempo, sobre todos
     os vídeos do canal, para que rodadas repetidas escolham sempre os mesmos. desde limita a
     vídeos publicados a partir da data (ex.: a janela de teste, para a ablação ter tamanho).
     """
+    prontos = "SELECT video_id FROM camada_bruta" + ("" if leve else " WHERE descricao <> ''")
     feitos = {
         v
         for (v,) in banco.execute(
-            "SELECT video_id FROM camada_bruta UNION SELECT video_id FROM falhas"
+            f"{prontos} UNION SELECT video_id FROM falhas"
             " UNION SELECT id FROM excluidos WHERE tipo = 'video'"
         ).fetchall()
     }
@@ -104,19 +108,29 @@ def processar(
     fonte: str,
     pasta: Path,
     salvar: bool = True,
+    leve: bool = False,
 ) -> CamadaBruta:
-    """salvar=False serve à análise de um vídeo novo, que não entra na base."""
+    """salvar=False serve à análise de um vídeo novo, que não entra na base.
+
+    leve=True pula o descritor (Gemini, cota diária) e o transcritor (Whisper, lento) e grava
+    descrição e transcrição vazias: só frames e embedding, que é o que o extrator `vizinhos`
+    precisa. Uma rodada completa depois refaz o vídeo inteiro (download, frames, embedding)
+    em vez de reaproveitar: as partes refeitas custam segundos, enquanto guardar o áudio de
+    dezenas de milhares de ganchos custaria gigabytes, e o código fica com um caminho só.
+    """
     with execucao.etapa("extrair_gancho", {"video_id": video_id}) as registro:
         gancho = deps.extrator.extrair(fonte, pasta, SEGUNDOS_DO_GANCHO)
         registro["saida"] = {"frames": len(gancho.frames), "audio": gancho.audio is not None}
-    with execucao.etapa("descrever_gancho", {"video_id": video_id}) as registro:
-        descricao = deps.descritor.descrever(gancho.frames)
-        registro["saida"] = descricao
-    with execucao.etapa("transcrever_gancho", {"video_id": video_id}) as registro:
-        transcricao = deps.transcritor.transcrever(gancho.audio) if gancho.audio else ""
-        registro["saida"] = transcricao
-        if gancho.audio:
-            gancho.audio.unlink(missing_ok=True)
+    descricao = transcricao = ""
+    if not leve:
+        with execucao.etapa("descrever_gancho", {"video_id": video_id}) as registro:
+            descricao = deps.descritor.descrever(gancho.frames)
+            registro["saida"] = descricao
+        with execucao.etapa("transcrever_gancho", {"video_id": video_id}) as registro:
+            transcricao = deps.transcritor.transcrever(gancho.audio) if gancho.audio else ""
+            registro["saida"] = transcricao
+    if gancho.audio:
+        gancho.audio.unlink(missing_ok=True)
     with execucao.etapa("embutir_gancho", {"video_id": video_id}):
         embedding = deps.embedder.embutir(gancho.frames)
 

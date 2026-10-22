@@ -53,6 +53,7 @@ def test_expoe_as_tools_do_framework(tmp_path):
         "ciclo_automatico",
     } <= nomes
     assert {"concordancia", "notas"} <= nomes
+    assert {"processar_ganchos", "rotular_vizinhos", "avaliar_vizinhos"} <= nomes
     # aprovar, revisar e anotar são do humano, na UI
     assert not {"decidir", "revisar", "anotar_erro"} & nomes
 

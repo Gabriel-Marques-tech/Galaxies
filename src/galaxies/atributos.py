@@ -106,12 +106,28 @@ def salvar_respostas(
     respostas: dict,
     extrator: str,
 ):
+    salvar_respostas_de_varios(banco, atributos, {video_id: respostas}, extrator)
+
+
+def salvar_respostas_de_varios(
+    banco: duckdb.DuckDBPyConnection,
+    atributos: list[Atributo],
+    por_video: dict[str, dict],
+    extrator: str,
+):
+    """Um INSERT só para muitos vídeos: o extrator `vizinhos` rotula a base inteira de uma
+    vez, e um comando por linha levaria minutos."""
+    if not por_video:
+        return
     agora = datetime.now(UTC)
-    for a in atributos:
-        banco.execute(
-            "INSERT OR REPLACE INTO respostas VALUES (?, ?, ?, ?, ?, ?)",
-            [video_id, a.id, extrator, a.assinatura, json.dumps(respostas[a.id]), agora],
-        )
+    banco.executemany(
+        "INSERT OR REPLACE INTO respostas VALUES (?, ?, ?, ?, ?, ?)",
+        [
+            [video_id, a.id, extrator, a.assinatura, json.dumps(respostas[a.id]), agora]
+            for video_id, respostas in por_video.items()
+            for a in atributos
+        ],
+    )
 
 
 def features(

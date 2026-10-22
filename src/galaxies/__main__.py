@@ -27,6 +27,17 @@ def main():
     ganchos.add_argument("--limite-por-canal", type=int, default=None)
     ganchos.add_argument("--canais", nargs="*", default=None, help="ids de canal (UC...)")
     ganchos.add_argument("--desde", type=date.fromisoformat, default=None, help="AAAA-MM-DD")
+    ganchos.add_argument(
+        "--leve", action="store_true", help="só frames e embedding (sem Gemini nem Whisper)"
+    )
+    rotular = comandos.add_parser("rotular-vizinhos", help="atributos por kNN (SigLIP)")
+    rotular.add_argument("projeto")
+    rotular.add_argument("--k", type=int, default=7)
+    rotular.add_argument("--fonte", default=None, help="extrator fonte (padrão: o LLM @cf/...)")
+    avaliar_viz = comandos.add_parser("avaliar-vizinhos", help="concordância kNN × LLM (LOO)")
+    avaliar_viz.add_argument("projeto")
+    avaliar_viz.add_argument("--k", type=int, default=7)
+    avaliar_viz.add_argument("--fonte", default=None)
     titulos = comandos.add_parser("calcular-titulos", help="perguntas de título (Laya) p/ todos")
     titulos.add_argument("projeto")
     titulos.add_argument("--limite", type=int, default=None)
@@ -102,8 +113,23 @@ def main():
             limite_por_canal=args.limite_por_canal,
             canais=args.canais,
             desde=args.desde,
+            leve=args.leve,
         )
         print(resumo.model_dump_json(indent=2))
+    elif args.comando == "rotular-vizinhos":
+        print(fw.rotular_vizinhos(args.projeto, args.k, args.fonte).model_dump_json(indent=2))
+    elif args.comando == "avaliar-vizinhos":
+        avaliacao = fw.avaliar_vizinhos(args.projeto, args.k, args.fonte)
+        print(
+            f"fonte={avaliacao.fonte} k={avaliacao.k} sementes={avaliacao.sementes} "
+            f"concordância média={avaliacao.concordancia_media:.1%}"
+        )
+        for a in avaliacao.atributos:
+            print(
+                f"{a.atributo:24} {a.tipo:6} concorda {a.concordancia:.1%} "
+                f"(majoritário {a.majoritario:.1%}) · confiante {_pct(a.concordancia_confiante)} "
+                f"em {a.fracao_confiante:.0%} dos casos"
+            )
     elif args.comando == "calcular-titulos":
         print(json.dumps(fw.calcular_titulos(args.projeto, args.limite)))
     elif args.comando == "calcular-texto":

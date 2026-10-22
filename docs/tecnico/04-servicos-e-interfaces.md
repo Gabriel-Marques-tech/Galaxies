@@ -11,9 +11,15 @@ e devolve Pydantic. Agrupados:
 
 **Dados**: `coletar(so_faltantes)`, `adicionar_canal`, `descobrir_canais(consulta,
 teto_unidades)` (busca paga: 100 unidades por página), `processar_ganchos(limite_por_canal,
-canais, desde)`, `reprocessar`, `excluir`, `falhas`, `calcular_texto`, `calcular_titulos`,
-`calcular_atributos`, `atributos`, `definir_atributos` (substitui as perguntas; respostas de
-atributos inalterados ficam), `features_de_atributos`.
+canais, desde, leve)` (`leve=True`: só frames e embedding, sem Gemini nem Whisper; exige só
+`extrator` e `embedder`; uma rodada sem `leve` depois completa os ganchos leves),
+`reprocessar`, `excluir`, `falhas`, `calcular_texto`, `calcular_titulos`,
+`calcular_atributos` (pula ganchos leves: `incompletos` no resumo), `atributos`,
+`definir_atributos` (substitui as perguntas; respostas de atributos inalterados ficam),
+`features_de_atributos`, `rotular_vizinhos(k=7, extrator_fonte=None)` (atributos por kNN
+para os ganchos que o LLM não leu; run `rotular_vizinhos`, etapa `rotular`),
+`avaliar_vizinhos(k=7, extrator_fonte=None)` (leave-one-out: concordância kNN × LLM por
+atributo; run `avaliar_vizinhos`, etapa `leave_one_out`). Ver `vizinhos.py` em 02.
 
 **Modelo**: `treinar` (diagnóstico), `experimentar(receita, hipotese, alvo)`,
 `experimentos(alvo)`, `promover`, `decidir(aprovar, nota)` (humano), `otimizar(alvo,
@@ -21,7 +27,12 @@ orcamento, paciencia)`, `ciclo_automatico`, `erros(alvo)` (falhas do pipeline + 
 modelo mais erra), `insights` (setores, ganchos e formatos que mais rendem a partir das
 respostas do extrator atual, melhores horários, dias, duração).
 
-**Uso**: `analisar(video, canal_id)`, `comparar(video_a, video_b, canal_id)`.
+**Uso**: `analisar(video, canal_id)`, `comparar(video_a, video_b, canal_id)`. Se o modelo
+ativo foi treinado com `extrator = "vizinhos"`, a análise responde os atributos com
+`vizinhos.responder` sobre o embedding do gancho (etapa `responder_vizinhos`), não exige
+`jev` e ignora a checagem de `ATRIBUTOS_MODELO`; sem `descritor` ou `transcritor`
+configurados, processa o gancho em modo leve (a análise sai sem descrição e fala, mas com
+atributos e previsão).
 
 **Produção**: `acompanhar(run_id, video_id)`, `atualizar_acompanhamentos`,
 `acompanhamentos`, `observar_recentes(dias_max)`, `crescimento(alvo)`.
@@ -47,10 +58,10 @@ decidem nada.
 texto que o cliente MCP recebe: a ordem do pipeline, quando usar `proximo_passo`, como ler
 "sem poder estatístico", o que é modo cientista.
 
-**Jobs**: operações longas (`coletar`, `processar_ganchos`, `calcular_*`, `otimizar`,
-`experimentar`, `rotina`, …) rodam em uma thread única (`Jobs`): a tool devolve `job_id` e o
-agente acompanha com `status(job_id)`. Uma thread só porque o DuckDB tem um escritor por
-vez.
+**Jobs**: operações longas (`coletar`, `processar_ganchos` (com `leve`), `calcular_*`,
+`rotular_vizinhos(k)`, `otimizar`, `experimentar`, `rotina`, …) rodam em uma thread única
+(`Jobs`): a tool devolve `job_id` e o agente acompanha com `status(job_id)`. Uma thread só
+porque o DuckDB tem um escritor por vez. `avaliar_vizinhos(k)` responde na hora (segundos).
 
 Tools que só existem na UI, de propósito: `decidir`, `revisar`, `anotar` (portões humanos).
 
@@ -74,11 +85,14 @@ pasta do projeto (symlink), por isso o banner de progresso funciona mesmo assim.
 
 ## `__main__.py` — CLI
 
-`uv run python -m galaxies <comando>`: criar-projeto, coletar, cota, processar-ganchos,
-calcular-titulos, calcular-texto, calcular-atributos, definir-atributos, treinar, falhas,
-reprocessar, excluir, erros, experimentar, experimentos, promover, relatorio, otimizar,
-ciclo-automatico, proximo-passo, rotina, crescimento. Mesmo núcleo; útil para jobs longos
-fora do MCP e para o `relatorio`.
+`uv run python -m galaxies <comando>`: criar-projeto, coletar, cota, processar-ganchos
+(`--leve`), rotular-vizinhos (`--k`, `--fonte`), avaliar-vizinhos (`--k`, `--fonte`; imprime
+uma linha por atributo), calcular-titulos, calcular-texto, calcular-atributos,
+definir-atributos, treinar, falhas, reprocessar, excluir, erros, experimentar, experimentos,
+promover, relatorio, otimizar, ciclo-automatico, proximo-passo, rotina, crescimento. Mesmo
+núcleo; útil para jobs longos fora do MCP e para o `relatorio`. `processar-ganchos --leve`
+monta o framework multimodal, mas o Whisper só carrega o modelo na primeira transcrição, que
+não acontece.
 
 ## `ambiente.py` — montagem a partir do `.env`
 

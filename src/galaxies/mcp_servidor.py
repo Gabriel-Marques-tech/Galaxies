@@ -25,7 +25,9 @@ YouTube Shorts de um setor. As regras de avaliação são fixas; você escolhe a
 Dados: criar_projeto → coletar (job) → calcular_texto (job) → calcular_titulos (job, local)
 → processar_ganchos (job, caro: confirme com o usuário lotes grandes) → calcular_atributos
 (job, LLM lê o gancho). Camadas: metadados, historico, texto e titulo existem para todos os
-vídeos; multimodal e atributos só para os com gancho processado.
+vídeos; multimodal e atributos só para os com gancho processado. Para escalar o gancho sem
+Gemini/Whisper: processar_ganchos(leve=True) → rotular_vizinhos (kNN sobre os ganchos que o
+LLM já leu; avaliar_vizinhos mede a concordância) → receita com extrator 'vizinhos'.
 
 Antes de agir: proximo_passo diz o que o estado do projeto pede agora (regras, com motivo);
 siga-o, e só delibere quando ele devolver certeza='ambiguo'.
@@ -183,10 +185,13 @@ def criar_servidor(fw: Framework) -> ServidorGalaxies:
         limite_por_canal: int | None = None,
         canais: list[str] | None = None,
         desde: str | None = None,
+        leve: bool = False,
     ) -> str:
         """Job: camada bruta dos primeiros 5s (frames, descrição, fala, embedding). Cara:
         use limite_por_canal para uma amostra espaçada no tempo e desde (AAAA-MM-DD) para
-        cobrir a janela de teste."""
+        cobrir a janela de teste. leve=True pula Gemini e Whisper (só frames e embedding,
+        segundos por vídeo, sem cota): é a base do extrator 'vizinhos'; uma rodada sem leve
+        depois completa descrição e fala desses ganchos."""
         return _texto(
             jobs.iniciar(
                 "processar_ganchos",
@@ -196,8 +201,24 @@ def criar_servidor(fw: Framework) -> ServidorGalaxies:
                 limite_por_canal,
                 canais,
                 date.fromisoformat(desde) if desde else None,
+                leve,
             )
         )
+
+    @tool
+    def rotular_vizinhos(projeto: str, k: int = 7) -> str:
+        """Job: responde os atributos de todo gancho com embedding que o LLM não leu, pelo
+        voto dos k vizinhos SigLIP mais parecidos entre os que ele leu (extrator 'vizinhos',
+        local, sem cota). confidence = fração dos vizinhos que concordam; ≥ 0,8 é confiável.
+        Depois: experimentar/otimizar com extrator 'vizinhos'."""
+        return _texto(jobs.iniciar("rotular_vizinhos", projeto, fw.rotular_vizinhos, projeto, k))
+
+    @tool
+    def avaliar_vizinhos(projeto: str, k: int = 7) -> str:
+        """Leave-one-out nas sementes do LLM: concordância kNN × LLM por atributo, a
+        concordância só nos casos confiantes (≥ 0,8) e quantos casos são esses, contra o
+        baseline do rótulo majoritário."""
+        return _texto(fw.avaliar_vizinhos(projeto, k))
 
     @tool
     def calcular_titulos(projeto: str, limite: int | None = None) -> str:

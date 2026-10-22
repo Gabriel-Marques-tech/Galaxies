@@ -3,11 +3,13 @@ from datetime import date
 import pytest
 
 from galaxies import CotaEsgotada, Framework
+from galaxies.erros import DependenciaAusente
 from galaxies.portas import Dependencias
 from tests.fakes import (
     DescritorFalso,
     EmbedderFalso,
     ExtratorFalso,
+    JevFalso,
     TranscritorFalso,
     YouTubeFalso,
     video,
@@ -130,6 +132,64 @@ def test_cota_diaria_esgotada_para_o_lote_sem_marcar_falha(tmp_path):
     assert resumo.interrompido_por_cota
     assert framework.falhas("moda-beleza") == []
     assert deps.descritor.chamadas == 2  # parou na primeira recusa
+
+
+def test_modo_leve_pula_descritor_e_transcritor_mas_guarda_frames_e_embedding(tmp_path):
+    framework, deps = montar(tmp_path, [video("beleza1"), video("beleza1")])
+
+    resumo = framework.processar_ganchos("moda-beleza", leve=True)
+
+    assert resumo.processados == 2
+    assert deps.descritor.chamadas == 0
+    assert deps.transcritor.chamadas == 0
+    for bruta in framework.camada_bruta("moda-beleza"):
+        assert bruta.descricao == "" and bruta.transcricao == ""
+        assert bruta.embedding == pytest.approx([0.1, 0.2, 0.3])
+        assert len(bruta.frames) == 3
+
+
+def test_modo_leve_so_exige_extrator_e_embedder(tmp_path):
+    framework, deps = montar(tmp_path, [video("beleza1")])
+    deps.descritor = deps.transcritor = None
+
+    framework.processar_ganchos("moda-beleza", leve=True)
+    with pytest.raises(DependenciaAusente):
+        framework.processar_ganchos("moda-beleza")
+
+    assert len(framework.camada_bruta("moda-beleza")) == 1
+
+
+def test_rodada_completa_depois_preenche_os_ganchos_leves_sem_repetir_os_prontos(tmp_path):
+    framework, deps = montar(tmp_path, [video("beleza1"), video("beleza1")])
+
+    framework.processar_ganchos("moda-beleza", leve=True)
+    framework.processar_ganchos("moda-beleza", leve=True)  # leve não refaz leve
+    assert len(deps.extrator.extraidos) == 2
+
+    completa = framework.processar_ganchos("moda-beleza")
+    framework.processar_ganchos("moda-beleza")  # já completos: nada a fazer
+
+    assert completa.processados == 2
+    assert deps.descritor.chamadas == 2
+    assert deps.transcritor.chamadas == 2
+    for bruta in framework.camada_bruta("moda-beleza"):
+        assert bruta.descricao == "mulher mostra batom vermelho em close (3 frames)"
+        assert bruta.transcricao == "gente, olha esse batom"
+        assert bruta.embedding == pytest.approx([0.1, 0.2, 0.3])
+
+
+def test_calcular_atributos_pula_ganchos_leves_sem_marcar_falha(tmp_path):
+    leve, completo = video("beleza1"), video("beleza1")
+    framework, deps = montar(tmp_path, [leve, completo])
+    deps.jev = JevFalso()
+    framework.processar_ganchos("moda-beleza", leve=True)
+
+    resumo = framework.calcular_atributos("moda-beleza")
+
+    assert (resumo.processados, resumo.incompletos) == (0, 2)
+    assert framework.falhas("moda-beleza") == []
+    assert deps.jev.perguntas_feitas == []
+    assert framework.features_de_atributos("moda-beleza") == []
 
 
 def test_desde_restringe_a_janela_de_teste(tmp_path):
