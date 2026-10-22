@@ -93,13 +93,24 @@ def diagnosticar(
             )
     # 3. canais rasos
     if base["canais"] and base["canais_rasos"] / base["canais"] >= 0.15:
+        rasos = [
+            c
+            for (c,) in banco.execute(
+                "SELECT canal_id FROM videos GROUP BY canal_id HAVING count(*) < ?",
+                [MIN_VIDEOS_CANAL],
+            ).fetchall()
+        ]
         pistas.append(
             Pista(
                 tipo="canais_rasos",
                 mensagem=f"{base['canais_rasos']} de {base['canais']} canais têm menos de "
                 f"{MIN_VIDEOS_CANAL} vídeos: sem histórico para a âncora e com 1–2 vídeos no "
                 "teste, dominam os piores erros. Excluir (excluir) ou coletar mais deles.",
-                evidencia={"canais_rasos": base["canais_rasos"], "canais": base["canais"]},
+                evidencia={
+                    "canais_rasos": base["canais_rasos"],
+                    "canais": base["canais"],
+                    "ids": rasos,
+                },
                 acao="excluir",
             )
         )

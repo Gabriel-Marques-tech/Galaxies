@@ -170,17 +170,22 @@ def test_rotina_reobserva_coleta_e_so_reotimiza_quando_a_base_cresce(tmp_path, m
 
     framework = projeto(tmp_path)
 
-    parada = framework.rotina("moda-beleza")
+    primeira = framework.rotina("moda-beleza")  # texto e títulos faltavam: aplica e reotimiza
 
-    assert parada.observados > 0
-    assert parada.videos_novos == 0
-    assert not parada.reotimizou
-    assert "modelo mantido" in parada.motivo
+    assert primeira.observados > 0
+    assert primeira.videos_novos == 0
+    assert {"calcular_texto", "calcular_titulos"} <= set(primeira.pistas_aplicadas)
+    assert primeira.reotimizou and primeira.experimento is not None
+    assert any(p.startswith("ganchos_insuficientes") for p in primeira.pistas_pendentes)
+
+    segunda = framework.rotina("moda-beleza")  # nada a aplicar, nada novo: mantém
+
+    assert not segunda.reotimizou
+    assert "modelo mantido" in segunda.motivo
 
     monkeypatch.setattr(servicos, "LIMIAR_NOVOS_ABSOLUTO", 0)
     monkeypatch.setattr(servicos, "LIMIAR_NOVOS_FRACAO", 0.0)
     completa = framework.rotina("moda-beleza")
 
     assert completa.reotimizou
-    assert completa.experimento is not None
     assert completa.motivo

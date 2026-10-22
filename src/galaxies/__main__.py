@@ -91,6 +91,9 @@ def main():
     diag = comandos.add_parser("diagnostico", help="pistas da base antes de culpar o modelo")
     diag.add_argument("projeto")
     diag.add_argument("--alvo", choices=["likes", "views"], default=None)
+    aplicar = comandos.add_parser("aplicar-pistas", help="aplica as pistas seguras do diagnóstico")
+    aplicar.add_argument("projeto")
+    aplicar.add_argument("--alvo", choices=["likes", "views"], default=None)
     passo = comandos.add_parser("proximo-passo", help="o que o estado do projeto pede agora")
     passo.add_argument("projeto")
     rotina = comandos.add_parser("rotina", help="rotina diária: reobserva, coleta e reotimiza")
@@ -187,6 +190,8 @@ def main():
         print(fw.erros(args.projeto, alvo=args.alvo).model_dump_json(indent=2))
     elif args.comando == "observar-recentes":
         print(fw.observar_recentes(args.projeto, args.dias_max).model_dump_json(indent=2))
+    elif args.comando == "aplicar-pistas":
+        print(json.dumps(fw.aplicar_pistas(args.projeto, args.alvo), ensure_ascii=False))
     elif args.comando == "diagnostico":
         d = fw.diagnostico(args.projeto, args.alvo)
         print(json.dumps(d.base, ensure_ascii=False))

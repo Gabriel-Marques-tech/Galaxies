@@ -396,6 +396,14 @@ def criar_servidor(fw: Framework) -> ServidorGalaxies:
         return _texto(fw.diagnostico(projeto, alvo))
 
     @tool
+    def aplicar_pistas(projeto: str, alvo: str | None = None) -> str:
+        """Aplica as pistas seguras do diagnóstico (job): completa texto e títulos, reobserva,
+        exclui canais rasos (só no modo automático). Devolve o que aplicou e o que ficou
+        pendente de decisão (setores misturados, alvo alternativo, ganchos). A rotina faz
+        isso sozinha todo dia e reotimiza se o dado mudou."""
+        return _texto(jobs.iniciar("aplicar_pistas", projeto, fw.aplicar_pistas, projeto, alvo))
+
+    @tool
     def proximo_passo(projeto: str) -> str:
         """Comece por aqui: o roadmap deduzido do estado do projeto (regras, grátis e
         auditável): qual tool chamar agora, por quê e alternativas. certeza='ambiguo' marca

@@ -66,6 +66,8 @@ class Rotina(BaseModel):
     videos_novos: int
     unidades: int  # cota do YouTube gasta na reobservação
     texto_calculado: int = 0
+    pistas_aplicadas: list[str] = []  # modo automático: o que o diagnóstico mandou fazer
+    pistas_pendentes: list[str] = []  # decisões de custo/escopo que ficam com o humano
     reotimizou: bool = False
     experimento: str | None = None
     promovido: str | None = None
@@ -914,10 +916,15 @@ class Framework:
             videos_novos=coletados,
             unidades=observacao.unidades,
         )
+        pistas = self.aplicar_pistas(projeto, alvo)
+        rotina.pistas_aplicadas = pistas["aplicadas"]
+        rotina.pistas_pendentes = pistas["pendentes"]
+        mudou_dado = any(not p.startswith("observar") for p in pistas["aplicadas"])
         limiar = max(LIMIAR_NOVOS_ABSOLUTO, int(antes * LIMIAR_NOVOS_FRACAO))
-        if coletados < limiar:
+        if coletados < limiar and not mudou_dado:
             rotina.motivo = (
-                f"{coletados} vídeos novos (reotimiza a partir de {limiar}): modelo mantido"
+                f"{coletados} vídeos novos (reotimiza a partir de {limiar}) e nenhuma pista "
+                "aplicada: modelo mantido"
             )
             return rotina
         if self.dependencias.texto is not None:
@@ -934,6 +941,37 @@ class Framework:
             else "nenhuma receita superou a média do canal"
         )
         return rotina
+
+    def aplicar_pistas(self, projeto: str, alvo: str | None = None) -> dict:
+        """Aplica as pistas seguras do diagnóstico (modo automático): completa camadas de
+        texto e título, reobserva, exclui canais rasos. Setores misturados, alvo alternativo
+        e ganchos ficam como pendentes: são decisões de custo ou escopo."""
+        config = self.obter_projeto(projeto)
+        aplicadas, pendentes = [], []
+        for pista in self.diagnostico(projeto, alvo).pistas:
+            if config.modo != "automatico" and pista.tipo != "camada_incompleta":
+                pendentes.append(f"{pista.tipo}: {pista.acao}")
+                continue
+            if pista.tipo == "camada_incompleta":
+                camada = pista.evidencia["camada"]
+                if camada == "texto" and self.dependencias.texto is not None:
+                    self.calcular_texto(projeto)
+                elif camada == "titulo" and self.dependencias.rapido is not None:
+                    self.calcular_titulos(projeto)
+                else:
+                    pendentes.append(f"{pista.tipo}: {pista.acao}")
+                    continue
+                aplicadas.append(pista.acao)
+            elif pista.tipo in ("sem_reobservacao", "idade"):
+                if self.dependencias.youtube is not None and "observar_recentes" not in aplicadas:
+                    self.observar_recentes(projeto)
+                    aplicadas.append("observar_recentes")
+            elif pista.tipo == "canais_rasos":
+                self.excluir(projeto, canais=pista.evidencia.get("ids", []))
+                aplicadas.append(f"excluir {len(pista.evidencia.get('ids', []))} canais rasos")
+            else:
+                pendentes.append(f"{pista.tipo}: {pista.acao}")
+        return {"aplicadas": aplicadas, "pendentes": pendentes}
 
     def crescimento(self, projeto: str, alvo: str | None = None) -> crescimento.Curva:
         """Curva de crescimento observada: inclinação de log(1+y) por log(idade) por faixa de
