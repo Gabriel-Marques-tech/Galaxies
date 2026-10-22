@@ -43,8 +43,12 @@ mais recentes). Baseline = média do canal.
 | moda-beleza | 153 / 54,9k | likes | **−24,4%** | +13% | 58,9% | 73% | [`docs/avaliacao.md`](docs/avaliacao.md) |
 | saude | 42 / 9,4k | likes | **−23,0%** | +8% | 57,1% | 83% | [`docs/avaliacao-saude.md`](docs/avaliacao-saude.md) |
 | fitness | 30 / 13,2k | likes | −7,3% | +3% | 52% | 83% | [`docs/avaliacao-fitness.md`](docs/avaliacao-fitness.md) |
+| automotivo | 45 / 18,3k | likes | **−19,8%** | +2% | 58,6% | 81% | [`docs/avaliacao-automotivo.md`](docs/avaliacao-automotivo.md) |
 
-Fitness e saúde começaram como um projeto só (−12,4%). O `diagnostico` apontou setores
+Automotivo foi criado em 40 minutos na noite da entrega (busca de canais → coleta → texto →
+otimizar), com jobs rodando dentro da API enquanto a UI seguia em uso; só metadados já
+explicam 18% ali, e histórico + âncora móvel acrescentam pouco (+2%). Fitness e saúde
+começaram como um projeto só (−12,4%). O `diagnostico` apontou setores
 misturados (saúde errava mais que fitness) e canais rasos; separados, saúde ficou quase no
 nível de moda e fitness mostrou ser ruído (likes dependem pouco do canal e do título: só
 metadados fica a 4% do baseline). O framework não inventa acerto onde o dado não tem, e acha
@@ -72,6 +76,23 @@ likes estabilizam a partir de ~10 dias e views seguem crescendo devagar até ~40
 timeline usa essa curva nas idades que o modelo não viu no treino. Relatório completo, com todas as tentativas do agente:
 [`docs/avaliacao.md`](docs/avaliacao.md), gerado por
 `uv run python -m galaxies relatorio moda-beleza`.
+
+## Demo
+
+`data/demo/` (fora do git) tem 4 Shorts reais de canais da base, com o resultado conhecido,
+para subir em **Analisar vídeo** com a data de publicação real no compositor:
+
+| arquivo | canal | data | real | o modelo (só metadados + histórico) |
+|---|---|---|---|---|
+| Carina Araújo · Achei meu look do ano novo | Carina Araújo | 2026-10-06 | 14,0k likes | 14,8k, dentro da faixa provável |
+| Dourada · Penteado fácil | Dourada | 2026-10-11 | 4,4k | 3,4k, dentro da provável |
+| Mari Maria · Testando coisas novas | Mari Maria | 2026-10-09 | 32,6k | 6,2k, dentro da quase certa (estourou) |
+| Bella Dias · Katherine Pierce | Bella Dias Makeup | 2026-10-14 | 11,5k | 2,5k, dentro da quase certa; o gancho explica |
+
+Depois de analisar, "Publiquei" com o id do YouTube registra o real, e **Vídeos analisados**
+mostra previsto × real. Os dois últimos são a história honesta do que o modelo ainda não vê:
+o gancho (trend, texto na tela) é lido pelo Gemini e pelo LLM, mas a camada só entra no
+modelo com volume (`processar_ganchos --leve` + `rotular_vizinhos`).
 
 ## O que o case pede e onde está
 

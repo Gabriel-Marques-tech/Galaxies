@@ -67,6 +67,29 @@ tentar, com estimativa de ganho e esforço. É o roadmap técnico depois da entr
 - Conformal mais sofisticado: cobertura já em 80%; sem métrica de largura não dá para saber
   se há o que ganhar (item 3 primeiro).
 
+## O que falta (estado em 22/10/2026, 00h)
+
+Necessário para a apresentação e para o uso real, em ordem:
+
+1. **Demo gravada e slides.** Roteiro: `data/demo/` tem 4 Shorts reais de moda e beleza
+   (ver README, seção de demo); use a data de publicação real no compositor. Fluxo do
+   agente via MCP: `proximo_passo` → `diagnostico` → `otimizar` → `analisar`.
+2. **Camada de gancho com volume** (`processar_ganchos --leve` em ~3k vídeos, de madrugada;
+   `rotular_vizinhos`; `otimizar`): é o que pode fazer a camada multimodal entrar no modelo.
+   Zero cota; ~4 h de máquina. Depois, `calcular_atributos` com Gemini em 250/dia para
+   adensar as sementes.
+3. **Reavaliar o ativo quando a base muda** (trava compara ganhos de testes diferentes):
+   guardar a assinatura do split em cada experimento e reavaliar o ativo antes de comparar.
+4. **Rotina diária ligada** (cron ou agente): `rotina` em cada projeto; `observar_recentes`
+   é o que calibra a timeline nos primeiros dias.
+5. **Automotivo em português**: a busca trouxe canais internacionais (carwow, Forrest's);
+   filtrar por idioma do título ou excluir os que não são BR.
+6. **Títulos (Laya) completos** em fitness, saúde e automotivo (hoje parciais).
+7. **Erro de lock amigável na API** quando um processo externo escreve no projeto (hoje
+   devolve HTML 500; a UI mostra "JSON.parse"): traduzir para `{"erro": ...}`.
+8. **Suíte completa** depois das mudanças da noite (rodou só o ciclo rápido e os arquivos
+   tocados): `uv run pytest` sozinho na máquina.
+
 ## Além do modelo
 
 - Mais canais é a única alavanca do teto (A vs B ~58%).
