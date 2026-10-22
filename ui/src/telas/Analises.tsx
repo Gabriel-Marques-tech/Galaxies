@@ -23,7 +23,7 @@ export default function Analises({ projeto, alvo }: { projeto: string; alvo: str
                     <td className="sub">{new Date(a.inicio).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
                     <td><b>{a.titulo ?? '(sem título)'}</b>{a.fonte && <span className="sub"> · com vídeo</span>}</td>
                     <td>{a.canal ?? a.canal_id ?? '—'}</td>
-                    <td className="n">{p ? <>{compacto(p.q50)} <span className="sub">({compacto(p.q25)}–{compacto(p.q75)})</span></> : '—'}</td>
+                    <td className="n">{p ? <>{compacto(p.q50)} <span className="sub">({compacto(p.q25 || p.q10)}–{compacto(p.q75 || p.q90)})</span></> : '—'}</td>
                     <td className="n">{a.chances.length ? pct(a.chances[a.chances.length - 1].prob, false) : '—'}</td>
                     <td>{u ? <span className={u.dentro_da_faixa ? 'bom-t' : 'ruim-t'}>{compacto(u.real)} {alvo} aos {Math.round(u.idade_dias)} d {u.dentro_da_faixa_50 ? '· na provável' : u.dentro_da_faixa ? '· na quase certa' : '· fora'}</span> : <span className="sub">não acompanhado</span>}</td>
                     <td>{a.status === 'rodando' ? <span className="chip"><span className="pulso" /> analisando</span> : a.status === 'falhou' ? <span className="chip ruim">falhou</span> : <span className="chip bom">ok</span>}</td>
@@ -47,7 +47,7 @@ export default function Analises({ projeto, alvo }: { projeto: string; alvo: str
           {a.chances.length > 0 && <p className="sub" style={{ margin: '8px 0 0' }}>{a.chances.map((c) => `${c.evento} ${Math.round(c.prob * 100)}%`).join(' · ')}</p>}
           {a.acompanhamento?.ultima && (
             <p className="sub" style={{ margin: '6px 0 0' }}>
-              Real aos {Math.round(a.acompanhamento.ultima.idade_dias)} dias: <b>{compacto(a.acompanhamento.ultima.real)} {alvo}</b>; previsto para essa idade {compacto(a.acompanhamento.ultima.previsto_q50)} (provável {compacto(a.acompanhamento.ultima.previsto_q25)}–{compacto(a.acompanhamento.ultima.previsto_q75)}).
+              Real aos {Math.round(a.acompanhamento.ultima.idade_dias)} dias: <b>{compacto(a.acompanhamento.ultima.real)} {alvo}</b>; previsto para essa idade {compacto(a.acompanhamento.ultima.previsto_q50)} (provável {compacto(a.acompanhamento.ultima.previsto_q25 || a.acompanhamento.ultima.previsto_q10)}–{compacto(a.acompanhamento.ultima.previsto_q75 || a.acompanhamento.ultima.previsto_q90)}).
             </p>
           )}
           <span className="sub mono">run {a.run_id}</span>
