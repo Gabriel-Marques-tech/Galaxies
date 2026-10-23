@@ -161,43 +161,49 @@ body { -webkit-font-smoothing: antialiased; }
 .chat .resposta-final { font: 500 clamp(22px, 2.6vw, 40px)/1.2 var(--display); margin-top: 1.4vh; }
 
 
-/* ---------------------------------------------------------------- abertura com a cara do Gemini */
+
+/* ---------------------------------------------------------------- abertura com a cara do Gemini (UI atual) */
 .s-gancho { padding: 0; align-items: stretch; justify-content: stretch; }
-.gapp { position: absolute; inset: 0; display: grid; grid-template-columns: 72px 1fr; background: #131314; color: #e3e3e3; font-family: 'Google Sans', 'Inter', system-ui, sans-serif; }
-.gapp .trilho { background: #1e1f20; display: flex; flex-direction: column; align-items: center; padding: 18px 0; gap: 22px; color: #c4c7c5; }
-.gapp .trilho .ico { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; }
-.gapp .trilho .ico.novo { background: #2a2b2d; }
-.gapp .area { position: relative; display: flex; flex-direction: column; }
-.gapp .cab { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; font-size: 20px; color: #e3e3e3; }
-.gapp .cab .modelo { display: flex; align-items: center; gap: 8px; }
-.gapp .cab .modelo small { color: #9aa0a6; font-size: 13px; }
-.gapp .cab .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #4285f4, #9b72cb); }
-.gapp .meio { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; width: min(820px, 86%); margin: 0 auto; padding-bottom: 14vh; gap: 2.4vh; }
-.gapp .ola { font: 500 clamp(36px, 4.6vw, 64px)/1.15 'Google Sans', 'Inter', sans-serif; transition: opacity .6s var(--ease), transform .8s var(--ease); }
-.gapp .ola.some { opacity: 0; transform: translateY(-20px); position: absolute; }
-.gapp .ola .g { background: linear-gradient(90deg, #4285f4 0%, #9b72cb 45%, #d96570 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.gapp .ola .d { color: #444746; display: block; }
-.gapp .msg.eu { background: #333537; border: 0; color: #e3e3e3; border-radius: 22px 22px 6px 22px; font-size: clamp(15px, 1.5vw, 20px); padding: 1.2vh 1.4vw; }
+.gapp { position: absolute; inset: 0; display: grid; grid-template-columns: 76px 1fr; background: #0e0e10; color: #e3e3e3; font-family: 'Google Sans', 'Inter', system-ui, sans-serif; overflow: hidden; }
+.gapp .brilho { position: absolute; left: 50%; top: 62%; width: 110vw; height: 90vh; transform: translate(-50%, -50%); background: radial-gradient(ellipse at center, rgba(28, 56, 160, .95) 0%, rgba(20, 38, 110, .55) 28%, rgba(10, 16, 40, .2) 52%, transparent 70%); filter: blur(10px); pointer-events: none; transition: opacity 1s var(--ease); }
+.gapp .trilho { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; padding: 20px 0 18px; gap: 18px; color: #c4c7c5; }
+.gapp .trilho .faisca-logo { width: 42px; height: 42px; border-radius: 50%; background: #1f2023; display: grid; place-items: center; margin-bottom: 14px; }
+.gapp .trilho .faisca-logo b { width: 22px; height: 22px; background: conic-gradient(from 200deg, #4285f4, #9b72cb, #d96570, #4285f4); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+.gapp .trilho .ico { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 19px; color: #c4c7c5; }
+.gapp .trilho .ico.novo { background: #1f2023; }
+.gapp .trilho .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #4285f4, #9b72cb); }
+.gapp .area { position: relative; z-index: 2; display: flex; flex-direction: column; }
+.gapp .cab { height: 72px; display: flex; align-items: center; justify-content: flex-end; gap: 18px; padding: 0 28px; }
+.gapp .cab .upgrade { background: #1b2a4a; color: #cfe0ff; border-radius: 999px; padding: 12px 22px; font-size: clamp(13px, 1.2vw, 17px); display: flex; align-items: center; gap: 10px; }
+.gapp .cab .upgrade::before { content: '✦'; }
+.gapp .cab .ico { color: #c4c7c5; font-size: 18px; }
+.gapp .meio { flex: 1; display: flex; flex-direction: column; justify-content: center; width: min(1000px, 86%); margin: 0 auto; gap: 2.4vh; transition: justify-content .6s; }
+.gapp .meio.conversa { justify-content: flex-end; padding-bottom: 16vh; }
+.gapp .ola { text-align: center; font: 400 clamp(32px, 3.6vw, 52px)/1.15 'Google Sans', 'Inter', sans-serif; color: #e3e3e3; margin-bottom: 4vh; transition: opacity .6s var(--ease), transform .8s var(--ease); }
+.gapp .ola.some { opacity: 0; transform: translateY(-20px); position: absolute; pointer-events: none; }
+.gapp .msg.eu { align-self: flex-end; background: #2a2b2e; border: 0; color: #e3e3e3; border-radius: 22px 22px 6px 22px; font-size: clamp(15px, 1.5vw, 20px); padding: 1.2vh 1.4vw; }
 .gapp .msg.ia { display: grid; grid-template-columns: 34px 1fr; gap: 14px; align-items: start; }
-.gapp .msg.ia .faisca { width: 30px; height: 30px; margin-top: 2px; background: conic-gradient(from 180deg, #4285f4, #9b72cb, #d96570, #4285f4); border-radius: 50%; -webkit-mask: radial-gradient(circle at 50% 50%, transparent 0 22%, #000 23% 100%); mask: radial-gradient(circle at 50% 50%, transparent 0 22%, #000 23% 100%); animation: gira 6s linear infinite; }
+.gapp .msg.ia .faisca { width: 26px; height: 26px; margin-top: 4px; background: conic-gradient(from 200deg, #4285f4, #9b72cb, #d96570, #4285f4); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: gira 4s linear infinite; }
 .gapp .msg.ia .faisca.parada { animation: none; }
 .gapp .corpo { font-size: clamp(15px, 1.5vw, 20px); line-height: 1.5; color: #e3e3e3; }
-.gapp .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.gapp .card { background: #1e1f20; border-color: #2d2e30; border-radius: 16px; backdrop-filter: none; }
-.gapp .card .l { color: #9aa0a6; }
-.gapp .resposta-final { color: #e3e3e3; font: 500 clamp(18px, 2vw, 30px)/1.25 'Google Sans', 'Inter', sans-serif; }
-.gapp .rodape { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 0 2.4vh; display: flex; flex-direction: column; align-items: center; gap: 1vh; }
-.gapp .entrada { width: min(820px, 86%); background: #1e1f20; border: 1px solid #2d2e30; border-radius: 28px; padding: 1.4vh 1.4vw 1.4vh 1.8vw; display: flex; align-items: center; gap: 12px; color: #e3e3e3; font-size: clamp(15px, 1.5vw, 20px); min-height: 7vh; position: relative; }
+.gapp .resposta-final { color: #e3e3e3; font: 500 clamp(18px, 2vw, 30px)/1.25 'Google Sans', 'Inter', sans-serif; margin-top: 1.4vh; }
+.gapp .rodape { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 0 3vh; display: flex; flex-direction: column; align-items: center; gap: 1.2vh; }
+.gapp .meio:not(.conversa) ~ .rodape { bottom: auto; top: 50%; transform: translateY(2vh); }
+.gapp .entrada { width: min(1000px, 86%); background: #1f2023; border: 1px solid #2a2b2e; border-radius: 999px; padding: 1.6vh 1.4vw 1.6vh 1.6vw; display: flex; align-items: center; gap: 14px; color: #e3e3e3; font-size: clamp(15px, 1.5vw, 20px); min-height: 8vh; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 .gapp .entrada::before { display: none; }
-.gapp .entrada .texto:empty::before { content: 'Pergunte ao Gemini'; color: #9aa0a6; }
-.gapp .entrada .mais, .gapp .entrada .mic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: #c4c7c5; font-size: 22px; }
-.gapp .entrada .enviar { width: 40px; height: 40px; border-radius: 50%; background: #e3e3e3; color: #131314; display: grid; place-items: center; font-weight: 700; opacity: 0; transition: opacity .3s; }
+.gapp .entrada .mais { font-size: 24px; color: #c4c7c5; width: 36px; text-align: center; }
+.gapp .entrada .texto { flex: 1; min-height: 1.3em; }
+.gapp .entrada .texto:empty::before { content: 'Digite @ para acessar conectores, habilidades e muito mais'; color: #9aa0a6; }
+.gapp .entrada .modelo { color: #e3e3e3; font-size: .9em; white-space: nowrap; display: flex; gap: 6px; align-items: center; }
+.gapp .entrada .modelo small { color: #9aa0a6; }
+.gapp .entrada .mic { color: #c4c7c5; font-size: 20px; width: 36px; text-align: center; }
+.gapp .entrada .enviar { width: 40px; height: 40px; border-radius: 50%; background: #e3e3e3; color: #0e0e10; display: grid; place-items: center; font-weight: 700; opacity: 0; transition: opacity .3s; }
 .gapp .entrada .enviar.on { opacity: 1; }
 .gapp .aviso { font-size: 12px; color: #9aa0a6; }
-
+.gapp .area.escura .meio, .gapp .area.escura .cab, .gapp.escura .trilho, .gapp .area.escura .rodape { opacity: .18; filter: blur(2px); transition: opacity .9s var(--ease), filter .9s var(--ease); }
+.gapp.escura .brilho { opacity: .45; }
 
 /* ---------------------------------------------------------------- números espalhados (gancho) */
-.gapp .area.escura .meio, .gapp .area.escura .cab, .gapp.escura .trilho, .gapp .area.escura .rodape { opacity: .18; filter: blur(2px); transition: opacity .9s var(--ease), filter .9s var(--ease); }
 .revelar { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
 .fig { position: absolute; opacity: 0; transform: translate(-50%, -50%) scale(.6); transition: opacity .7s var(--ease), transform 1s cubic-bezier(.16, 1.2, .3, 1); text-align: left; animation: flutua 7s ease-in-out infinite; animation-play-state: paused; }
 .fig.on { opacity: 1; transform: translate(-50%, -50%) scale(1); animation-play-state: running; }
@@ -210,6 +216,34 @@ body { -webkit-font-smoothing: antialiased; }
 .fecho-gancho { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(.9); width: min(1100px, 86vw); text-align: center; font: 500 clamp(30px, 4.4vw, 72px)/1.1 'Google Sans', 'Inter', sans-serif; color: #f3f4f8; opacity: 0; transition: opacity .8s var(--ease), transform 1s cubic-bezier(.16, 1.2, .3, 1); z-index: 4; text-shadow: 0 10px 60px rgba(0,0,0,.8); }
 .fecho-gancho.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .revelar.recolhe .fig { opacity: .12; filter: blur(3px); transition: opacity .9s var(--ease), filter .9s var(--ease); }
+
+
+/* ---------------------------------------------------------------- demo: chat do Gemini com tools do MCP */
+.janela.terminal { background: #0e0e10; }
+.janela.terminal .barra { background: #1f2023; border-color: #2a2b2e; }
+.gchat { height: calc(100% - 38px); display: flex; flex-direction: column; font-family: 'Google Sans', 'Inter', sans-serif; color: #e3e3e3; position: relative; }
+.gchat .brilho2 { position: absolute; left: 50%; bottom: -30%; width: 120%; height: 80%; transform: translateX(-50%); background: radial-gradient(ellipse at center, rgba(28,56,160,.8), rgba(10,16,40,.15) 55%, transparent 70%); filter: blur(12px); pointer-events: none; }
+.gchat .rolo { position: relative; flex: 1; overflow: hidden; padding: 22px 28px 10px; display: flex; flex-direction: column; gap: 14px; }
+.gchat .rolo .msg { opacity: 1; transform: none; max-width: 100%; }
+.gchat .eu { align-self: flex-end; background: #2a2b2e; color: #e3e3e3; border-radius: 22px 22px 6px 22px; padding: 10px 16px; font-size: clamp(14px, 1.3vw, 19px); max-width: 80%; }
+.gchat .ia { display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: start; }
+.gchat .ia .faisca { width: 24px; height: 24px; margin-top: 3px; background: conic-gradient(from 200deg, #4285f4, #9b72cb, #d96570, #4285f4); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: gira 4s linear infinite; }
+.gchat .ia .faisca.parada { animation: none; }
+.gchat .ia .corpo { font-size: clamp(14px, 1.3vw, 19px); line-height: 1.5; display: flex; flex-direction: column; gap: 8px; }
+.gchat .tool { display: flex; align-items: center; gap: 10px; background: #1f2023; border: 1px solid #2a2b2e; border-radius: 12px; padding: 8px 12px; font-size: clamp(12.5px, 1.1vw, 16px); color: #c4c7c5; opacity: 0; transform: translateY(8px); transition: opacity .4s var(--ease), transform .5s var(--ease); }
+.gchat .tool.on { opacity: 1; transform: none; }
+.gchat .tool .ic { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: #2a2b2e; font-size: 13px; flex-shrink: 0; }
+.gchat .tool .nome { font-family: var(--mono); color: #e3e3e3; }
+.gchat .tool .estado { margin-left: auto; font-size: .9em; color: #9aa0a6; white-space: nowrap; }
+.gchat .tool.ok .estado { color: #5fd39a; } .gchat .tool.erro .estado { color: #f28b82; }
+.gchat .tool .giro { width: 12px; height: 12px; border: 2px solid #4285f4; border-right-color: transparent; border-radius: 50%; animation: gira 1s linear infinite; display: inline-block; }
+.gchat .resultado { font-size: .92em; color: #9aa0a6; padding-left: 32px; margin-top: -4px; opacity: 0; transition: opacity .4s; }
+.gchat .resultado.on { opacity: 1; }
+.gchat .entrada { position: relative; margin: 0 28px 16px; background: #1f2023; border: 1px solid #2a2b2e; border-radius: 999px; padding: 10px 14px 10px 18px; display: flex; align-items: center; gap: 12px; font-size: clamp(14px, 1.3vw, 19px); min-height: 54px; }
+.gchat .entrada .texto { flex: 1; min-height: 1.2em; }
+.gchat .entrada .texto:empty::before { content: 'Digite @ para acessar conectores, habilidades e muito mais'; color: #9aa0a6; }
+.gchat .entrada .modelo { color: #e3e3e3; font-size: .85em; white-space: nowrap; } .gchat .entrada .modelo small { color: #9aa0a6; }
+.gchat .entrada .enviar { width: 36px; height: 36px; border-radius: 50%; background: #e3e3e3; color: #0e0e10; display: grid; place-items: center; font-weight: 700; }
 
 /* progresso e ajuda */
 .progresso { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--grad); width: 0; transition: width .5s var(--ease); z-index: 5; }
@@ -225,11 +259,12 @@ body { -webkit-font-smoothing: antialiased; }
 <!-- 1 · gancho invertido: uma pergunta num chat com a cara do Gemini; os números nascem na resposta -->
 <section class="slide s-gancho">
   <div class="gapp" id="chat">
-    <div class="trilho"><div class="ico">☰</div><div class="ico novo">＋</div><div style="flex:1"></div><div class="ico">⚙</div></div>
+    <div class="brilho"></div>
+    <div class="trilho"><div class="faisca-logo"><b></b></div><div class="ico novo">✎</div><div class="ico">⌕</div><div class="ico">▦</div><div class="ico">▣</div><div class="ico">◴</div><div class="ico">◎</div><div style="flex:1"></div><div class="ico">⚙</div><div class="avatar"></div></div>
     <div class="area">
-      <div class="cab"><div class="modelo">Gemini <small>▾</small></div><div class="avatar"></div></div>
-      <div class="meio">
-        <div class="ola" id="ola"><span class="g">Olá, Gabriel</span><span class="d">Como posso ajudar hoje?</span></div>
+      <div class="cab"><div class="upgrade">Fazer upgrade</div><div class="ico">✎</div></div>
+      <div class="meio" id="meio">
+        <div class="ola" id="ola">Por onde começamos?</div>
         <div class="msg eu" id="msg-eu"></div>
         <div class="msg ia" id="msg-ia">
           <div class="faisca" id="faisca"></div>
@@ -241,8 +276,7 @@ body { -webkit-font-smoothing: antialiased; }
         </div>
       </div>
       <div class="rodape">
-        <div class="entrada" id="entrada"><div class="mais">＋</div><div class="texto" id="entrada-texto"></div><div class="mic">🎤</div><div class="enviar" id="enviar">➤</div></div>
-        <div class="aviso">O Gemini pode cometer erros. Verifique as informações.</div>
+        <div class="entrada" id="entrada"><div class="mais">＋</div><div class="texto" id="entrada-texto"></div><div class="modelo">Gemini <small>Auto</small> ▾</div><div class="mic">🎙</div><div class="enviar" id="enviar">➤</div></div>
       </div>
     </div>
 
@@ -288,14 +322,14 @@ body { -webkit-font-smoothing: antialiased; }
 <section class="slide s-demo">
   <div class="palco" id="palco" data-cena="prompt">
     <div class="janela terminal" id="terminal">
-      <div class="barra"><i></i><i></i><i></i><span>gemini · ~/Stars · MCP: stars</span></div>
-      <pre id="tty"></pre>
+      <div class="barra"><i></i><i></i><i></i><span>Gemini · conector: stars (MCP)</span></div>
+      <div class="gchat"><div class="brilho2"></div><div class="rolo" id="rolo"></div><div class="entrada" id="demo-entrada"><span style="color:#c4c7c5;font-size:22px">＋</span><div class="texto" id="demo-texto"></div><div class="modelo">Gemini <small>Auto</small> ▾</div><div class="enviar">➤</div></div></div>
     </div>
     <div class="janela ui" id="janela-ui">
       <div class="barra"><i></i><i></i><i></i><span>Stars · console</span></div>
       <iframe id="ui-demo" data-src="http://127.0.0.1:5173/#projetos" title="Stars"></iframe>
     </div>
-    <div class="legenda" id="legenda">sessão real · Gemini CLI plugado no Stars por MCP</div>
+    <div class="legenda" id="legenda">replay de uma sessão real · Gemini plugado no Stars por MCP</div>
   </div>
 </section>
 
@@ -423,13 +457,13 @@ async function chat() {
   const texto = document.getElementById('entrada-texto'), figs = [...document.querySelectorAll('#revelar .fig')], final = document.getElementById('resposta-final'), iaTexto = document.getElementById('ia-texto')
   const revelar = document.getElementById('revelar'), fecho = document.getElementById('fecho-gancho'), area = document.querySelector('#chat .area')
   eu.classList.remove('on'); ia.classList.remove('on'); figs.forEach((c) => c.classList.remove('on')); revelar.classList.remove('recolhe'); fecho.classList.remove('on'); area.classList.remove('escura'); document.getElementById('chat').classList.remove('escura'); texto.textContent = ''; final.textContent = ''; iaTexto.textContent = ''; pensando.style.display = 'inline-flex'
-  document.getElementById('ola').classList.remove('some'); document.getElementById('enviar').classList.remove('on'); document.getElementById('faisca').classList.remove('parada')
+  document.getElementById('ola').classList.remove('some'); document.getElementById('meio').classList.remove('conversa'); document.getElementById('enviar').classList.remove('on'); document.getElementById('faisca').classList.remove('parada')
   await espera(700); if (id !== chatAtivo) return
   await clicar(document.getElementById('entrada'), { dx: -120 })
   await digitarEm(texto, 'Como foram os modelos de previsão de Shorts que o Stars montou essa semana?')
   document.getElementById('enviar').classList.add('on')
   await espera(350); await clicar(document.getElementById('enviar')); esconderCursor()
-  document.getElementById('ola').classList.add('some')
+  document.getElementById('ola').classList.add('some'); document.getElementById('meio').classList.add('conversa')
   eu.textContent = texto.textContent; texto.textContent = ''; eu.classList.add('on')
   await espera(600); ia.classList.add('on'); await espera(1400); if (id !== chatAtivo) return
   pensando.style.display = 'none'; document.getElementById('faisca').classList.add('parada')
@@ -492,37 +526,51 @@ async function carregarRoteiro() {
   return roteiro
 }
 const ROTEIRO_RESERVA = [
-  { cena: 'prompt', tipo: 'prompt', texto: 'Cria o projeto culinaria com canais de receitas, coleta, otimiza e me explica o modelo com os números.' },
-  { cena: 'tools', tipo: 'tool', texto: 'proximo_passo(projeto="culinaria")' },
-  { cena: 'tools', tipo: 'tool', texto: 'descobrir_canais(consulta="receitas fáceis")  →  50 canais' },
-  { cena: 'tools', tipo: 'tool', texto: 'coletar(projeto="culinaria")  →  job 7f3a… rodando' },
-  { cena: 'tools', tipo: 'tool', texto: 'calcular_texto · calcular_titulos · otimizar(alvo="likes")' },
-  { cena: 'ui', tipo: 'tool', texto: 'diagnostico(projeto="culinaria")' },
-  { cena: 'final', tipo: 'resposta', texto: '(a resposta real da sessão entra aqui quando sessao-gemini.json existir)' },
+  { cena: 'prompt', tipo: 'prompt', texto: 'Monta um modelo de likes para o nicho de culinária: descobre canais, coleta, otimiza e me explica o resultado com os números.' },
+  { cena: 'tools', tipo: 'tool', texto: "criar_projeto(nome='culinaria', setores=['receitas'], alvo='likes')" },
+  { cena: 'tools', tipo: 'ok', texto: 'projeto criado, modo automático' },
+  { cena: 'tools', tipo: 'tool', texto: "descobrir_canais(consulta='receitas fáceis', teto_unidades=100)" },
+  { cena: 'tools', tipo: 'ok', texto: '50 canais encontrados' },
+  { cena: 'tools', tipo: 'tool', texto: "adicionar_canal(ref='UC…', setor='receitas') ×25" },
+  { cena: 'tools', tipo: 'ok', texto: '25 canais, 11,2 mil Shorts coletados' },
+  { cena: 'ui', tipo: 'tool', texto: "otimizar(alvo='likes')" },
+  { cena: 'ui', tipo: 'ok', texto: 'job concluído: 9 receitas na validação, 1 testada e promovida' },
+  { cena: 'final', tipo: 'resposta', texto: '(replay de reserva: a resposta real da sessão entra aqui quando ela completar)' },
 ]
 let demoAtiva = 0
 async function demo() {
   const id = ++demoAtiva
-  const tty = document.getElementById('tty'), palco = document.getElementById('palco')
-  tty.innerHTML = ''; palco.dataset.cena = 'prompt'
+  const rolo = document.getElementById('rolo'), palco = document.getElementById('palco'), entradaTexto = document.getElementById('demo-texto')
+  rolo.innerHTML = ''; entradaTexto.textContent = ''; palco.dataset.cena = 'prompt'
   const passos = await carregarRoteiro()
-  await clicar(document.getElementById('terminal'), { dx: -180, dy: -120 }); esconderCursor()
-  const linha = (cls, txt) => { const s = document.createElement('span'); s.className = cls; s.textContent = txt; tty.appendChild(s); tty.appendChild(document.createTextNode('\n')); tty.scrollTop = tty.scrollHeight }
-  const digitar = async (cls, txt, ms = 22) => {
-    const s = document.createElement('span'); s.className = cls; tty.appendChild(s)
-    const cur = document.createElement('span'); cur.className = 'cursor'; tty.appendChild(cur)
-    for (const ch of txt) { if (id !== demoAtiva) return; s.textContent += ch; await espera(ch === ' ' ? ms * .6 : ms) }
-    cur.remove(); tty.appendChild(document.createTextNode('\n'))
-  }
-  const espera = (ms) => new Promise((r) => setTimeout(r, ms))
+  const no = (html, cls = '') => { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; rolo.appendChild(d); rolo.scrollTop = rolo.scrollHeight; return d }
+  const prompt = passos.find((p) => p.tipo === 'prompt')
+  await espera(600); if (id !== demoAtiva) return
+  await clicar(document.getElementById('demo-entrada'), { dx: -160 })
+  await digitarEm(entradaTexto, prompt ? prompt.texto : 'Monta um modelo de likes para culinária e me explica.', 16)
+  await espera(300); if (id !== demoAtiva) return
+  esconderCursor(); no(entradaTexto.textContent, 'msg eu'); entradaTexto.textContent = ''
+  const ia = no('<div class="faisca"></div><div class="corpo"><div class="pensando" style="display:inline-flex;gap:6px"><i style="width:8px;height:8px;border-radius:50%;background:#4285f4"></i><i style="width:8px;height:8px;border-radius:50%;background:#9b72cb"></i><i style="width:8px;height:8px;border-radius:50%;background:#d96570"></i></div></div>', 'msg ia')
+  const corpo = ia.querySelector('.corpo'); await espera(900); corpo.innerHTML = ''
+  let ultimaTool = null
   for (const p of passos) {
     if (id !== demoAtiva) return
+    if (p.tipo === 'prompt') continue
     palco.dataset.cena = p.cena
-    if (p.tipo === 'prompt') { await digitar('prompt', '> ' + p.texto, 24); await espera(500) }
-    else if (p.tipo === 'tool') { linha('tool', '  ⚙ ' + p.texto); await espera(p.espera ?? 900) }
-    else if (p.tipo === 'ok') { linha('ok', '  ✓ ' + p.texto); await espera(p.espera ?? 700) }
-    else if (p.tipo === 'dim') { linha('dim', '  ' + p.texto); await espera(p.espera ?? 500) }
-    else { await digitar('', p.texto, 9); await espera(400) }
+    if (p.tipo === 'tool') {
+      const nome = p.texto.split('(')[0], args = p.texto.slice(p.texto.indexOf('(')).slice(0, 70)
+      ultimaTool = document.createElement('div'); ultimaTool.className = 'tool'
+      ultimaTool.innerHTML = `<span class="ic">⚙</span><span>stars · <span class="nome">${nome}</span><span style="color:#9aa0a6"> ${args}</span></span><span class="estado"><span class="giro"></span></span>`
+      corpo.appendChild(ultimaTool); requestAnimationFrame(() => ultimaTool.classList.add('on')); rolo.scrollTop = rolo.scrollHeight
+      await espera(p.espera ?? 700)
+    } else if (p.tipo === 'ok' || p.tipo === 'dim') {
+      if (ultimaTool) { ultimaTool.classList.add(p.tipo === 'ok' ? 'ok' : 'erro'); ultimaTool.querySelector('.estado').textContent = p.tipo === 'ok' ? '✓ concluído' : '✗ erro' }
+      const r = document.createElement('div'); r.className = 'resultado'; r.textContent = p.texto.replace(/^[✗✓] ?/, ''); corpo.appendChild(r); requestAnimationFrame(() => r.classList.add('on')); rolo.scrollTop = rolo.scrollHeight
+      await espera(p.espera ?? 500)
+    } else {
+      ia.querySelector('.faisca').classList.add('parada')
+      const t = document.createElement('div'); corpo.appendChild(t); await digitarEm(t, p.texto, 9); rolo.scrollTop = rolo.scrollHeight; await espera(400)
+    }
   }
 }
 
