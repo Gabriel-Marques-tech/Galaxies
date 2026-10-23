@@ -119,7 +119,18 @@ body { -webkit-font-smoothing: antialiased; }
 .tabela td b { color: var(--verde); font-weight: 600; }
 
 /* ---------------------------------------------------------------- fecho */
-.fecho .nome { font: 500 clamp(36px, 5vw, 80px) var(--display); letter-spacing: -.02em; margin-top: 4vh; }
+.fecho .assina { display: flex; align-items: center; gap: 1.6vw; margin-top: 4vh; text-align: left; }
+.fecho .assina .foto { width: clamp(72px, 7vw, 110px); aspect-ratio: 1; border-radius: 50%; padding: 3px; background: var(--grad); flex-shrink: 0; }
+.fecho .assina .foto img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; border: 3px solid #0b0d14; }
+.fecho .qrs { display: flex; gap: 3vw; margin-top: 4vh; }
+.fecho .qr { display: flex; flex-direction: column; align-items: center; gap: .8vh; color: inherit; text-decoration: none; }
+.fecho .qr .tile { width: clamp(110px, 11vw, 170px); aspect-ratio: 1; background: #fff; border-radius: 16px; padding: 8px; display: grid; place-items: center; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+.fecho .qr .tile img { width: 100%; height: 100%; display: block; }
+.fecho .qr .tile.vazio { background: rgba(255,255,255,.06); border: 1px dashed rgba(255,255,255,.2); }
+.fecho .qr .tile.vazio img { display: none; }
+.fecho .qr b { font: 500 clamp(14px, 1.3vw, 19px) var(--body); color: #e3e3e3; }
+.fecho .qr small { font: 400 clamp(11px, .95vw, 14px) var(--body); color: var(--sub); }
+.fecho .nome { font: 500 clamp(30px, 3.6vw, 58px) var(--display); letter-spacing: -.02em; line-height: 1.05; }
 .fecho .onde { color: var(--sub); font: 400 clamp(16px, 1.6vw, 24px) var(--body); margin-top: 1vh; }
 
 
@@ -548,8 +559,14 @@ body { -webkit-font-smoothing: antialiased; }
 <section class="slide fecho">
   <div class="h1" data-in="zoom" style="--i:0">Não é um modelo.<br><span class="grad">É quem faz os modelos.</span></div>
   <div class="p" data-in style="--i:1">E se vigia.</div>
-  <div class="nome" data-in style="--i:2">Gabriel Marques</div>
-  <div class="onde" data-in style="--i:3">Inteli Academy × Galaxies · Stars</div>
+  <div class="assina" data-in style="--i:2">
+    <div class="foto"><img src="foto-gabriel.jpg" alt=""></div>
+    <div><div class="nome">Gabriel Marques</div><div class="onde">Inteli Academy × Galaxies · Stars</div></div>
+  </div>
+  <div class="qrs" data-in style="--i:3">
+    <a class="qr" href="https://www.linkedin.com/in/gabriel-marques-tech" target="_blank" rel="noopener" id="qr-linkedin"><span class="tile"><img src="qr-linkedin.svg" alt="" onerror="this.parentElement.classList.add('vazio')"></span><b>LinkedIn</b><small>gabriel-marques-tech</small></a>
+    <a class="qr" href="https://github.com/Gabriel-Marques-tech/Galaxies" target="_blank" rel="noopener"><span class="tile"><img src="qr-github.svg" alt=""></span><b>Código</b><small>github.com/Gabriel-Marques-tech/Galaxies</small></a>
+  </div>
 </section>
 
 </div>
