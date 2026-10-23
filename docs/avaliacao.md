@@ -5,8 +5,8 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 ## Base
 
 - 54.880 Shorts de 153 canais (YouTube Data API. 4.327 unidades de cota gratuita).
-- 474 ganchos (primeiros 5s) com frames, descrição, fala e embedding.
-- Atributos por extrator: @cf/meta/llama-3.1-8b-instruct-fast (474), laya (9398).
+- 2558 ganchos (primeiros 5s) com frames, descrição, fala e embedding.
+- Atributos por extrator: laya (9398), @cf/meta/llama-3.1-8b-instruct-fast (474), vizinhos (2084).
 
 ## Regras fixas (o agente não altera)
 
@@ -43,15 +43,16 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 | `6e7808ded3` | metadados + historico, âncora móvel | 2041 | 0.652 | 0.738 | 0.863 | +24.5% | +11.8% | 58.7% | 80.1% |
 | `988e19ff1a` | metadados + historico, âncora móvel | 2041 | 0.658 | 0.735 | 0.863 | +23.8% | +10.4% | 58.6% | 79.8% |
 | `1786c3fd7c` | metadados + historico, âncora móvel **← ativo** | 3014 | 0.649 | 0.749 | 0.859 | +24.4% | +13.3% | 58.9% | 73.1% |
+| `d6ebcc7b67` | metadados + historico, âncora móvel | 3014 | 0.660 | 0.746 | 0.859 | +23.1% | +11.5% | 58.7% | 76.0% |
 
 ## Views
 
-**Modelo ativo `799d10cea9`** (metadados + historico + texto, âncora móvel):
+**Modelo ativo `0834899550`** (metadados + historico, âncora móvel):
 
-- Erro +21.1% menor que o baseline (MAE 0.690 vs 0.874; erro típico 1.99× vs 2.40×).
-- Acerta 56.7% dos pares A vs B no mesmo canal (acaso: 50%).
-- A faixa de 80% contém 75.5% dos resultados reais no teste (sem calibração: 65.7%). A faixa provável de 50% contém 51.8%.
-- Hipótese registrada: otimização: melhor de 18 tentativas na validação (+4.3% sobre o controle). Tentativas: padrão: metadados: +0.0%, padrão: historico: +2.0%, padrão: texto: -0.3%, padrão: titulo: -0.2%, padrão: movel: +2.1%, padrão: historico+texto: +2.4%, ancora movel: +3.0%, min_data_in_leaf=40: +3.1%, meia_vida_dias=180: +3.7%, learning_rate=0.0858: +4.2%, meia_vida_dias=None: +3.1%, rodadas=150: +4.3%, ancora me
+- Erro +21.2% menor que o baseline (MAE 0.689 vs 0.874; erro típico 1.99× vs 2.40×).
+- Acerta 55.2% dos pares A vs B no mesmo canal (acaso: 50%).
+- A faixa de 80% contém 76.6% dos resultados reais no teste (sem calibração: 70.2%). A faixa provável de 50% contém 51.7%.
+- Hipótese registrada: otimização: melhor de 12 tentativas na validação (+2.1% sobre o controle). Tentativas: padrão: metadados: +0.0%, padrão: historico: +1.8%, padrão: texto: -0.6%, padrão: titulo: -1.1%, padrão: movel: +2.1%, padrão: historico+texto: +1.7%, min_data_in_leaf=40: +0.9%
 
 | id | receita | n teste | MAE | só meta | baseline | vs baseline | vs controle | A vs B | faixa 80% |
 |---|---|---|---|---|---|---|---|---|---|
@@ -65,30 +66,25 @@ Setores: moda, beleza · alvo padrão: likes · modo: automatico
 | `c149994b1f` | metadados + historico + texto | 2062 | 0.697 | 0.726 | 0.856 | +18.6% | +4.1% | 56.7% | 71.5% |
 | `db8c565807` | metadados + historico, âncora móvel | 2062 | 0.680 | 0.728 | 0.856 | +20.5% | +6.5% | 54.4% | 73.8% |
 | `1ee4ea6866` | metadados + historico, âncora móvel | 2062 | 0.686 | 0.725 | 0.856 | +19.8% | +5.4% | 52.8% | 74.3% |
-| `799d10cea9` | metadados + historico + texto, âncora móvel **← ativo** | 3035 | 0.690 | 0.742 | 0.874 | +21.1% | +7.0% | 56.7% | 75.5% |
+| `799d10cea9` | metadados + historico + texto, âncora móvel | 3035 | 0.690 | 0.742 | 0.874 | +21.1% | +7.0% | 56.7% | 75.5% |
+| `0834899550` | metadados + historico, âncora móvel **← ativo** | 3035 | 0.689 | 0.730 | 0.874 | +21.2% | +5.7% | 55.2% | 76.6% |
 
 ## Busca do agente (likes, validação)
 
 | origem | camadas | melhora sobre o controle | ganho real? | n validação |
 |---|---|---|---|---|
 | padrão: metadados | metadados | +0.0% | indistinguível (50%) | 2898 |
-| padrão: historico | metadados + historico | +2.0% | sim (100%) | 2898 |
-| padrão: texto | metadados + texto | -0.3% | indistinguível (21%) | 2898 |
-| padrão: titulo | metadados + historico + titulo | -0.2% | indistinguível (43%) | 2047 |
+| padrão: historico | metadados + historico | +1.8% | sim (100%) | 2898 |
+| padrão: texto | metadados + texto | -0.6% | indistinguível (10%) | 2898 |
+| padrão: titulo | metadados + historico + titulo | -1.1% | indistinguível (6%) | 2047 |
 | padrão: movel | metadados + historico | +2.1% | sim (100%) | 2898 |
-| padrão: historico+texto | metadados + historico + texto | +2.4% | sim (100%) | 2898 |
-| padrão: historico+texto+multimodal | metadados + historico + texto + multimodal | — | sem poder estatístico: 22 linhas na validação (mínimo 300); precisa de ~2864 vídeos com essas camadas para medir a difer | 22 |
+| padrão: historico+texto | metadados + historico + texto | +1.7% | sim (100%) | 2898 |
+| padrão: historico+texto+multimodal | metadados + historico + texto + multimodal | — | sem poder estatístico: 218 linhas na validação (mínimo 300); precisa de ~559 vídeos com essas camadas para medir a difer | 218 |
 | padrão: completo | metadados + historico + texto + multimodal + atributos | — | sem poder estatístico: 22 linhas na validação (mínimo 300); precisa de ~2864 vídeos com essas camadas para medir a difer | 22 |
 | padrão: completo | metadados + historico + texto + multimodal + atributos | — | sem poder estatístico: 22 linhas na validação (mínimo 300); precisa de ~2864 vídeos com essas camadas para medir a difer | 22 |
-| ancora movel | metadados + historico + texto | +3.0% | sim (100%) | 2898 |
-| com multimodal | metadados + historico + texto + multimodal | — | sem poder estatístico: 22 linhas na validação (mínimo 300); precisa de ~2864 vídeos com essas camadas para medir a difer | 22 |
-| min_data_in_leaf=40 | metadados + historico + texto | +3.1% | sim (100%) | 2898 |
-| meia_vida_dias=180 | metadados + historico + texto | +3.7% | sim (100%) | 2898 |
-| learning_rate=0.0858 | metadados + historico + texto | +4.2% | sim (100%) | 2898 |
-| meia_vida_dias=None | metadados + historico + texto | +3.1% | sim (100%) | 2898 |
-| rodadas=150 | metadados + historico + texto | +4.3% | sim (100%) | 2898 |
-| com multimodal | metadados + historico + texto + multimodal | — | sem poder estatístico: 22 linhas na validação (mínimo 300); precisa de ~2864 vídeos com essas camadas para medir a difer | 22 |
-| ancora mediana_canal | metadados + historico + texto | +3.2% | sim (100%) | 2898 |
+| padrão: completo | metadados + historico + texto + multimodal + atributos | — | receita com poucos dados (0 treino, 196 teste): processe mais ganchos, calcule os atributos ou o texto | 0 |
+| com multimodal | metadados + historico + multimodal | — | sem poder estatístico: 218 linhas na validação (mínimo 300); precisa de ~559 vídeos com essas camadas para medir a difer | 218 |
+| min_data_in_leaf=40 | metadados + historico | +0.9% | sim (92%) | 2898 |
 
 ## Crescimento observado
 
@@ -107,7 +103,7 @@ A coleta é uma foto só; os vídeos recentes foram reobservados dias depois (6.
 ## Limitações
 
 - Previsão antes de publicar tem teto natural: algoritmo e acaso pesam muito. O modelo serve para expectativa, triagem e priorizar testes, não para cravar números.
-- O período de teste derivou: os vídeos novos rendem ~18% menos em relação à mediana histórica do canal do que o treino sugeria. Não é crescimento pendente (a curva observada mostra likes estáveis a partir de ~10 dias). Com a âncora fixa a faixa de 80% cobria ~75% no teste; a âncora móvel (média dos últimos 10 vídeos do canal) segue a deriva e fechou a cobertura. O ciclo de reotimização com a base atualizada continua sendo o remédio de longo prazo.
+- A base é uma foto só: o período de teste pode render diferente da mediana histórica do canal (deriva). A âncora móvel (média dos últimos 10 vídeos do canal) segue esse movimento; a reobservação diária mede a curva de crescimento; e a reotimização com a base atualizada é o remédio de longo prazo.
 - Sugestões vêm de associação aprendida na base, não de causa.
 - Camadas de gancho e atributos cobrem só os vídeos com camada bruta; comparações nelas usam menos linhas de teste.
 
