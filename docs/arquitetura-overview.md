@@ -223,3 +223,27 @@ replicação por estado, não por conversa: por isso qualquer LLM pode operar o 
   desiste cedo; o framework compensa com respostas que sempre trazem o estado.
 - O gancho ainda não provou valor no modelo: os ganchos processados caem no teste; a
   validação tem 22 linhas (mínimo 300).
+
+---
+
+# "780 a 15 mil não diz nada": o que a faixa vale e o que não vale
+
+Medido em 23/10 no teste de moda e beleza (3.014 vídeos, modelo ativo `1786c3fd7c`):
+
+- **A faixa de 80% é larga porque o dado é ruidoso**, não porque o modelo é frouxo. Dentro
+  de um mesmo canal, likes variam com desvio ~1,0 em log: o mesmo criador oscila 2,7× para
+  cima e para baixo sem mudar nada. Uma faixa ingênua ("média do canal ± c") precisa de
+  **~10× de largura** para cobrir 80%; a do modelo cobre o mesmo com **~6×**. Metade da
+  largura, mesma honestidade. Estreitar além disso seria mentir (a faixa sem calibração
+  cobre bem menos que 80%).
+- **O valor de decisão não está na faixa; está em três coisas que a faixa sustenta:**
+  1. **Veredito "acima / abaixo do normal do canal"**: quando o modelo diz *acima* (q50 ≥
+     1,3× a mediana), **81%** dos vídeos ficaram acima da mediana do canal; quando diz
+     *abaixo*, só **17%** ficaram acima.
+  2. **Chance de viralizar (3× a mediana em 30 dias) é calibrada**: quando ele diz 0–5%,
+     viralizam 4%; 5–10% → 8%; 10–20% → 16%; 20–40% → 26%. AUC 0,71 (acaso 0,50). Ele não
+     diz "vai viralizar"; diz "este tem 4× mais chance que aquele", e acerta a proporção.
+  3. **A vs B no mesmo canal**: 58,9% (acaso 50%).
+- **Frase**: "Ninguém prevê o viral de um Short antes de publicar; o que dá para prever, e
+  conferir, é a chance. Quando o Stars diz 20%, um em cada quatro viraliza. Quando diz 2%,
+  quase nenhum."
