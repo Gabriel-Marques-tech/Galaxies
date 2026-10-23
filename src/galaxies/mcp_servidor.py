@@ -122,7 +122,12 @@ class ServidorGalaxies:
 
 
 def _texto(valor) -> str:
-    return json.dumps(_json(valor), ensure_ascii=False, default=str)
+    """JSON em texto. Listas vão embrulhadas em objeto: clientes como o Gemini CLI validam
+    o conteúdo como um registro e rejeitam uma lista no topo."""
+    dado = _json(valor)
+    if isinstance(dado, list):
+        dado = {"itens": dado, "n": len(dado)}
+    return json.dumps(dado, ensure_ascii=False, default=str)
 
 
 def criar_servidor(fw: Framework) -> ServidorGalaxies:

@@ -81,7 +81,7 @@ def test_loop_criar_coletar_treinar_avaliar_analisar(tmp_path):
     )
     assert len(analise["timeline"]) == 5
     etapas = chamar(mcp, "trace", projeto="moda-beleza", run_id=analise["run_id"])
-    assert [e["nome"] for e in etapas] == ["prever", "explicar"]
+    assert [e["nome"] for e in etapas["itens"]] == ["prever", "explicar"]  # listas vêm em itens
 
 
 def test_erro_de_dominio_volta_como_mensagem_para_o_agente(tmp_path):
