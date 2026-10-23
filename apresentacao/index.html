@@ -591,6 +591,7 @@ let roteiroAtual = 0 // cada troca de slide incrementa; toda sequência animada 
 function mostrar(i) {
   atual = Math.min(Math.max(i, 0), slides.length - 1)
   roteiroAtual++; cursorAnim++; cursor.classList.remove('on'); cursor.classList.remove('clicando')
+  som.slide()
   for (const res of esperandoRect.values()) res(null)
   esperandoRect.clear()
   slides.forEach((s, k) => s.classList.toggle('on', k === atual))
@@ -615,6 +616,45 @@ addEventListener('keydown', (e) => {
 })
 addEventListener('click', (e) => { if (!e.target.closest('iframe, a, button, #chip-modo, #icone-stars')) mostrar(atual + 1) })
 
+
+// ---------------------------------------------------------------- som: efeitos discretos sintetizados (Web Audio)
+// Nada de arquivo: cada efeito é um osciladorzinho ou um sopro de ruído filtrado. Volume baixo.
+// O navegador só libera áudio depois de um gesto do usuário: o primeiro clique/tecla destrava.
+const SOM = { ctx: null, ligado: true, volume: .07 }
+function somPronto() {
+  if (!SOM.ligado) return null
+  try { SOM.ctx ??= new (window.AudioContext || window.webkitAudioContext)() } catch { return null }
+  if (SOM.ctx.state === 'suspended') SOM.ctx.resume().catch(() => {})
+  return SOM.ctx.state === 'running' ? SOM.ctx : null
+}
+function tom({ freq = 440, para = freq, dur = .12, tipo = 'sine', ganho = 1, ataque = .005 } = {}) {
+  const c = somPronto(); if (!c) return
+  const o = c.createOscillator(), g = c.createGain(), t = c.currentTime
+  o.type = tipo; o.frequency.setValueAtTime(freq, t); if (para !== freq) o.frequency.exponentialRampToValueAtTime(para, t + dur)
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(SOM.volume * ganho, t + ataque); g.gain.exponentialRampToValueAtTime(.0001, t + dur)
+  o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + .02)
+}
+function sopro({ dur = .35, de = 400, ate = 1800, ganho = .8 } = {}) {
+  const c = somPronto(); if (!c) return
+  const n = Math.floor(c.sampleRate * dur), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0)
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n)
+  const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), t = c.currentTime
+  src.buffer = buf; f.type = 'bandpass'; f.Q.value = .9; f.frequency.setValueAtTime(de, t); f.frequency.exponentialRampToValueAtTime(ate, t + dur)
+  g.gain.setValueAtTime(SOM.volume * ganho, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur)
+  src.connect(f).connect(g).connect(c.destination); src.start(t)
+}
+const som = {
+  clique: () => { tom({ freq: 1800, para: 900, dur: .05, tipo: 'square', ganho: .35 }) },
+  tecla: () => { tom({ freq: 2600 + Math.random() * 600, para: 1500, dur: .025, tipo: 'triangle', ganho: .18 }) },
+  pop: () => { tom({ freq: 420, para: 880, dur: .18, ganho: .9 }); tom({ freq: 1320, dur: .12, ganho: .25, ataque: .02 }) },
+  slide: () => { sopro({ dur: .3, de: 300, ate: 1400, ganho: .5 }) },
+  abrir: () => { sopro({ dur: .55, de: 200, ate: 2400, ganho: .7 }); tom({ freq: 520, para: 1040, dur: .4, ganho: .35, ataque: .05 }) },
+  tool: () => { tom({ freq: 980, para: 1240, dur: .07, tipo: 'triangle', ganho: .3 }) },
+  ok: () => { tom({ freq: 880, dur: .08, ganho: .3 }); setTimeout(() => tom({ freq: 1320, dur: .12, ganho: .3 }), 70) },
+  onda: () => { tom({ freq: 220, para: 660, dur: .9, ganho: .6, ataque: .03 }); sopro({ dur: .9, de: 200, ate: 3000, ganho: .4 }) },
+}
+addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'm') { SOM.ligado = !SOM.ligado; if (SOM.ligado) somPronto() } else somPronto() })
+addEventListener('pointerdown', () => somPronto())
 
 // ---------------------------------------------------------------- cursor animado
 const cursor = document.getElementById('cursor')
@@ -642,9 +682,9 @@ function moverCursor(el, { dx = 0, dy = 0, ms } = {}) {
   })
 }
 async function clicar(el, opts) { await moverCursor(el, opts); await pressionar() }
-async function pressionar() { const r = roteiroAtual; if (!cursor.classList.contains('on')) return; cursor.classList.add('clicando'); await espera(380); cursor.classList.remove('clicando'); if (r !== roteiroAtual) throw new Error('slide trocou') }
+async function pressionar() { const r = roteiroAtual; if (!cursor.classList.contains('on')) return; som.clique(); cursor.classList.add('clicando'); await espera(380); cursor.classList.remove('clicando'); if (r !== roteiroAtual) throw new Error('slide trocou') }
 function esconderCursor() { cursorAnim++; cursor.classList.remove('on') }
-async function digitarEm(el, texto, ms = 38) { const r = roteiroAtual; el.textContent = ''; for (const ch of texto) { if (r !== roteiroAtual) return; el.textContent += ch; await espera(ch === ' ' ? ms * .5 : ms + Math.random() * 18) } }
+async function digitarEm(el, texto, ms = 38) { const r = roteiroAtual; el.textContent = ''; let n = 0; for (const ch of texto) { if (r !== roteiroAtual) return; el.textContent += ch; if (ch !== ' ' && n++ % 2 === 0) som.tecla(); await espera(ch === ' ' ? ms * .5 : ms + Math.random() * 18) } }
 
 // ---------------------------------------------------------------- gancho: chat roteirizado
 let chatAtivo = 0
@@ -664,15 +704,15 @@ async function chat() {
   eu.textContent = texto.textContent; texto.textContent = ''; eu.classList.add('on')
   await espera(600); ia.classList.add('on'); await espera(1400); if (id !== chatAtivo || r !== roteiroAtual) return
   pensando.style.display = 'none'; document.getElementById('faisca').classList.add('parada')
-  await digitarEm(iaTexto, 'Resumo da semana, em números:', 22)
+  await digitarEm(iaTexto, 'Resumo da semana, em números:', 16)
   await espera(700); if (id !== chatAtivo || r !== roteiroAtual) return
   area.classList.add('escura'); document.getElementById('chat').classList.add('escura')
-  for (const [k, c] of figs.entries()) { await espera(k ? 1100 : 500); if (id !== chatAtivo || r !== roteiroAtual) return; c.classList.add('on'); contarEm(c) }
+  for (const [k, c] of figs.entries()) { await espera(k ? 650 : 300); if (id !== chatAtivo || r !== roteiroAtual) return; c.classList.add('on'); som.pop(); contarEm(c) }
   // os números ficam na tela; a frase vem no próximo slide
 }
 function contarEm(c) {
   const el = c.querySelector('[data-conta]'); const alvo = parseFloat(el.dataset.conta), pre = el.dataset.prefixo || '', suf = el.dataset.sufixo || ''
-  const dec = (el.dataset.conta.split('.')[1] || '').length, ini = performance.now() + 100, dur = 1400
+  const dec = (el.dataset.conta.split('.')[1] || '').length, ini = performance.now() + 100, dur = 1000
   const passo = (t) => { const p = Math.min(Math.max((t - ini) / dur, 0), 1), e = 1 - Math.pow(1 - p, 3); el.textContent = pre + (alvo * e).toFixed(dec).replace('.', ',') + suf; if (p < 1) requestAnimationFrame(passo) }
   requestAnimationFrame(passo)
 }
@@ -688,7 +728,7 @@ async function abrirApp(s) {
 }
 // Como no macOS: o ícone dá um pulo e a janela cresce a partir dele até ocupar a tela.
 async function abrirJanelaDesde(icone, s) {
-  icone.classList.add('pula'); await espera(420)
+  icone.classList.add('pula'); som.abrir(); await espera(420)
   const r = icone.getBoundingClientRect(), j = document.createElement('div'); j.className = 'janela-abrindo'
   Object.assign(j.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` })
   document.body.appendChild(j); requestAnimationFrame(() => { j.classList.add('on'); requestAnimationFrame(() => Object.assign(j.style, { left: '0px', top: '0px', width: '100vw', height: '100vh', borderRadius: '0px' })) })
@@ -758,7 +798,7 @@ function garantirFiltro() {
 function ondular(alvo, x, y, forca = 38) {
   const { img, mapa } = garantirFiltro(), cx0 = alvo.getBoundingClientRect()
   const cx = x - cx0.left, cy = y - cx0.top, alcance = Math.hypot(Math.max(cx, cx0.width - cx), Math.max(cy, cx0.height - cy)) / ONDA.ri
-  alvo.style.filter = `url(#${ONDA.id})`; cancelAnimationFrame(ONDA.anim); const t0 = performance.now()
+  alvo.style.filter = `url(#${ONDA.id})`; cancelAnimationFrame(ONDA.anim); som.onda(); const t0 = performance.now()
   const quadro = (agora) => {
     const t = Math.min((agora - t0) / ONDA.dur, 1), av = 1 - Math.pow(1 - t, 1.8), raio = Math.max(alcance * av, 2), inten = forca * Math.min(t * 6, 1) * Math.pow(1 - t, 1.3)
     img.setAttribute('x', (cx - raio).toFixed(1)); img.setAttribute('y', (cy - raio).toFixed(1)); img.setAttribute('width', (raio * 2).toFixed(1)); img.setAttribute('height', (raio * 2).toFixed(1)); mapa.setAttribute('scale', inten.toFixed(2))
@@ -916,10 +956,10 @@ async function demo() {
       const nome = p.texto.split('(')[0], args = p.texto.slice(p.texto.indexOf('(')).slice(0, 70)
       ultimaTool = document.createElement('div'); ultimaTool.className = 'tool'
       ultimaTool.innerHTML = `<span class="ic">⚙</span><span>stars · <span class="nome">${nome}</span><span style="color:#9aa0a6"> ${args}</span></span><span class="estado"><span class="giro"></span></span>`
-      corpo.appendChild(ultimaTool); requestAnimationFrame(() => ultimaTool.classList.add('on')); rolo.scrollTop = rolo.scrollHeight
+      corpo.appendChild(ultimaTool); som.tool(); requestAnimationFrame(() => ultimaTool.classList.add('on')); rolo.scrollTop = rolo.scrollHeight
       await espera(Math.min(p.espera ?? 700, 420))
     } else if (p.tipo === 'ok' || p.tipo === 'dim') {
-      if (ultimaTool) { ultimaTool.classList.add(p.tipo === 'ok' ? 'ok' : 'erro'); ultimaTool.querySelector('.estado').textContent = p.tipo === 'ok' ? '✓ concluído' : '✗ erro' }
+      if (ultimaTool) { ultimaTool.classList.add(p.tipo === 'ok' ? 'ok' : 'erro'); ultimaTool.querySelector('.estado').textContent = p.tipo === 'ok' ? '✓ concluído' : '✗ erro'; if (p.tipo === 'ok') som.ok() }
       const r = document.createElement('div'); r.className = 'resultado'; r.textContent = p.texto.replace(/^[✗✓] ?/, ''); corpo.appendChild(r); requestAnimationFrame(() => r.classList.add('on')); rolo.scrollTop = rolo.scrollHeight
       await espera(Math.min(p.espera ?? 500, 320))
     } else {
