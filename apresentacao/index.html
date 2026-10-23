@@ -66,9 +66,9 @@ body { -webkit-font-smoothing: antialiased; }
 
 /* ---------------------------------------------------------------- marca */
 .marca { display: flex; flex-direction: column; align-items: center; gap: 2vh; }
-.marca .logo { width: clamp(110px, 14vw, 210px); aspect-ratio: 1; background: linear-gradient(100deg, #4285f4, #9b72cb, #d96570, #4285f4); background-size: 300% 100%; animation: flui 8s linear infinite, gira 90s linear infinite; -webkit-mask: url(logo.svg) center / contain no-repeat; mask: url(logo.svg) center / contain no-repeat; filter: drop-shadow(0 0 40px rgba(155,114,203,.5)); transition: transform 1.1s cubic-bezier(.6, 0, .2, 1), opacity .9s var(--ease); cursor: pointer; }
-.marca .logo.abrindo { transform: scale(14); opacity: 0; }
-.slide.abrindo .marca > :not(.logo) { opacity: 0; transition: opacity .5s; }
+.marca .logo { width: clamp(110px, 14vw, 210px); aspect-ratio: 1; display: block; background: linear-gradient(100deg, #4285f4, #9b72cb, #d96570, #4285f4); background-size: 300% 100%; animation: flui 8s linear infinite, gira 90s linear infinite; -webkit-mask: url(logo.svg) center / contain no-repeat; mask: url(logo.svg) center / contain no-repeat; filter: drop-shadow(0 0 40px rgba(155,114,203,.5)); transition: transform 1.1s cubic-bezier(.6, 0, .2, 1), opacity .9s var(--ease); cursor: pointer; }
+.slide.abrindo .marca > :not(.icone-mac) { opacity: 0; transition: opacity .5s; }
+.slide.abrindo .icone-mac { opacity: 0; transition: opacity .4s .25s; }
 @keyframes gira { to { transform: rotate(360deg); } }
 .marca .nome { font: 500 clamp(64px, 11vw, 200px)/1 var(--display); letter-spacing: -.04em; }
 .marca .tag { font: 400 clamp(18px, 2.2vw, 34px) var(--display); color: var(--sub); }
@@ -247,6 +247,16 @@ body { -webkit-font-smoothing: antialiased; }
 .gchat .entrada .modelo { color: #e3e3e3; font-size: .85em; white-space: nowrap; } .gchat .entrada .modelo small { color: #9aa0a6; }
 .gchat .entrada .enviar { width: 36px; height: 36px; border-radius: 50%; background: #e3e3e3; color: #0e0e10; display: grid; place-items: center; font-weight: 700; }
 
+
+/* ---------------------------------------------------------------- ícone de app estilo macOS */
+.icone-mac { position: relative; width: clamp(130px, 15vw, 220px); aspect-ratio: 1; border-radius: 22.5%; background: linear-gradient(160deg, #2a2e3d 0%, #121521 60%, #0b0d14 100%); box-shadow: 0 2px 0 rgba(255,255,255,.08) inset, 0 -2px 0 rgba(0,0,0,.6) inset, 0 24px 60px rgba(0,0,0,.6), 0 0 60px rgba(155,114,203,.25); display: grid; place-items: center; cursor: pointer; transition: transform .35s cubic-bezier(.3, 1.4, .4, 1); }
+.icone-mac::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(180deg, rgba(255,255,255,.12), transparent 45%); pointer-events: none; }
+.icone-mac .logo { width: 70%; filter: drop-shadow(0 0 24px rgba(155,114,203,.55)); }
+.icone-mac.pula { animation: pula .7s cubic-bezier(.3, 1.2, .4, 1); }
+@keyframes pula { 0% { transform: translateY(0); } 35% { transform: translateY(-14%) scale(1.03); } 70% { transform: translateY(0) scale(.98); } 100% { transform: translateY(0); } }
+.janela-abrindo { position: fixed; z-index: 40; border-radius: 22%; background: #0e0e10; box-shadow: 0 40px 120px rgba(0,0,0,.7); opacity: 0; transition: left .75s cubic-bezier(.2, .8, .2, 1), top .75s cubic-bezier(.2, .8, .2, 1), width .75s cubic-bezier(.2, .8, .2, 1), height .75s cubic-bezier(.2, .8, .2, 1), border-radius .75s, opacity .35s; }
+.janela-abrindo.on { opacity: 1; }
+
 /* progresso e ajuda */
 .progresso { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--grad); width: 0; transition: width .5s var(--ease); z-index: 5; }
 .ajuda { position: fixed; right: 16px; bottom: 12px; font: 400 12px var(--body); color: rgba(255,255,255,.35); z-index: 5; }
@@ -303,7 +313,7 @@ body { -webkit-font-smoothing: antialiased; }
 <!-- 3 · a ideia -->
 <section class="slide s-ideia">
   <div class="marca">
-    <div class="logo" id="logo-stars" data-in="zoom" style="--i:0"></div>
+    <div class="icone-mac" id="icone-stars" data-in="zoom" style="--i:0"><div class="logo" id="logo-stars"></div></div>
     <div class="nome gradvivo" data-in style="--i:1">Stars</div>
     <div class="tag" data-in style="--i:2">um cientista de dados na palma da mão</div>
     <div class="plug" data-in style="--i:3">
@@ -488,14 +498,21 @@ function contarEm(c) {
 let abrindoId = 0
 async function abrirApp(s) {
   const id = ++abrindoId
-  const logo = document.getElementById('logo-stars'); logo.classList.remove('abrindo'); s.classList.remove('abrindo')
+  const icone = document.getElementById('icone-stars'); s.classList.remove('abrindo')
   await espera(5200); if (id !== abrindoId || slides[atual] !== s) return
-  await clicar(logo, { ms: 1300 }); if (id !== abrindoId || slides[atual] !== s) return
-  esconderCursor(); s.classList.add('abrindo'); logo.classList.add('abrindo')
-  await espera(900); if (id !== abrindoId || slides[atual] !== s) return
-  mostrar(atual + 1)
+  await clicar(icone, { ms: 1300 }); if (id !== abrindoId || slides[atual] !== s) return
+  esconderCursor(); await abrirJanelaDesde(icone, s)
 }
-document.addEventListener('click', (e) => { if (e.target.id === 'logo-stars') { abrindoId++; const s = slides[atual]; s.classList.add('abrindo'); e.target.classList.add('abrindo'); setTimeout(() => mostrar(atual + 1), 900) } }, true)
+// Como no macOS: o ícone dá um pulo e a janela cresce a partir dele até ocupar a tela.
+async function abrirJanelaDesde(icone, s) {
+  icone.classList.add('pula'); await espera(420)
+  const r = icone.getBoundingClientRect(), j = document.createElement('div'); j.className = 'janela-abrindo'
+  Object.assign(j.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` })
+  document.body.appendChild(j); requestAnimationFrame(() => { j.classList.add('on'); requestAnimationFrame(() => Object.assign(j.style, { left: '0px', top: '0px', width: '100vw', height: '100vh', borderRadius: '0px' })) })
+  s.classList.add('abrindo'); await espera(780)
+  mostrar(atual + 1); icone.classList.remove('pula'); await espera(350); j.style.opacity = '0'; await espera(400); j.remove()
+}
+document.addEventListener('click', (e) => { const ic = e.target.closest && e.target.closest('#icone-stars'); if (ic) { abrindoId++; esconderCursor(); abrirJanelaDesde(ic, slides[atual]) } }, true)
 
 // ---------------------------------------------------------------- cursor nas telas da UI
 async function passearUI(s) {
