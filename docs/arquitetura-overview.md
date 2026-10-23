@@ -112,3 +112,114 @@ e Laya rodando localmente. Um laptop. Um DuckDB por projeto, sem servidor de ban
   (foi o gargalo da sessão real do automotivo).
 - *"E se o LLM errar?"* Ele só escolhe receitas e escreve hipóteses; a régua é fixa e a
   promoção passa pela trava. No modo Data Scientist, passa também por você.
+
+---
+
+# A arquitetura do agente
+
+O "agente" não é um programa só. São **três níveis de decisão**, do mais livre ao mais
+rígido, e cada um só pode fazer o que o de baixo permite.
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ 1 · LLM (Gemini CLI, Claude Code, Codex)                             │
+│   lê as instruções do servidor MCP, chama tools, escreve hipóteses,  │
+│   cria atributos, conversa com o humano. Memória: a conversa.        │
+├──────────────────────────────────────────────────────────────────────┤
+│ 2 · Políticas do framework (código, sem LLM)                         │
+│   proximo_passo (regras sobre o estado)  ·  diagnostico (pistas)     │
+│   otimizacao (busca local de receitas)   ·  rotina / aplicar_pistas  │
+│   Memória: o DuckDB do projeto (runs, experimentos, notas).          │
+├──────────────────────────────────────────────────────────────────────┤
+│ 3 · Régua fixa (código, imutável para os níveis de cima)             │
+│   split temporal · baseline · controle · teste uma vez · bootstrap   │
+│   trava de promoção · calibração · trace de tudo                     │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+## Nível 1 · o LLM operando por MCP
+
+- **Contrato**: o servidor (`mcp_servidor.py`) expõe ~40 tools com descrição e um texto de
+  instruções que o LLM recebe ao conectar: ordem do fluxo, quando pedir `proximo_passo`,
+  o que fazer com `pistas`, "nunca invente números". É o único *prompt* do sistema. O
+  Gemini CLI tem ainda um `GEMINI.md` curto no repositório com o mesmo recado.
+- **Ciclo do LLM**: `proximo_passo` → executa a tool indicada → se devolveu `job_id`, faz
+  polling com `status` → lê o resultado (e `pistas`, quando há) → repete. Delibera só quando
+  `proximo_passo` responde `certeza = "ambiguo"` (ex.: processar ganchos custa horas e
+  Gemini; decisão de custo com o usuário).
+- **Jobs**: operações longas rodam numa thread única por servidor (`Jobs`), porque o DuckDB
+  de um projeto aceita um escritor só. O LLM nunca fica bloqueado; consulta `status`. Limite
+  conhecido: um job longo (títulos de 8 mil vídeos) segura os seguintes na fila. Foi o que
+  aconteceu na sessão real do automotivo: o agente esperou, desistiu de esperar e reportou o
+  modelo ativo com os números, sem inventar.
+- **Respostas das tools**: sempre JSON com motivo. Listas vêm embrulhadas em
+  `{"itens": [...], "n": N}` porque o Gemini valida listas cruas como registro.
+- **O que o LLM pode criar**: receitas para `experimentar` com uma hipótese escrita;
+  atributos novos (`definir_atributos`, perguntas tipadas sobre o gancho); notas de triagem.
+  O que ele **não** pode: mudar alvo, split, baseline, métrica ou promover fora da trava.
+
+## Nível 2 · as políticas (o "cérebro de regras")
+
+**`proximo_passo`**: uma cadeia de regras sobre o estado do projeto, na ordem:
+sem canais → `descobrir_canais`; sem vídeos → `coletar`; menos de 90% com texto →
+`calcular_texto`; menos de 90% com título → `calcular_titulos`; modo cientista com
+experimento aguardando → `aguardar_humano`; sem modelo ativo → `otimizar`; vídeos novos
+acima do limiar (2% da base, mínimo absoluto) → `otimizar`; reobservação de mais de um dia →
+`observar_recentes`; poucos ganchos para a camada ter poder (~2.900) → `manter`, certeza
+ambígua, alternativas listadas. Cada resposta traz `motivo` e o `estado` que a justificou.
+
+**`diagnostico`**: olha o dado e devolve pistas tipadas com evidência e ação:
+`setor_ruidoso` (desvio do log dentro do canal acima da referência: teto baixo, compare com
+o controle), `canais_rasos` (menos de 30 vídeos: excluir ou coletar mais), `camada_incompleta`,
+`ganchos_insuficientes` (quantos faltam), `controle_fraco`, `setores_misturados` (um setor
+erra mais que outro: dividir o projeto), `alvo_alternativo`, `idade` (vídeos recentes erram
+mais), `sem_reobservacao`. Foi `setores_misturados` que separou fitness de saúde.
+
+**`otimizacao.otimizar`** (a busca do agente, sem LLM): parte das receitas padrão (metadados;
++histórico; +texto; +título; completa) e faz **busca local** sobre a melhor: liga ou desliga
+uma camada, sorteia um hiperparâmetro, remove o atributo que mais atrapalha, troca o
+extrator. Objetivo: melhora do MAE **sobre o controle** na validação. Orçamento de 16 a 18
+tentativas, paciência 6 sem melhora; melhora abaixo de 0,2% é ruído; bootstrap pareado com
+confiança 90% separa "ganho real" de "indistinguível de acaso"; receita sem 300 linhas na
+validação vira "sem poder estatístico: faltam N vídeos". Só a vencedora vai ao teste.
+
+**`rotina`** (o dia): `observar_recentes` → `atualizar_acompanhamentos` → `coletar` só o
+que falta → `aplicar_pistas` (as seguras: completar camadas, reobservar, excluir canais
+rasos no automático) → se a base cresceu acima do limiar ou o dado mudou, `calcular_texto` e
+`otimizar`. No automático promove; no cientista deixa como candidato aguardando.
+
+## Nível 3 · a régua
+
+Detalhada na seção "O modelo em si" e em `docs/tecnico/03`. O ponto para a fala: **nenhum
+nível de cima escreve nela**. O LLM não tem tool para mudar split, âncora, métrica ou para
+promover ignorando `motivo_para_nao_promover`. Isso é o que permite dizer "ele não se engana"
+sem depender do bom comportamento do LLM.
+
+## O humano no laço (modo Data Scientist)
+
+- `promover` no modo cientista cria status `aguardando_aprovacao`; a UI mostra o candidato
+  com os números e a comparação com o ativo; o humano aprova ou recusa.
+- **Revisão de atributos**: dois extratores (LLM e vizinhos, ou LLM e Laya) discordam → a
+  UI mostra o gancho e o humano desempata; a resposta vira dado de treino.
+- **Triagem de erros**: os piores erros do modelo com caixa de nota; `notas` volta ao agente
+  como pista ("vídeo era um repost", "canal mudou de nicho") e pode virar exclusão ou
+  atributo novo.
+- Modo visual no deck: a troca de modo no slide não grava nada; na plataforma grava.
+
+## Como o LLM "aprende" entre sessões
+
+Não aprende no sentido de pesos. A memória é o projeto: `runs` e `trace` (o que foi feito e
+deu), `experimentos` (o que já foi tentado, com veredito), `buscas` (as tentativas da
+otimização com origem), `notas` e `revisoes` (o que o humano disse), `excluidos`. Uma sessão
+nova lê isso por `runs`, `experimentos`, `diagnostico`, `notas` e segue de onde parou. É
+replicação por estado, não por conversa: por isso qualquer LLM pode operar o mesmo projeto.
+
+## Limites honestos do agente hoje
+
+- Fila de jobs única por servidor: um job local longo atrasa os outros (próximo passo:
+  prioridade e estimativa de duração em `proximo_passo`).
+- `proximo_passo` recomenda `calcular_titulos` sem estimar o tempo (8 mil vídeos = horas).
+- O LLM gratuito disponível hoje (`gemini-3.5-flash-lite`) faz polling demais e às vezes
+  desiste cedo; o framework compensa com respostas que sempre trazem o estado.
+- O gancho ainda não provou valor no modelo: os ganchos processados caem no teste; a
+  validação tem 22 linhas (mínimo 300).
