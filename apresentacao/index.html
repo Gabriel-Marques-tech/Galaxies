@@ -119,6 +119,47 @@ body { -webkit-font-smoothing: antialiased; }
 .fecho .nome { font: 500 clamp(36px, 5vw, 80px) var(--display); letter-spacing: -.02em; margin-top: 4vh; }
 .fecho .onde { color: var(--sub); font: 400 clamp(16px, 1.6vw, 24px) var(--body); margin-top: 1vh; }
 
+
+/* ---------------------------------------------------------------- transições de tela */
+.slide { transform: scale(.97); filter: blur(8px); transition: opacity .7s var(--ease), transform .9s var(--ease), filter .9s var(--ease), visibility 0s .9s; }
+.slide.on { transform: none; filter: none; transition: opacity .7s var(--ease), transform .9s var(--ease), filter .9s var(--ease); }
+[data-in] { transition-timing-function: cubic-bezier(.16, 1.1, .3, 1); }
+
+/* ---------------------------------------------------------------- cursor animado */
+.cursor-fake { position: fixed; left: 0; top: 0; width: 26px; height: 32px; z-index: 50; pointer-events: none; opacity: 0; transform: translate(-40px, -40px); transition: transform 1.1s cubic-bezier(.3, .9, .3, 1), opacity .4s; filter: drop-shadow(0 4px 10px rgba(0,0,0,.6)); }
+.cursor-fake.on { opacity: 1; }
+.cursor-fake svg { width: 100%; height: 100%; }
+.cursor-fake .onda { position: absolute; left: 2px; top: 2px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff; opacity: 0; transform: scale(.3); }
+.cursor-fake.clicando .onda { animation: onda .55s var(--ease) forwards; }
+.cursor-fake.clicando svg { animation: aperta .25s var(--ease); }
+@keyframes onda { 0% { opacity: .9; transform: scale(.3); } 100% { opacity: 0; transform: scale(3.2); } }
+@keyframes aperta { 50% { transform: scale(.85); } }
+
+/* ---------------------------------------------------------------- chat (gancho) */
+.chat { width: min(1040px, 92vw); display: flex; flex-direction: column; gap: 2.2vh; }
+.chat .topo { display: flex; align-items: center; gap: 10px; color: var(--sub); font: 500 clamp(13px, 1.2vw, 16px) var(--body); }
+.chat .topo .faisca { width: 26px; height: 26px; border-radius: 50%; background: var(--grad); display: inline-block; box-shadow: 0 0 22px rgba(155,114,203,.6); }
+.msg { max-width: 78%; padding: 1.6vh 2vw; border-radius: 22px; font: 400 clamp(17px, 1.9vw, 28px)/1.4 var(--body); opacity: 0; transform: translateY(14px); transition: opacity .6s var(--ease), transform .7s cubic-bezier(.16, 1.1, .3, 1); }
+.msg.on { opacity: 1; transform: none; }
+.msg.eu { align-self: flex-end; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1); border-bottom-right-radius: 8px; }
+.msg.ia { align-self: flex-start; background: transparent; padding-left: 0; max-width: 100%; }
+.msg.ia .pensando { display: inline-flex; gap: 6px; }
+.msg.ia .pensando i { width: 9px; height: 9px; border-radius: 50%; background: var(--grad); animation: pulsa 1s ease-in-out infinite; }
+.msg.ia .pensando i:nth-child(2) { animation-delay: .15s; } .msg.ia .pensando i:nth-child(3) { animation-delay: .3s; }
+@keyframes pulsa { 50% { transform: translateY(-5px); opacity: .5; } }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.6vh 1.6vw; margin-top: 1.4vh; }
+.card { border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04); border-radius: 18px; padding: 2vh 1.6vw; opacity: 0; transform: translateY(18px) scale(.97); transition: opacity .6s var(--ease), transform .8s cubic-bezier(.16, 1.1, .3, 1); backdrop-filter: blur(10px); }
+.card.on { opacity: 1; transform: none; }
+.card .v { font: 500 clamp(40px, 5.4vw, 92px)/1 var(--display); letter-spacing: -.03em; }
+.card .v.c { color: var(--verde); }
+.card .l { font: 400 clamp(13px, 1.3vw, 18px) var(--body); color: var(--sub); margin-top: .8vh; }
+.chat .entrada { display: flex; align-items: center; gap: 12px; border-radius: 999px; padding: 1.2vh 1.8vw; background: rgba(255,255,255,.05); border: 1px solid transparent; background-clip: padding-box; position: relative; font: 400 clamp(17px, 1.8vw, 26px) var(--body); color: var(--texto); min-height: 7vh; }
+.chat .entrada::before { content: ''; position: absolute; inset: -1px; border-radius: 999px; padding: 1px; background: var(--grad); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; opacity: .8; }
+.chat .entrada .texto { flex: 1; min-height: 1.3em; }
+.chat .entrada .texto:empty::before { content: 'Pergunte ao Stars'; color: var(--sub); }
+.chat .entrada .enviar { width: 42px; height: 42px; border-radius: 50%; background: var(--grad); display: grid; place-items: center; color: #0b0d14; font-weight: 700; flex-shrink: 0; }
+.chat .resposta-final { font: 500 clamp(22px, 2.6vw, 40px)/1.2 var(--display); margin-top: 1.4vh; }
+
 /* progresso e ajuda */
 .progresso { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--grad); width: 0; transition: width .5s var(--ease); z-index: 5; }
 .ajuda { position: fixed; right: 16px; bottom: 12px; font: 400 12px var(--body); color: rgba(255,255,255,.35); z-index: 5; }
@@ -130,13 +171,23 @@ body { -webkit-font-smoothing: antialiased; }
 <canvas class="estrelas" id="estrelas"></canvas>
 <div class="deck" id="deck">
 
-<!-- 1 · gancho invertido: números -->
+<!-- 1 · gancho invertido: um chat, uma pergunta, os números nascendo -->
 <section class="slide s-gancho">
-  <div class="numeros">
-    <div class="num" data-in style="--i:0"><div class="v" data-conta="24.4" data-prefixo="−" data-sufixo="%">−0%</div><div class="l">menos erro que chutar a média do canal · moda e beleza</div></div>
-    <div class="num" data-in style="--i:1"><div class="v" data-conta="4" data-sufixo="">0</div><div class="l">setores, mesma régua: moda, saúde, automotivo, fitness</div></div>
-    <div class="num" data-in style="--i:2"><div class="v" data-conta="112" data-sufixo=" mil">0</div><div class="l">Shorts coletados, 267 canais, zero reais gastos</div></div>
-    <div class="num" data-in style="--i:3"><div class="v c" data-conta="83" data-sufixo="%">0%</div><div class="l">dos vídeos reais caem na faixa que o modelo prometeu com 80% · saúde</div></div>
+  <div class="chat" id="chat">
+    <div class="topo"><span class="faisca"></span>Stars · cientista de dados</div>
+    <div class="msg eu" id="msg-eu"></div>
+    <div class="msg ia" id="msg-ia">
+      <div class="pensando" id="pensando"><i></i><i></i><i></i></div>
+      <div id="ia-texto"></div>
+      <div class="cards" id="cards">
+        <div class="card"><div class="v" data-conta="24.4" data-prefixo="−" data-sufixo="%">−0%</div><div class="l">menos erro que chutar a média do canal · moda e beleza</div></div>
+        <div class="card"><div class="v" data-conta="4" data-sufixo="">0</div><div class="l">setores, mesma régua: moda, saúde, automotivo, fitness</div></div>
+        <div class="card"><div class="v" data-conta="112" data-sufixo=" mil">0</div><div class="l">Shorts coletados, 267 canais, zero reais gastos</div></div>
+        <div class="card"><div class="v c" data-conta="83" data-sufixo="%">0%</div><div class="l">dos vídeos reais caem na faixa que o modelo prometeu com 80% · saúde</div></div>
+      </div>
+      <div class="resposta-final" id="resposta-final"></div>
+    </div>
+    <div class="entrada" id="entrada"><div class="texto" id="entrada-texto"></div><div class="enviar" id="enviar">➤</div></div>
   </div>
 </section>
 
@@ -242,8 +293,9 @@ body { -webkit-font-smoothing: antialiased; }
 </section>
 
 </div>
+<div class="cursor-fake" id="cursor"><svg viewBox="0 0 26 32"><path d="M2 2 L2 24 L8 18 L12 29 L16 27 L12 17 L20 17 Z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="onda"></span></div>
 <div class="progresso" id="progresso"></div>
-<div class="ajuda">← → navegar · Espaço avança · D repete a demo · R réplica/ao vivo</div>
+<div class="ajuda">← → navegar · Espaço avança · C repete o chat · D repete a demo · R réplica/ao vivo</div>
 
 <script>
 // ---------------------------------------------------------------- estrelas de fundo
@@ -267,7 +319,8 @@ function mostrar(i) {
   history.replaceState(null, '', `#${atual}`)
   document.getElementById('fundo').style.transform = `rotate(${atual * 9}deg) scale(${1 + atual * .03})`
   const s = slides[atual]
-  if (s.classList.contains('s-gancho')) contar(s)
+  if (s.classList.contains('s-gancho')) chat(); else chatAtivo++
+  if (s.querySelector('.tour .quadro')) passearUI(s); else if (!s.classList.contains('s-demo')) esconderCursor()
   if (s.classList.contains('s-demo')) demo()
   carregarIframes(s)
 }
@@ -276,8 +329,55 @@ addEventListener('keydown', (e) => {
   if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); mostrar(atual - 1) }
   if (e.key.toLowerCase() === 'd' && slides[atual].classList.contains('s-demo')) demo()
   if (e.key.toLowerCase() === 'r') alternarReplica()
+  if (e.key.toLowerCase() === 'c' && slides[atual].classList.contains('s-gancho')) chat()
 })
 addEventListener('click', (e) => { if (!e.target.closest('iframe, a, button')) mostrar(atual + 1) })
+
+
+// ---------------------------------------------------------------- cursor animado
+const cursor = document.getElementById('cursor')
+const espera = (ms) => new Promise((r) => setTimeout(r, ms))
+async function moverCursor(el, { dx = 0, dy = 0, ms = 1100 } = {}) {
+  const r = el.getBoundingClientRect(); cursor.classList.add('on')
+  cursor.style.transitionDuration = `${ms}ms, .4s`
+  cursor.style.transform = `translate(${r.left + r.width / 2 + dx}px, ${r.top + r.height / 2 + dy}px)`
+  await espera(ms + 80)
+}
+async function clicar(el, opts) { await moverCursor(el, opts); cursor.classList.add('clicando'); await espera(600); cursor.classList.remove('clicando') }
+function esconderCursor() { cursor.classList.remove('on') }
+async function digitarEm(el, texto, ms = 38) { el.textContent = ''; for (const ch of texto) { el.textContent += ch; await espera(ch === ' ' ? ms * .5 : ms + Math.random() * 18) } }
+
+// ---------------------------------------------------------------- gancho: chat roteirizado
+let chatAtivo = 0
+async function chat() {
+  const id = ++chatAtivo
+  const eu = document.getElementById('msg-eu'), ia = document.getElementById('msg-ia'), pensando = document.getElementById('pensando')
+  const texto = document.getElementById('entrada-texto'), cards = [...document.querySelectorAll('#cards .card')], final = document.getElementById('resposta-final'), iaTexto = document.getElementById('ia-texto')
+  eu.classList.remove('on'); ia.classList.remove('on'); cards.forEach((c) => c.classList.remove('on')); texto.textContent = ''; final.textContent = ''; iaTexto.textContent = ''; pensando.style.display = 'inline-flex'
+  await espera(700); if (id !== chatAtivo) return
+  await clicar(document.getElementById('entrada'), { dx: -120 })
+  await digitarEm(texto, 'Como foram os modelos que você montou essa semana?')
+  await espera(350); await clicar(document.getElementById('enviar')); esconderCursor()
+  eu.textContent = texto.textContent; texto.textContent = ''; eu.classList.add('on')
+  await espera(600); ia.classList.add('on'); await espera(1400); if (id !== chatAtivo) return
+  pensando.style.display = 'none'; iaTexto.textContent = 'Quatro setores, mesma régua. Resumo:'
+  for (const [k, c] of cards.entries()) { await espera(k ? 650 : 400); if (id !== chatAtivo) return; c.classList.add('on'); contarEm(c) }
+  await espera(900); if (id !== chatAtivo) return
+  await digitarEm(final, 'Nenhum desses modelos foi montado por você.', 30)
+}
+function contarEm(c) {
+  const el = c.querySelector('[data-conta]'); const alvo = parseFloat(el.dataset.conta), pre = el.dataset.prefixo || '', suf = el.dataset.sufixo || ''
+  const dec = (el.dataset.conta.split('.')[1] || '').length, ini = performance.now() + 100, dur = 1400
+  const passo = (t) => { const p = Math.min(Math.max((t - ini) / dur, 0), 1), e = 1 - Math.pow(1 - p, 3); el.textContent = pre + (alvo * e).toFixed(dec).replace('.', ',') + suf; if (p < 1) requestAnimationFrame(passo) }
+  requestAnimationFrame(passo)
+}
+
+// ---------------------------------------------------------------- cursor nas telas da UI
+async function passearUI(s) {
+  const q = s.querySelector('.quadro'); if (!q) return
+  await espera(1200); await moverCursor(q, { dx: -q.getBoundingClientRect().width * .22, dy: -q.getBoundingClientRect().height * .18, ms: 1300 })
+  await espera(500); await moverCursor(q, { dx: q.getBoundingClientRect().width * .1, dy: q.getBoundingClientRect().height * .12, ms: 1500 }); await espera(800); esconderCursor()
+}
 
 // ---------------------------------------------------------------- números que sobem
 function contar(s) {
@@ -331,6 +431,7 @@ async function demo() {
   const tty = document.getElementById('tty'), palco = document.getElementById('palco')
   tty.innerHTML = ''; palco.dataset.cena = 'prompt'
   const passos = await carregarRoteiro()
+  await clicar(document.getElementById('terminal'), { dx: -180, dy: -120 }); esconderCursor()
   const linha = (cls, txt) => { const s = document.createElement('span'); s.className = cls; s.textContent = txt; tty.appendChild(s); tty.appendChild(document.createTextNode('\n')); tty.scrollTop = tty.scrollHeight }
   const digitar = async (cls, txt, ms = 22) => {
     const s = document.createElement('span'); s.className = cls; tty.appendChild(s)
