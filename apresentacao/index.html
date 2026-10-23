@@ -460,14 +460,14 @@ async function chat() {
   document.getElementById('ola').classList.remove('some'); document.getElementById('meio').classList.remove('conversa'); document.getElementById('enviar').classList.remove('on'); document.getElementById('faisca').classList.remove('parada')
   await espera(700); if (id !== chatAtivo) return
   await clicar(document.getElementById('entrada'), { dx: -120 })
-  await digitarEm(texto, 'Como foram os modelos de previsão de Shorts que o Stars montou essa semana?')
+  await digitarEm(texto, 'Qual foi o desempenho dos nossos modelos essa semana?')
   document.getElementById('enviar').classList.add('on')
   await espera(350); await clicar(document.getElementById('enviar')); esconderCursor()
   document.getElementById('ola').classList.add('some'); document.getElementById('meio').classList.add('conversa')
   eu.textContent = texto.textContent; texto.textContent = ''; eu.classList.add('on')
   await espera(600); ia.classList.add('on'); await espera(1400); if (id !== chatAtivo) return
   pensando.style.display = 'none'; document.getElementById('faisca').classList.add('parada')
-  await digitarEm(iaTexto, 'Pelo que o Stars me devolveu via MCP, esta semana:', 22)
+  await digitarEm(iaTexto, 'Resumo da semana, em números:', 22)
   await espera(700); if (id !== chatAtivo) return
   area.classList.add('escura'); document.getElementById('chat').classList.add('escura')
   for (const [k, c] of figs.entries()) { await espera(k ? 1100 : 500); if (id !== chatAtivo) return; c.classList.add('on'); contarEm(c) }
