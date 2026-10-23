@@ -68,6 +68,7 @@ function CartaoProjeto({ c, emFoco, abrir, criar }: { c: Cartao; emFoco: boolean
   return (
     <button
       className={`cartao-projeto ${emFoco ? 'foco' : ''} ${dx ? 'arrastando' : ''}`}
+      data-deck={`projeto-${c.nome}`}
       style={{ transform: dx ? `translateX(${dx}px) rotate(${dx / 40}deg)` : undefined, opacity: dx ? 1 - Math.min(Math.abs(dx) / 260, 0.5) : undefined }}
       onPointerDown={(e) => { inicio.current = e.clientX; arrastou.current = false }}
       onPointerMove={(e) => { if (inicio.current === null || !(e.buttons & 1)) return; const d = e.clientX - inicio.current; if (Math.abs(d) > 6) { arrastou.current = true; setDx(d) } }}

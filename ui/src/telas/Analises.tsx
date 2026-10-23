@@ -10,7 +10,7 @@ export default function Analises({ projeto, alvo }: { projeto: string; alvo: str
   if (!lista.dados.length) return <Vazio icone="history">Nenhum vídeo analisado ainda.</Vazio>
   return (
     <div className="pilha">
-      <div className="cartao" style={{ padding: '8px 8px' }}>
+      <div className="cartao" data-deck="analises" style={{ padding: '8px 8px' }}>
         <div className="rolagem-x">
           <table className="tabela">
             <thead><tr><th>quando</th><th>vídeo</th><th>canal</th><th className="n">previsto em 7 dias</th><th className="n">viralizar</th><th>real</th><th>status</th></tr></thead>

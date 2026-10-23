@@ -149,7 +149,7 @@ function Resultado({ a, alvo, projeto }: { a: Analise; alvo: string; projeto: st
   const p = a.previsao_7d
   return (
     <div className="pilha" style={{ minWidth: 0 }}>
-      <div className="cartao avaliacao">
+      <div className="cartao avaliacao" data-deck="avaliacao">
         <div className="linha" style={{ gap: 10, alignItems: 'flex-start' }}>
           <Icone nome={p.q50 >= a.mediana_canal * 1.3 ? 'trending_up' : p.q50 <= a.mediana_canal * 0.7 ? 'trending_down' : 'trending_flat'} className="destaque-icone" />
           <div style={{ flex: 1, minWidth: 0 }}>

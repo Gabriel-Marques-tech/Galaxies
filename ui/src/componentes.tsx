@@ -35,9 +35,9 @@ export function Vazio({ icone, children }: { icone: string; children: ReactNode 
   return <div className="vazio"><Icone nome={icone} />{children}</div>
 }
 
-export function Metrica({ icone, rotulo, valor, detalhe }: { icone: string; rotulo: string; valor: string; detalhe?: ReactNode }) {
+export function Metrica({ icone, rotulo, valor, detalhe, deck }: { icone: string; rotulo: string; valor: string; detalhe?: ReactNode; deck?: string }) {
   return (
-    <div className="metrica">
+    <div className="metrica" data-deck={deck}>
       <span className="rotulo"><Icone nome={icone} />{rotulo}</span>
       <span className="valor">{valor}</span>
       {detalhe && <span className="detalhe">{detalhe}</span>}

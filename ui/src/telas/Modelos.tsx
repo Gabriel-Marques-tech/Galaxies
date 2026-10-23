@@ -46,7 +46,7 @@ export default function Modelos({ projeto, config, aoMudar }: { projeto: string;
 
       {buscas.dados?.map((b) => <BuscaDoAgente key={b.alvo} b={b} vista={vista} />)}
 
-      <div className="cartao" style={{ padding: '8px 8px' }}>
+      <div className="cartao" data-deck="experimentos" style={{ padding: '8px 8px' }}>
         <div className="rolagem-x">
           {vista === 'simples' ? (
             <table className="tabela">
@@ -191,7 +191,7 @@ function BuscaDoAgente({ b, vista }: { b: Busca; vista: 'simples' | 'avancada' }
   const reais = medidas.filter((t) => (t.confianca ?? 0) >= 0.9).length
   const melhor = medidas.reduce<typeof medidas[number] | null>((m, t) => (m === null || (t.objetivo ?? -1) > (m.objetivo ?? -1) ? t : m), null)
   return (
-    <div className="cartao">
+    <div className="cartao" data-deck="busca">
       <div className="linha" style={{ gap: 10 }}>
         <Icone nome="travel_explore" className="destaque-icone" />
         <div style={{ flex: 1, minWidth: 0 }}>

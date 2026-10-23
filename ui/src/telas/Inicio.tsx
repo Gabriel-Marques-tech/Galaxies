@@ -34,7 +34,7 @@ export default function Inicio({ projeto, config, ir, aoMudarModo }: {
         <Metrica icone="smart_display" rotulo="Shorts na base" valor={r ? compacto(r.videos) : '—'} detalhe={r && `${r.canais} canais · ${config.setores.join(', ')}`} />
         <Metrica icone="frame_inspect" rotulo="Ganchos analisados" valor={r ? compacto(r.ganchos) : '—'}
           detalhe={r && Object.entries(r.atributos_por_extrator).map(([e, n]) => `${n} com ${e.replace('@cf/meta/', '')}`).join(' · ')} />
-        <Metrica icone="model_training" rotulo="Modelo ativo" valor={ativo ? pct(ativo.resultado.ganho) : '—'}
+        <Metrica deck="modelo-ativo" icone="model_training" rotulo="Modelo ativo" valor={ativo ? pct(ativo.resultado.ganho) : '—'}
           detalhe={ativo ? `mais preciso que a média do canal · ${receitaTexto(ativo.receita)}` : 'nenhum promovido ainda'} />
         <Metrica icone="science" rotulo="Experimentos" valor={r ? String(r.experimentos) : '—'} detalhe={r && `${r.revisoes} revisões humanas · ${r.runs} execuções`} />
         <Metrica icone="publish" rotulo="Em produção" valor={acomp.dados?.n ? `${Math.round(acomp.dados.cobertura * 100)}%` : '—'}
@@ -46,7 +46,7 @@ export default function Inicio({ projeto, config, ir, aoMudarModo }: {
       </div>
 
       {passo.dados && (
-        <div className="cartao" style={{ borderColor: passo.dados.certeza === 'ambiguo' ? 'var(--aviso)' : undefined }}>
+        <div className="cartao" data-deck="proximo-passo" style={{ borderColor: passo.dados.certeza === 'ambiguo' ? 'var(--aviso)' : undefined }}>
           <div className="linha" style={{ gap: 10 }}>
             <Icone nome={passo.dados.certeza === 'ambiguo' ? 'help' : 'route'} className="destaque-icone" />
             <div style={{ flex: 1, minWidth: 0 }}>

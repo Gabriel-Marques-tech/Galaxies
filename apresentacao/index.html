@@ -98,13 +98,13 @@ body { -webkit-font-smoothing: antialiased; }
 .palco[data-cena="final"] { transform: scale(1.02); }
 .ui { left: 34%; top: 6%; width: 66%; height: 92%; transform: translate3d(40%, 0, -100px) rotateY(-24deg); opacity: 0; }
 .palco[data-cena="ui"] .ui, .palco[data-cena="final"] .ui { transform: translate3d(0, 0, 60px) rotateY(-4deg); opacity: 1; }
-.ui iframe { width: 100%; height: calc(100% - 38px); border: 0; background: #11141f; }
+.ui iframe { width: 100%; height: calc(100% - 38px); border: 0; display: block; background: #11141f; }
 .legenda { position: absolute; left: 50%; bottom: 2vh; transform: translateX(-50%); font: 500 clamp(14px, 1.4vw, 20px) var(--body); color: var(--sub); background: rgba(11,13,20,.7); padding: .8vh 1.6vw; border-radius: 999px; backdrop-filter: blur(10px); white-space: nowrap; }
 
 /* ---------------------------------------------------------------- tour da UI */
 .tour { display: grid; grid-template-columns: 1.4fr 1fr; gap: 4vw; align-items: center; width: min(1400px, 92vw); }
 .tour .quadro { border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); box-shadow: 0 30px 90px rgba(0,0,0,.55); background: #11141f; aspect-ratio: 16 / 10; }
-.tour .quadro iframe { width: 100%; height: 100%; border: 0; }
+.tour .quadro iframe { width: 100%; height: 100%; border: 0; display: block; }
 .tour .texto .h2 { text-align: left; max-width: none; }
 .tour .texto .p { text-align: left; }
 .tour .texto .fato { margin-top: 3vh; font: 500 clamp(22px, 2.6vw, 40px) var(--display); }
@@ -574,29 +574,65 @@ function pontoUI(f, x, y) { const r = f.getBoundingClientRect(), esc = r.width /
 async function clicarUI(f, tela, ms = 1100) { const m = NAV_UI[replica ? 'replica' : 'vivo']; await clicar(f, { ...pontoUI(f, m.x, m.y[tela]), ms }); mandarUI(f, { tipo: 'ir', tela }) }
 async function rolarUI(f, y, passos = 8, ms = 200) { for (let k = 0; k < passos; k++) { mandarUI(f, { tipo: 'rolar', y: y / passos }); await espera(ms) } }
 
+// Os iframes rodam a UI em largura de desktop (1360 px) e são reduzidos para caber no quadro:
+// a plataforma aparece inteira, como num monitor, e não espremida numa coluna.
+const LARGURA_UI = 1360
+function ajustarIframes() {
+  document.querySelectorAll('iframe[data-src]').forEach((f) => {
+    const pai = f.parentElement, W = pai.clientWidth, H = pai.clientHeight - (pai.id === 'janela-ui' ? 38 : 0)
+    if (!W || !H) return
+    const k = W / LARGURA_UI
+    Object.assign(f.style, { width: `${LARGURA_UI}px`, height: `${H / k}px`, transform: `scale(${k})`, transformOrigin: '0 0' })
+  })
+}
+addEventListener('resize', ajustarIframes)
+// foco: a UI rola até o elemento marcado, destaca e devolve a posição; o cursor vai até lá
+const esperandoRect = new Map()
+addEventListener('message', (e) => { const m = e.data; if (m && m.origem === 'ui' && m.tipo === 'rect') { const r = esperandoRect.get(m.alvo); if (r) { esperandoRect.delete(m.alvo); r(m.achou ? m : null) } } })
+async function focarUI(f, alvo, { ms = 1100, dy = 0 } = {}) {
+  const rect = await new Promise((res) => { esperandoRect.set(alvo, res); mandarUI(f, { tipo: 'foco', alvo }); setTimeout(() => { if (esperandoRect.get(alvo) === res) { esperandoRect.delete(alvo); res(null) } }, 1800) })
+  if (!rect) return false
+  await moverCursor(f, { ...pontoUI(f, rect.x + Math.min(rect.w * .35, 260), rect.y + Math.min(rect.h * .4, 70) + dy), ms })
+  return true
+}
+
 // ---------------------------------------------------------------- cursor nas telas da UI (tour: ninguém clica, o deck passeia)
 let passeioId = 0
 async function passearUI(s) {
   const id = ++passeioId, f = s.querySelector('.quadro iframe'); if (!f) return
   const tela = (f.dataset.src.split('#')[1] || 'inicio')
-  await espera(1600); if (id !== passeioId) return
-  await moverCursor(f, { ...pontoUI(f, f.clientWidth * .55, 170), ms: 1300 }); if (id !== passeioId) return
-  await espera(500); await rolarUI(f, 420, 8, 220); await espera(1000); if (id !== passeioId) return
-  if (tela === 'analisar') { await clicarUI(f, 'analises'); await espera(1400); if (id !== passeioId) return; await rolarUI(f, 240, 6, 200) }
-  else { await rolarUI(f, 320, 8, 220); await espera(900); if (id !== passeioId) return; await rolarUI(f, -740, 6, 160) }
-  await espera(600); if (id === passeioId) esconderCursor()
+  const vivo = () => id === passeioId
+  await espera(1800); if (!vivo()) return
+  if (tela === 'modelos') {
+    await focarUI(f, 'busca'); await espera(3200); if (!vivo()) return
+    await focarUI(f, 'experimentos'); await espera(2600)
+  } else if (tela === 'inicio') {
+    await focarUI(f, 'modelo-ativo'); await espera(2400); if (!vivo()) return
+    await focarUI(f, 'proximo-passo'); await espera(2800); if (!vivo()) return
+    await focarUI(f, 'diagnostico'); await espera(2400)
+  } else if (tela === 'analisar') {
+    const achou = await focarUI(f, 'avaliacao'); await espera(achou ? 3000 : 800); if (!vivo()) return
+    await clicarUI(f, 'analises'); await espera(1600); if (!vivo()) return
+    await focarUI(f, 'analises'); await espera(2600)
+  } else {
+    await rolarUI(f, 360, 8, 220); await espera(1200)
+  }
+  if (vivo()) esconderCursor()
 }
-// Na demo: quando a janela da UI entra, o cursor abre um projeto, desce pela visão geral e vai a Modelos.
+// Na demo: quando a janela da UI entra, o cursor abre um projeto, mostra o modelo e o próximo passo, e vai a Modelos.
 async function passeioDemo(id) {
   const f = document.querySelector('#janela-ui iframe'); if (!f) return
-  await espera(1000); if (id !== demoAtiva) return
-  const w = f.clientWidth, xCard = replica ? 338 : 228 + (w - 228) * .3, yCard = replica ? 250 : 300
-  await clicar(f, { ...pontoUI(f, xCard, yCard), ms: 1200 }); if (id !== demoAtiva) return
+  const vivo = () => id === demoAtiva
+  await espera(1000); if (!vivo()) return
+  const achou = await focarUI(f, 'projeto-moda-beleza', { ms: 1200 }); if (!vivo()) return
+  if (!achou) await moverCursor(f, { ...pontoUI(f, 520, 300), ms: 1000 })
+  cursor.classList.add('clicando'); await espera(600); cursor.classList.remove('clicando')
   mandarUI(f, { tipo: 'projeto', nome: 'moda-beleza' }); mandarUI(f, { tipo: 'ir', tela: 'inicio' })
-  await espera(2200); if (id !== demoAtiva) return
-  await rolarUI(f, 360, 8, 200); await espera(1400); if (id !== demoAtiva) return
-  await clicarUI(f, 'modelos'); await espera(1800); if (id !== demoAtiva) return
-  await rolarUI(f, 300, 8, 220); await espera(800); if (id === demoAtiva) esconderCursor()
+  await espera(1800); if (!vivo()) return
+  await focarUI(f, 'modelo-ativo'); await espera(2200); if (!vivo()) return
+  await focarUI(f, 'proximo-passo'); await espera(2400); if (!vivo()) return
+  await clicarUI(f, 'modelos'); await espera(1600); if (!vivo()) return
+  await focarUI(f, 'busca'); await espera(2600); if (vivo()) esconderCursor()
 }
 
 // ---------------------------------------------------------------- números que sobem
@@ -621,10 +657,11 @@ function carregarIframes(s) {
     const alvo = replica ? f.dataset.src.replace('http://127.0.0.1:5173/', 'replica.html') : f.dataset.src
     if (f.dataset.carregado !== alvo) { f.src = alvo; f.dataset.carregado = alvo }
   })
+  ajustarIframes(); setTimeout(ajustarIframes, 400)
 }
 function alternarReplica() { replica = !replica; document.querySelectorAll('iframe[data-src]').forEach((f) => { f.dataset.carregado = '' }); carregarIframes(slides[atual]); document.getElementById('legenda').textContent = replica ? 'réplica gravada da plataforma' : 'sessão real · Gemini CLI plugado no Stars por MCP' }
 // se a API não responder em 2,5 s, cai na réplica sozinho
-fetch('http://127.0.0.1:8000/projetos', { signal: AbortSignal.timeout(2500) }).catch(() => { replica = true })
+fetch('http://127.0.0.1:8000/projetos', { signal: AbortSignal.timeout(4000) }).catch(() => { replica = true })
 
 // ---------------------------------------------------------------- demo: replay da sessão real
 // Cada passo: texto a digitar/mostrar, classe, e a cena da câmera. A sessão vem de

@@ -57,6 +57,19 @@ export default function App() {
       if (m.tipo === 'ir' && TELAS.includes(m.tela)) { setTela(m.tela); history.replaceState(null, '', `#${m.tela}`) }
       if (m.tipo === 'projeto' && typeof m.nome === 'string') setProjeto(m.nome)
       if (m.tipo === 'rolar') document.querySelector('.conteudo')?.scrollBy({ top: Number(m.y) || 0, behavior: 'smooth' })
+      if (m.tipo === 'foco') {
+        // leva o elemento marcado ao centro, destaca e devolve a posição para o cursor do deck
+        document.querySelectorAll('.foco-deck').forEach((x) => x.classList.remove('foco-deck'))
+        const el = document.querySelector<HTMLElement>(`[data-deck="${CSS.escape(String(m.alvo))}"]`)
+        const fonte = e.source as Window | null
+        if (!el) { fonte?.postMessage({ origem: 'ui', tipo: 'rect', alvo: m.alvo, achou: false }, '*'); return }
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setTimeout(() => {
+          el.classList.add('foco-deck')
+          const r = el.getBoundingClientRect()
+          fonte?.postMessage({ origem: 'ui', tipo: 'rect', alvo: m.alvo, achou: true, x: r.left, y: r.top, w: r.width, h: r.height }, '*')
+        }, 650)
+      }
     }
     addEventListener('message', ouvir)
     return () => removeEventListener('message', ouvir)
