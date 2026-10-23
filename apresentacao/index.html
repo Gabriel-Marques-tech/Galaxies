@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stars</title>
+<link rel="icon" href="../ui/public/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b0d14;
+  --bg2: #11141f;
+  --texto: #f3f4f8;
+  --sub: #9aa0b4;
+  --azul: #4285f4;
+  --roxo: #9b72cb;
+  --coral: #d96570;
+  --verde: #5fd39a;
+  --grad: linear-gradient(100deg, #4285f4 0%, #9b72cb 55%, #d96570 100%);
+  --display: 'Google Sans', 'Inter', system-ui, sans-serif;
+  --body: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, monospace;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--texto); font-family: var(--body); }
+body { -webkit-font-smoothing: antialiased; }
+
+/* ---------------------------------------------------------------- palco */
+.deck { position: fixed; inset: 0; perspective: 1600px; }
+.slide { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6vh 8vw; opacity: 0; visibility: hidden; transition: opacity .6s var(--ease), visibility 0s .6s; }
+.slide.on { opacity: 1; visibility: visible; transition: opacity .6s var(--ease); }
+.fundo { position: fixed; inset: -20%; z-index: -1; pointer-events: none; filter: blur(70px); opacity: .55; transition: opacity 1.2s var(--ease), transform 2.4s var(--ease); }
+.fundo b { position: absolute; width: 46vw; height: 46vw; border-radius: 50%; }
+.fundo .a { left: 8%; top: 10%; background: radial-gradient(circle, #4285f4, transparent 65%); }
+.fundo .r { right: 6%; top: 30%; background: radial-gradient(circle, #9b72cb, transparent 65%); }
+.fundo .c { left: 40%; bottom: -10%; background: radial-gradient(circle, #d96570, transparent 65%); opacity: .7; }
+.estrelas { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+
+/* entradas */
+[data-in] { opacity: 0; transform: translate3d(0, 28px, 0); transition: opacity .8s var(--ease), transform .9s var(--ease), filter .9s var(--ease); transition-delay: calc(var(--i, 0) * .14s + .15s); filter: blur(6px); }
+[data-in="zoom"] { transform: translate3d(0, 0, -600px) scale(.8); }
+[data-in="left"] { transform: translate3d(-80px, 0, 0); }
+.slide.on [data-in] { opacity: 1; transform: none; filter: none; }
+
+/* tipografia */
+.kicker { font: 500 clamp(13px, 1.2vw, 16px) var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--sub); margin-bottom: 2.4vh; }
+.h1 { font: 500 clamp(40px, 6.2vw, 104px)/1.02 var(--display); letter-spacing: -.02em; text-align: center; max-width: 1200px; }
+.h2 { font: 500 clamp(28px, 3.8vw, 60px)/1.1 var(--display); letter-spacing: -.015em; text-align: center; max-width: 1100px; }
+.p { font: 400 clamp(17px, 1.6vw, 24px)/1.5 var(--body); color: var(--sub); text-align: center; max-width: 900px; margin-top: 2.4vh; }
+.grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.gradvivo { background: linear-gradient(100deg, #4285f4, #9b72cb, #d96570, #4285f4); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: flui 8s linear infinite; }
+@keyframes flui { to { background-position: 300% 0; } }
+.mono { font-family: var(--mono); }
+.sub { color: var(--sub); }
+
+/* ---------------------------------------------------------------- gancho: números */
+.numeros { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3vh 6vw; width: min(1200px, 90vw); }
+.num { text-align: left; }
+.num .v { font: 500 clamp(56px, 8.6vw, 150px)/1 var(--display); letter-spacing: -.03em; }
+.num .l { font: 400 clamp(15px, 1.4vw, 20px) var(--body); color: var(--sub); margin-top: 1vh; }
+.num .v.c { color: var(--verde); }
+.baque { font: 500 clamp(30px, 4.6vw, 76px)/1.08 var(--display); letter-spacing: -.02em; text-align: center; max-width: 1100px; }
+.baque small { display: block; margin-top: 3vh; font: 400 clamp(20px, 2.4vw, 38px) var(--display); color: var(--sub); }
+
+/* ---------------------------------------------------------------- marca */
+.marca { display: flex; flex-direction: column; align-items: center; gap: 2vh; }
+.marca img { width: clamp(90px, 12vw, 180px); filter: drop-shadow(0 0 40px rgba(155,114,203,.45)); animation: gira 60s linear infinite; }
+@keyframes gira { to { transform: rotate(360deg); } }
+.marca .nome { font: 500 clamp(64px, 11vw, 200px)/1 var(--display); letter-spacing: -.04em; }
+.marca .tag { font: 400 clamp(18px, 2.2vw, 34px) var(--display); color: var(--sub); }
+.plug { display: flex; gap: 1.6vw; margin-top: 4vh; flex-wrap: wrap; justify-content: center; }
+.plug span { border: 1px solid rgba(255,255,255,.14); border-radius: 999px; padding: 1vh 1.6vw; font: 500 clamp(14px, 1.3vw, 18px) var(--body); color: var(--texto); background: rgba(255,255,255,.04); backdrop-filter: blur(8px); }
+.plug span.mcp { border-color: transparent; background: var(--grad); color: #0b0d14; font-weight: 600; }
+
+/* ---------------------------------------------------------------- palco 3D da demo */
+.palco { position: relative; width: min(1380px, 92vw); height: min(78vh, 820px); transform-style: preserve-3d; transition: transform 1.6s var(--ease); }
+.janela { position: absolute; border-radius: 18px; background: #0d1018; border: 1px solid rgba(255,255,255,.1); box-shadow: 0 40px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04) inset; overflow: hidden; transform-style: preserve-3d; transition: transform 1.6s var(--ease), opacity 1s var(--ease), filter 1s var(--ease); }
+.janela .barra { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.07); font: 500 12.5px var(--body); color: var(--sub); }
+.janela .barra i { width: 11px; height: 11px; border-radius: 50%; background: #3a3f4f; }
+.janela .barra i:nth-child(1) { background: #ff5f57; } .janela .barra i:nth-child(2) { background: #febc2e; } .janela .barra i:nth-child(3) { background: #28c840; }
+.janela .barra span { margin-left: 8px; }
+.terminal { left: 0; top: 0; width: 100%; height: 100%; }
+.terminal pre { margin: 0; padding: 22px 26px; font: 400 clamp(13px, 1.25vw, 19px)/1.55 var(--mono); color: #d7dbea; white-space: pre-wrap; word-break: break-word; height: calc(100% - 38px); overflow: hidden; }
+.terminal .prompt { color: var(--azul); }
+.terminal .tool { color: var(--roxo); }
+.terminal .ok { color: var(--verde); }
+.terminal .dim { color: var(--sub); }
+.terminal .cursor { display: inline-block; width: .6em; height: 1.1em; background: var(--texto); vertical-align: -0.2em; animation: pisca 1s steps(2) infinite; }
+@keyframes pisca { 50% { opacity: 0; } }
+.palco[data-cena="prompt"] { transform: translate3d(0, 6%, 0) scale(1.35); }
+.palco[data-cena="tools"] { transform: translate3d(-6%, -10%, 0) scale(1.25) rotateY(-6deg); }
+.palco[data-cena="ui"] { transform: translate3d(0, 0, 0) scale(1) rotateY(8deg) rotateX(2deg); }
+.palco[data-cena="ui"] .terminal { transform: translate3d(-26%, 0, -200px) rotateY(18deg); opacity: .55; filter: blur(1px); }
+.palco[data-cena="final"] { transform: scale(1.1); }
+.ui { left: 34%; top: 6%; width: 66%; height: 92%; transform: translate3d(40%, 0, -100px) rotateY(-24deg); opacity: 0; }
+.palco[data-cena="ui"] .ui, .palco[data-cena="final"] .ui { transform: translate3d(0, 0, 60px) rotateY(-4deg); opacity: 1; }
+.ui iframe { width: 100%; height: calc(100% - 38px); border: 0; background: #11141f; }
+.legenda { position: absolute; left: 50%; bottom: 2vh; transform: translateX(-50%); font: 500 clamp(14px, 1.4vw, 20px) var(--body); color: var(--sub); background: rgba(11,13,20,.7); padding: .8vh 1.6vw; border-radius: 999px; backdrop-filter: blur(10px); white-space: nowrap; }
+
+/* ---------------------------------------------------------------- tour da UI */
+.tour { display: grid; grid-template-columns: 1.4fr 1fr; gap: 4vw; align-items: center; width: min(1400px, 92vw); }
+.tour .quadro { border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); box-shadow: 0 30px 90px rgba(0,0,0,.55); background: #11141f; aspect-ratio: 16 / 10; }
+.tour .quadro iframe { width: 100%; height: 100%; border: 0; }
+.tour .texto .h2 { text-align: left; max-width: none; }
+.tour .texto .p { text-align: left; }
+.tour .texto .fato { margin-top: 3vh; font: 500 clamp(22px, 2.6vw, 40px) var(--display); }
+
+/* ---------------------------------------------------------------- tabela */
+.tabela { width: min(1200px, 90vw); border-collapse: collapse; font: 400 clamp(16px, 1.7vw, 26px) var(--body); }
+.tabela th, .tabela td { padding: 1.6vh 1.2vw; text-align: left; border-bottom: 1px solid rgba(255,255,255,.08); }
+.tabela th { color: var(--sub); font-weight: 500; font-size: .8em; letter-spacing: .06em; text-transform: uppercase; }
+.tabela td.n { font-family: var(--display); font-weight: 500; }
+.tabela tr.fraco td { color: var(--sub); }
+.tabela td b { color: var(--verde); font-weight: 600; }
+
+/* ---------------------------------------------------------------- fecho */
+.fecho .nome { font: 500 clamp(36px, 5vw, 80px) var(--display); letter-spacing: -.02em; margin-top: 4vh; }
+.fecho .onde { color: var(--sub); font: 400 clamp(16px, 1.6vw, 24px) var(--body); margin-top: 1vh; }
+
+/* progresso e ajuda */
+.progresso { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--grad); width: 0; transition: width .5s var(--ease); z-index: 5; }
+.ajuda { position: fixed; right: 16px; bottom: 12px; font: 400 12px var(--body); color: rgba(255,255,255,.35); z-index: 5; }
+@media (prefers-reduced-motion: reduce) { [data-in], .slide, .palco, .janela { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="fundo" id="fundo"><b class="a"></b><b class="r"></b><b class="c"></b></div>
+<canvas class="estrelas" id="estrelas"></canvas>
+<div class="deck" id="deck">
+
+<!-- 1 · gancho invertido: números -->
+<section class="slide s-gancho">
+  <div class="numeros">
+    <div class="num" data-in style="--i:0"><div class="v" data-conta="24.4" data-prefixo="−" data-sufixo="%">−0%</div><div class="l">menos erro que chutar a média do canal · moda e beleza</div></div>
+    <div class="num" data-in style="--i:1"><div class="v" data-conta="4" data-sufixo="">0</div><div class="l">setores, mesma régua: moda, saúde, automotivo, fitness</div></div>
+    <div class="num" data-in style="--i:2"><div class="v" data-conta="112" data-sufixo=" mil">0</div><div class="l">Shorts coletados, 267 canais, zero reais gastos</div></div>
+    <div class="num" data-in style="--i:3"><div class="v c" data-conta="83" data-sufixo="%">0%</div><div class="l">dos vídeos reais caem na faixa que o modelo prometeu com 80% · saúde</div></div>
+  </div>
+</section>
+
+<!-- 2 · o baque -->
+<section class="slide">
+  <div class="baque" data-in="zoom" style="--i:0">Nenhum desses modelos fui eu que montei.<small data-in style="--i:4">Bom. Pelo menos não 100%.</small></div>
+</section>
+
+<!-- 3 · a ideia -->
+<section class="slide">
+  <div class="marca">
+    <img src="../ui/public/logo.svg" alt="" data-in="zoom" style="--i:0">
+    <div class="nome gradvivo" data-in style="--i:1">Stars</div>
+    <div class="tag" data-in style="--i:2">um cientista de dados na palma da mão</div>
+    <div class="plug" data-in style="--i:3">
+      <span class="mcp">MCP</span><span>Gemini CLI</span><span>Claude Code</span><span>Codex</span><span>o LLM que você já usa</span>
+    </div>
+    <div class="p" data-in style="--i:4">Você aponta um setor. Ele coleta a base, monta as camadas, testa as receitas dentro de regras fixas, promove o que vence no teste, explica por quê, e volta todo dia para fazer de novo.</div>
+  </div>
+</section>
+
+<!-- 4 · 50 minutos -->
+<section class="slide">
+  <div class="kicker" data-in style="--i:0">de um nicho a um modelo</div>
+  <div class="h1" data-in="zoom" style="--i:1"><span class="grad">50 minutos.</span></div>
+  <div class="p" data-in style="--i:2">Coletar · texto · títulos · otimizar · promover · explicar. Em um prompt.</div>
+</section>
+
+<!-- 5 · demo 3D: Gemini CLI + UI -->
+<section class="slide s-demo">
+  <div class="palco" id="palco" data-cena="prompt">
+    <div class="janela terminal" id="terminal">
+      <div class="barra"><i></i><i></i><i></i><span>gemini · ~/Stars · MCP: stars</span></div>
+      <pre id="tty"></pre>
+    </div>
+    <div class="janela ui" id="janela-ui">
+      <div class="barra"><i></i><i></i><i></i><span>Stars · console</span></div>
+      <iframe id="ui-demo" data-src="http://127.0.0.1:5173/#projetos" title="Stars"></iframe>
+    </div>
+    <div class="legenda" id="legenda">sessão real · Gemini CLI plugado no Stars por MCP</div>
+  </div>
+</section>
+
+<!-- 6 · tour: busca do agente -->
+<section class="slide">
+  <div class="tour">
+    <div class="quadro" data-in="left" style="--i:0"><iframe data-src="http://127.0.0.1:5173/#modelos" title="Modelos"></iframe></div>
+    <div class="texto">
+      <div class="kicker" data-in style="--i:1">como ele trabalha</div>
+      <div class="h2" data-in style="--i:2">Ele testa receitas. Só a vencedora vai ao teste.</div>
+      <div class="p" data-in style="--i:3">Cada tentativa vem marcada: ganho real, indistinguível de acaso, ou "sem poder estatístico: faltam 2.900 vídeos". O teste é usado uma vez. A trava não deixa trocar o modelo por um igual.</div>
+      <div class="fato grad" data-in style="--i:4">13 receitas · 1 promovida</div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 · tour: diagnóstico -->
+<section class="slide">
+  <div class="tour">
+    <div class="quadro" data-in="left" style="--i:0"><iframe data-src="http://127.0.0.1:5173/#inicio" title="Início"></iframe></div>
+    <div class="texto">
+      <div class="kicker" data-in style="--i:1">ele pondera o dado antes de culpar o modelo</div>
+      <div class="h2" data-in style="--i:2">Fitness e saúde juntos: −12%.</div>
+      <div class="p" data-in style="--i:3">O diagnóstico apontou "setores misturados" e canais rasos. Separou. Saúde foi a <b style="color:var(--verde)">−23%</b>. Fitness mostrou ser ruído: likes que não dependem do canal. Ele disse isso com os números, não escondeu.</div>
+      <div class="fato grad" data-in style="--i:4">−12% → −23%</div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 · o que faz com um vídeo (ao vivo) -->
+<section class="slide">
+  <div class="tour" style="grid-template-columns: 1.6fr 1fr;">
+    <div class="quadro" data-in="left" style="--i:0"><iframe data-src="http://127.0.0.1:5173/#analisar" title="Analisar vídeo"></iframe></div>
+    <div class="texto">
+      <div class="kicker" data-in style="--i:1">ao vivo</div>
+      <div class="h2" data-in style="--i:2">Sobe um Short. Ele lê o gancho, ouve a fala, e diz quanto vai dar.</div>
+      <div class="p" data-in style="--i:3">Faixa provável, faixa quase certa, chance de viralizar, o que puxa pra cima e pra baixo. Depois de publicar: previsto × real, todo dia.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 · números com contexto -->
+<section class="slide">
+  <div class="kicker" data-in style="--i:0">mesma régua, quatro setores</div>
+  <table class="tabela" data-in style="--i:1">
+    <thead><tr><th>setor</th><th>canais / Shorts</th><th>erro vs média do canal</th><th>A vs B no canal</th><th>faixa de 80% cumpre</th></tr></thead>
+    <tbody>
+      <tr><td>moda e beleza</td><td>153 / 54,9k</td><td class="n"><b>−24,4%</b></td><td class="n">58,9%</td><td class="n">73%</td></tr>
+      <tr><td>saúde</td><td>42 / 9,4k</td><td class="n"><b>−23,0%</b></td><td class="n">57,1%</td><td class="n">83%</td></tr>
+      <tr><td>automotivo</td><td>37 / 15,9k</td><td class="n"><b>−19,8%</b></td><td class="n">58,6%</td><td class="n">81%</td></tr>
+      <tr class="fraco"><td>fitness</td><td>30 / 13,2k</td><td class="n">−7,3%</td><td class="n">52%</td><td class="n">83%</td></tr>
+    </tbody>
+  </table>
+  <div class="p" data-in style="--i:2">Erro típico de 2,4× para 1,9×. De dois vídeos do mesmo canal, aponta o melhor em ~58% (acaso: 50%). Validação separada do teste; teste usado uma vez.</div>
+</section>
+
+<!-- 10 · diferente em quê -->
+<section class="slide fecho">
+  <div class="h1" data-in="zoom" style="--i:0">Não é um modelo.<br><span class="grad">É quem faz os modelos.</span></div>
+  <div class="p" data-in style="--i:1">E se vigia.</div>
+  <div class="nome" data-in style="--i:2">Gabriel Marques</div>
+  <div class="onde" data-in style="--i:3">Inteli Academy × Galaxies · Stars</div>
+</section>
+
+</div>
+<div class="progresso" id="progresso"></div>
+<div class="ajuda">← → navegar · Espaço avança · D repete a demo · R réplica/ao vivo</div>
+
+<script>
+// ---------------------------------------------------------------- estrelas de fundo
+(() => {
+  const c = document.getElementById('estrelas'), ctx = c.getContext('2d')
+  let w, h, pts = []
+  const redim = () => { w = c.width = innerWidth; h = c.height = innerHeight; pts = Array.from({ length: 160 }, () => ({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.4 + .3, a: Math.random(), v: Math.random() * .3 + .05 })) }
+  redim(); addEventListener('resize', redim)
+  const tick = () => { ctx.clearRect(0, 0, w, h); for (const p of pts) { p.a += .01 * p.v; ctx.globalAlpha = .25 + .35 * Math.abs(Math.sin(p.a)); ctx.fillStyle = '#cfd6ff'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill() } requestAnimationFrame(tick) }
+  tick()
+})()
+
+// ---------------------------------------------------------------- navegação
+const slides = [...document.querySelectorAll('.slide')]
+let atual = Math.min(Math.max(parseInt(location.hash.slice(1) || '0', 10) || 0, 0), slides.length - 1)
+const progresso = document.getElementById('progresso')
+function mostrar(i) {
+  atual = Math.min(Math.max(i, 0), slides.length - 1)
+  slides.forEach((s, k) => s.classList.toggle('on', k === atual))
+  progresso.style.width = `${((atual + 1) / slides.length) * 100}%`
+  history.replaceState(null, '', `#${atual}`)
+  document.getElementById('fundo').style.transform = `rotate(${atual * 9}deg) scale(${1 + atual * .03})`
+  const s = slides[atual]
+  if (s.classList.contains('s-gancho')) contar(s)
+  if (s.classList.contains('s-demo')) demo()
+  carregarIframes(s)
+}
+addEventListener('keydown', (e) => {
+  if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); mostrar(atual + 1) }
+  if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); mostrar(atual - 1) }
+  if (e.key.toLowerCase() === 'd' && slides[atual].classList.contains('s-demo')) demo()
+  if (e.key.toLowerCase() === 'r') alternarReplica()
+})
+addEventListener('click', (e) => { if (!e.target.closest('iframe, a, button')) mostrar(atual + 1) })
+
+// ---------------------------------------------------------------- números que sobem
+function contar(s) {
+  s.querySelectorAll('[data-conta]').forEach((el, k) => {
+    const alvo = parseFloat(el.dataset.conta), pre = el.dataset.prefixo || '', suf = el.dataset.sufixo || ''
+    const dec = (el.dataset.conta.split('.')[1] || '').length
+    const ini = performance.now() + 300 + k * 350, dur = 1600
+    const passo = (t) => {
+      const p = Math.min(Math.max((t - ini) / dur, 0), 1), e = 1 - Math.pow(1 - p, 3)
+      el.textContent = pre + (alvo * e).toFixed(dec).replace('.', ',') + suf
+      if (p < 1) requestAnimationFrame(passo)
+    }
+    requestAnimationFrame(passo)
+  })
+}
+
+// ---------------------------------------------------------------- iframes: ao vivo ou réplica
+let replica = false
+function carregarIframes(s) {
+  s.querySelectorAll('iframe[data-src]').forEach((f) => {
+    const alvo = replica ? f.dataset.src.replace('http://127.0.0.1:5173/', 'replica.html') : f.dataset.src
+    if (f.dataset.carregado !== alvo) { f.src = alvo; f.dataset.carregado = alvo }
+  })
+}
+function alternarReplica() { replica = !replica; document.querySelectorAll('iframe[data-src]').forEach((f) => { f.dataset.carregado = '' }); carregarIframes(slides[atual]); document.getElementById('legenda').textContent = replica ? 'réplica gravada da plataforma' : 'sessão real · Gemini CLI plugado no Stars por MCP' }
+// se a API não responder em 2,5 s, cai na réplica sozinho
+fetch('http://127.0.0.1:8000/projetos', { signal: AbortSignal.timeout(2500) }).catch(() => { replica = true })
+
+// ---------------------------------------------------------------- demo: replay da sessão real
+// Cada passo: texto a digitar/mostrar, classe, e a cena da câmera. A sessão vem de
+// sessao-gemini.json (gerado a partir de uma execução real do Gemini CLI com o MCP do Stars).
+let roteiro = null
+async function carregarRoteiro() {
+  if (roteiro) return roteiro
+  try { roteiro = await (await fetch('sessao-gemini.json')).json() } catch { roteiro = ROTEIRO_RESERVA }
+  return roteiro
+}
+const ROTEIRO_RESERVA = [
+  { cena: 'prompt', tipo: 'prompt', texto: 'Cria o projeto culinaria com canais de receitas, coleta, otimiza e me explica o modelo com os números.' },
+  { cena: 'tools', tipo: 'tool', texto: 'proximo_passo(projeto="culinaria")' },
+  { cena: 'tools', tipo: 'tool', texto: 'descobrir_canais(consulta="receitas fáceis")  →  50 canais' },
+  { cena: 'tools', tipo: 'tool', texto: 'coletar(projeto="culinaria")  →  job 7f3a… rodando' },
+  { cena: 'tools', tipo: 'tool', texto: 'calcular_texto · calcular_titulos · otimizar(alvo="likes")' },
+  { cena: 'ui', tipo: 'tool', texto: 'diagnostico(projeto="culinaria")' },
+  { cena: 'final', tipo: 'resposta', texto: '(a resposta real da sessão entra aqui quando sessao-gemini.json existir)' },
+]
+let demoAtiva = 0
+async function demo() {
+  const id = ++demoAtiva
+  const tty = document.getElementById('tty'), palco = document.getElementById('palco')
+  tty.innerHTML = ''; palco.dataset.cena = 'prompt'
+  const passos = await carregarRoteiro()
+  const linha = (cls, txt) => { const s = document.createElement('span'); s.className = cls; s.textContent = txt; tty.appendChild(s); tty.appendChild(document.createTextNode('\n')); tty.scrollTop = tty.scrollHeight }
+  const digitar = async (cls, txt, ms = 22) => {
+    const s = document.createElement('span'); s.className = cls; tty.appendChild(s)
+    const cur = document.createElement('span'); cur.className = 'cursor'; tty.appendChild(cur)
+    for (const ch of txt) { if (id !== demoAtiva) return; s.textContent += ch; await espera(ch === ' ' ? ms * .6 : ms) }
+    cur.remove(); tty.appendChild(document.createTextNode('\n'))
+  }
+  const espera = (ms) => new Promise((r) => setTimeout(r, ms))
+  for (const p of passos) {
+    if (id !== demoAtiva) return
+    palco.dataset.cena = p.cena
+    if (p.tipo === 'prompt') { await digitar('prompt', '> ' + p.texto, 24); await espera(500) }
+    else if (p.tipo === 'tool') { linha('tool', '  ⚙ ' + p.texto); await espera(p.espera ?? 900) }
+    else if (p.tipo === 'ok') { linha('ok', '  ✓ ' + p.texto); await espera(p.espera ?? 700) }
+    else if (p.tipo === 'dim') { linha('dim', '  ' + p.texto); await espera(p.espera ?? 500) }
+    else { await digitar('', p.texto, 9); await espera(400) }
+  }
+}
+
+mostrar(atual)
+</script>
+</body>
+</html>
