@@ -1,4 +1,4 @@
-"""Gera os QR codes do slide final como SVG (módulos brancos, fundo transparente).
+"""Gera os QR codes do slide final como SVG (módulos escuros; o deck põe num azulejo branco).
 
 Uso: uv run --with "qrcode[pil]" python apresentacao/gerar_qr.py
 Edite URLS abaixo; os arquivos saem em apresentacao/qr-<nome>.svg.
@@ -24,6 +24,6 @@ for nome, url in URLS.items():
     qr.make(fit=True)
     img = qr.make_image(image_factory=qrcode.image.svg.SvgPathImage)
     svg = img.to_string(encoding="unicode")
-    svg = svg.replace('fill="#000000"', 'fill="#ffffff"').replace("fill:#000000", "fill:#ffffff")
+    svg = svg.replace('fill="#ffffff"', 'fill="#111111"').replace('fill="#000000"', 'fill="#111111"')  # escuro: vai num azulejo branco
     (AQUI / f"qr-{nome}.svg").write_text(svg)
     print(f"{nome}: qr-{nome}.svg ({qr.modules_count} módulos) -> {url}")
