@@ -588,18 +588,22 @@ body { -webkit-font-smoothing: antialiased; }
 const slides = [...document.querySelectorAll('.slide')]
 let atual = Math.min(Math.max(parseInt(location.hash.slice(1) || '0', 10) || 0, 0), slides.length - 1)
 const progresso = document.getElementById('progresso')
+let roteiroAtual = 0 // cada troca de slide incrementa; toda sequência animada checa se ainda é a dona do cursor
 function mostrar(i) {
   atual = Math.min(Math.max(i, 0), slides.length - 1)
+  roteiroAtual++; cursorAnim++; cursor.classList.remove('on'); cursor.classList.remove('clicando')
+  for (const res of esperandoRect.values()) res(null)
+  esperandoRect.clear()
   slides.forEach((s, k) => s.classList.toggle('on', k === atual))
   progresso.style.width = `${((atual + 1) / slides.length) * 100}%`
   history.replaceState(null, '', `#${atual}`)
   document.getElementById('fundo').style.transform = `rotate(${atual * 9}deg) scale(${1 + atual * .03})`
   const s = slides[atual]
-  if (s.classList.contains('s-gancho')) chat(); else chatAtivo++
-  if (s.querySelector('.tour .quadro')) passearUI(s); else if (!s.classList.contains('s-demo')) esconderCursor()
-  if (s.classList.contains('s-ideia')) abrirApp(s); else s.classList.remove('abrindo')
-  if (s.dataset.roteiro === 'modo') cenaModo(s)
-  if (s.classList.contains('s-demo')) demo()
+  if (s.classList.contains('s-gancho')) chat().catch(() => {}); else chatAtivo++
+  if (s.querySelector('.tour .quadro')) passearUI(s).catch(() => {})
+  if (s.classList.contains('s-ideia')) abrirApp(s).catch(() => {}); else s.classList.remove('abrindo')
+  if (s.dataset.roteiro === 'modo') cenaModo(s).catch(() => {})
+  if (s.classList.contains('s-demo')) demo().catch(() => {})
   carregarIframes(s)
   if (slides[atual + 1]) carregarIframes(slides[atual + 1]) // o próximo já carrega, para a UI estar pronta
 }
@@ -615,19 +619,21 @@ addEventListener('click', (e) => { if (!e.target.closest('iframe, a, button, #ch
 
 // ---------------------------------------------------------------- cursor animado
 const cursor = document.getElementById('cursor')
+var cursorAnim = 0
+const esperandoRect = new Map()
 const espera = (ms) => new Promise((r) => setTimeout(r, ms))
 // Cursor movido por requestAnimationFrame: velocidade proporcional à distância, um movimento
 // cancela o anterior (nada de transição CSS presa), e ele nasce perto do alvo em vez de voar do canto.
-let cursorAnim = 0, cursorPos = { x: innerWidth / 2, y: innerHeight / 2 }
+let cursorPos = { x: innerWidth / 2, y: innerHeight / 2 }
 function moverCursor(el, { dx = 0, dy = 0, ms } = {}) {
   return new Promise((res) => {
     const r = el.getBoundingClientRect(), ax = r.left + r.width / 2 + dx, ay = r.top + r.height / 2 + dy
     if (!cursor.classList.contains('on')) { cursorPos = { x: ax - 90, y: ay + 70 }; cursor.style.transform = `translate(${cursorPos.x}px, ${cursorPos.y}px)` }
     cursor.classList.add('on')
     const d = Math.hypot(ax - cursorPos.x, ay - cursorPos.y), dur = ms ?? Math.min(950, Math.max(320, d / 1.6))
-    const id = ++cursorAnim, x0 = cursorPos.x, y0 = cursorPos.y, t0 = performance.now()
+    const id = ++cursorAnim, rot = roteiroAtual, x0 = cursorPos.x, y0 = cursorPos.y, t0 = performance.now()
     const passo = (t) => {
-      if (id !== cursorAnim) return res()
+      if (id !== cursorAnim || rot !== roteiroAtual) return res()
       const p = Math.min((t - t0) / dur, 1), e = p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2
       cursorPos = { x: x0 + (ax - x0) * e, y: y0 + (ay - y0) * e }
       cursor.style.transform = `translate(${cursorPos.x}px, ${cursorPos.y}px)`
@@ -637,32 +643,32 @@ function moverCursor(el, { dx = 0, dy = 0, ms } = {}) {
   })
 }
 async function clicar(el, opts) { await moverCursor(el, opts); await pressionar() }
-async function pressionar() { cursor.classList.add('clicando'); await espera(380); cursor.classList.remove('clicando') }
+async function pressionar() { const r = roteiroAtual; if (!cursor.classList.contains('on')) return; cursor.classList.add('clicando'); await espera(380); cursor.classList.remove('clicando'); if (r !== roteiroAtual) throw new Error('slide trocou') }
 function esconderCursor() { cursorAnim++; cursor.classList.remove('on') }
-async function digitarEm(el, texto, ms = 38) { el.textContent = ''; for (const ch of texto) { el.textContent += ch; await espera(ch === ' ' ? ms * .5 : ms + Math.random() * 18) } }
+async function digitarEm(el, texto, ms = 38) { const r = roteiroAtual; el.textContent = ''; for (const ch of texto) { if (r !== roteiroAtual) return; el.textContent += ch; await espera(ch === ' ' ? ms * .5 : ms + Math.random() * 18) } }
 
 // ---------------------------------------------------------------- gancho: chat roteirizado
 let chatAtivo = 0
 async function chat() {
-  const id = ++chatAtivo
+  const id = ++chatAtivo, r = roteiroAtual
   const eu = document.getElementById('msg-eu'), ia = document.getElementById('msg-ia'), pensando = document.getElementById('pensando')
   const texto = document.getElementById('entrada-texto'), figs = [...document.querySelectorAll('#revelar .fig')], final = document.getElementById('resposta-final'), iaTexto = document.getElementById('ia-texto')
   const revelar = document.getElementById('revelar'), fecho = document.getElementById('fecho-gancho'), area = document.querySelector('#chat .area')
   eu.classList.remove('on'); ia.classList.remove('on'); figs.forEach((c) => c.classList.remove('on')); revelar.classList.remove('recolhe'); fecho.classList.remove('on'); area.classList.remove('escura'); document.getElementById('chat').classList.remove('escura'); texto.textContent = ''; final.textContent = ''; iaTexto.textContent = ''; pensando.style.display = 'inline-flex'
   document.getElementById('ola').classList.remove('some'); document.getElementById('meio').classList.remove('conversa'); document.getElementById('enviar').classList.remove('on'); document.getElementById('faisca').classList.remove('parada')
-  await espera(700); if (id !== chatAtivo) return
+  await espera(700); if (id !== chatAtivo || r !== roteiroAtual) return
   await clicar(document.getElementById('entrada'), { dx: -120 })
   await digitarEm(texto, 'Qual foi o desempenho dos nossos modelos essa semana?')
   document.getElementById('enviar').classList.add('on')
   await espera(350); await clicar(document.getElementById('enviar')); esconderCursor()
   document.getElementById('ola').classList.add('some'); document.getElementById('meio').classList.add('conversa')
   eu.textContent = texto.textContent; texto.textContent = ''; eu.classList.add('on')
-  await espera(600); ia.classList.add('on'); await espera(1400); if (id !== chatAtivo) return
+  await espera(600); ia.classList.add('on'); await espera(1400); if (id !== chatAtivo || r !== roteiroAtual) return
   pensando.style.display = 'none'; document.getElementById('faisca').classList.add('parada')
   await digitarEm(iaTexto, 'Resumo da semana, em números:', 22)
-  await espera(700); if (id !== chatAtivo) return
+  await espera(700); if (id !== chatAtivo || r !== roteiroAtual) return
   area.classList.add('escura'); document.getElementById('chat').classList.add('escura')
-  for (const [k, c] of figs.entries()) { await espera(k ? 1100 : 500); if (id !== chatAtivo) return; c.classList.add('on'); contarEm(c) }
+  for (const [k, c] of figs.entries()) { await espera(k ? 1100 : 500); if (id !== chatAtivo || r !== roteiroAtual) return; c.classList.add('on'); contarEm(c) }
   // os números ficam na tela; a frase vem no próximo slide
 }
 function contarEm(c) {
@@ -675,10 +681,10 @@ function contarEm(c) {
 // ---------------------------------------------------------------- a ideia: o logo abre como um app
 let abrindoId = 0
 async function abrirApp(s) {
-  const id = ++abrindoId
+  const id = ++abrindoId, r = roteiroAtual
   const icone = document.getElementById('icone-stars'); s.classList.remove('abrindo')
-  await espera(3000); if (id !== abrindoId || slides[atual] !== s) return
-  await clicar(icone, { ms: 900 }); if (id !== abrindoId || slides[atual] !== s) return
+  await espera(3000); if (id !== abrindoId || r !== roteiroAtual) return
+  await clicar(icone, { ms: 900 }); if (id !== abrindoId || r !== roteiroAtual) return
   esconderCursor(); await abrirJanelaDesde(icone, s)
 }
 // Como no macOS: o ícone dá um pulo e a janela cresce a partir dele até ocupar a tela.
@@ -721,11 +727,10 @@ function ajustarIframes() {
 }
 addEventListener('resize', ajustarIframes)
 // foco: a UI rola até o elemento marcado, destaca e devolve a posição; o cursor vai até lá
-const esperandoRect = new Map()
 addEventListener('message', (e) => { const m = e.data; if (m && m.origem === 'ui' && m.tipo === 'rect') { const r = esperandoRect.get(m.alvo); if (r) { esperandoRect.delete(m.alvo); r(m.achou ? m : null) } } })
 async function focarUI(f, alvo, { ms, dy = 0, destacar = true } = {}) {
   const rect = await new Promise((res) => { esperandoRect.set(alvo, res); mandarUI(f, { tipo: 'foco', alvo, destacar }); setTimeout(() => { if (esperandoRect.get(alvo) === res) { esperandoRect.delete(alvo); res(null) } }, 1800) })
-  if (!rect) return false
+  if (!rect || !slides[atual].contains(f)) return false
   await moverCursor(f, { ...pontoUI(f, rect.x + Math.min(rect.w * .35, 260), rect.y + Math.min(rect.h * .4, 70) + dy), ms })
   return true
 }
@@ -766,7 +771,7 @@ function ondular(alvo, x, y, forca = 38) {
 // o chip vira Data Scientist e o agente traz o trade-off.
 let modoId = 0
 async function cenaModo(s) {
-  const id = ++modoId, vivo = () => id === modoId && slides[atual] === s
+  const id = ++modoId, r = roteiroAtual, vivo = () => id === modoId && r === roteiroAtual
   const area = document.getElementById('modo-area'), chip = document.getElementById('chip-modo'), ico = document.getElementById('chip-ico'), rotulo = document.getElementById('chip-rotulo')
   const caixa = document.getElementById('pergunta-agente'), fala = document.getElementById('fala-agente'), opcoes = document.getElementById('opcoes-agente')
   chip.classList.remove('cientista'); ico.textContent = 'bolt'; rotulo.textContent = 'Automático'; caixa.classList.remove('on'); opcoes.classList.remove('on'); fala.textContent = ''
@@ -792,9 +797,9 @@ async function cenaModoManual(chip) {
 // ---------------------------------------------------------------- cursor nas telas da UI (tour: ninguém clica, o deck passeia)
 let passeioId = 0
 async function passearUI(s) {
-  const id = ++passeioId, f = s.querySelector('.quadro iframe'); if (!f) return
+  const id = ++passeioId, r = roteiroAtual, f = s.querySelector('.quadro iframe'); if (!f) return
   const tela = (f.dataset.src.split('#')[1] || 'inicio')
-  const vivo = () => id === passeioId
+  const vivo = () => id === passeioId && r === roteiroAtual
   await espera(900); if (!vivo()) return
   if (tela === 'modelos') {
     await focarUI(f, 'busca'); await espera(3200); if (!vivo()) return
@@ -820,7 +825,7 @@ async function passearUI(s) {
 // Na demo: quando a janela da UI entra, o cursor abre um projeto, mostra o modelo e o próximo passo, e vai a Modelos.
 async function passeioDemo(id) {
   const f = document.querySelector('#janela-ui iframe'); if (!f) return
-  const vivo = () => id === demoAtiva
+  const r = roteiroAtual, vivo = () => id === demoAtiva && r === roteiroAtual
   await espera(700); if (!vivo()) return
   const achou = await focarUI(f, 'projeto-moda-beleza'); if (!vivo()) return
   if (!achou) await moverCursor(f, { ...pontoUI(f, 520, 300), ms: 1000 })
@@ -885,7 +890,7 @@ const ROTEIRO_RESERVA = [
 ]
 let demoAtiva = 0
 async function demo() {
-  const id = ++demoAtiva
+  const id = ++demoAtiva, r = roteiroAtual
   const rolo = document.getElementById('rolo'), palco = document.getElementById('palco'), entradaTexto = document.getElementById('demo-texto')
   rolo.innerHTML = ''; entradaTexto.textContent = ''; palco.dataset.cena = 'prompt'
   const meio = document.getElementById('demo-meio'), ola = document.getElementById('demo-ola'), enviar = document.getElementById('demo-enviar')
@@ -893,10 +898,10 @@ async function demo() {
   const passos = await carregarRoteiro()
   const no = (html, cls = '') => { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; rolo.appendChild(d); rolo.scrollTop = rolo.scrollHeight; return d }
   const prompt = passos.find((p) => p.tipo === 'prompt')
-  await espera(350); if (id !== demoAtiva) return
+  await espera(350); if (id !== demoAtiva || r !== roteiroAtual) return
   await clicar(document.getElementById('demo-entrada'), { dx: -160 })
   await digitarEm(entradaTexto, prompt ? prompt.texto : 'Monta um modelo de likes para culinária e me explica.', 12)
-  enviar.classList.add('on'); await espera(200); if (id !== demoAtiva) return
+  enviar.classList.add('on'); await espera(200); if (id !== demoAtiva || r !== roteiroAtual) return
   await clicar(enviar); esconderCursor()
   ola.classList.add('some'); meio.classList.add('conversa')
   no(entradaTexto.textContent, 'msg eu'); entradaTexto.textContent = ''
@@ -904,9 +909,9 @@ async function demo() {
   const corpo = ia.querySelector('.corpo'); await espera(600); corpo.innerHTML = ''
   let ultimaTool = null
   for (const p of passos) {
-    if (id !== demoAtiva) return
+    if (id !== demoAtiva || r !== roteiroAtual) return
     if (p.tipo === 'prompt') continue
-    if (p.cena === 'ui' && palco.dataset.cena !== 'ui' && palco.dataset.cena !== 'final') passeioDemo(id)
+    if (p.cena === 'ui' && palco.dataset.cena !== 'ui' && palco.dataset.cena !== 'final') passeioDemo(id).catch(() => {})
     palco.dataset.cena = p.cena
     if (p.tipo === 'tool') {
       const nome = p.texto.split('(')[0], args = p.texto.slice(p.texto.indexOf('(')).slice(0, 70)
