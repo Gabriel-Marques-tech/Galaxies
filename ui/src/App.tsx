@@ -49,6 +49,18 @@ export default function App() {
   useEffect(() => {
     if (!projeto && projetos.dados?.length) setProjeto(projetos.dados[0])
   }, [projetos.dados, projeto])
+  // Controle remoto do deck da apresentação (postMessage): trocar tela, projeto e rolar o conteúdo
+  useEffect(() => {
+    const ouvir = (e: MessageEvent) => {
+      const m = e.data
+      if (!m || m.origem !== 'deck') return
+      if (m.tipo === 'ir' && TELAS.includes(m.tela)) { setTela(m.tela); history.replaceState(null, '', `#${m.tela}`) }
+      if (m.tipo === 'projeto' && typeof m.nome === 'string') setProjeto(m.nome)
+      if (m.tipo === 'rolar') document.querySelector('.conteudo')?.scrollBy({ top: Number(m.y) || 0, behavior: 'smooth' })
+    }
+    addEventListener('message', ouvir)
+    return () => removeEventListener('message', ouvir)
+  }, [])
   useEffect(() => {
     const modo = config.dados?.modo ?? 'automatico'
     document.documentElement.dataset.modo = modo

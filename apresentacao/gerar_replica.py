@@ -95,6 +95,7 @@ function render() {
   document.getElementById('main').innerHTML = (telas[t] || telas.projetos)()
 }
 addEventListener('hashchange', render); render()
+addEventListener('message', (e) => { const m = e.data; if (!m || m.origem !== 'deck') return; if (m.tipo === 'ir') location.hash = '#' + m.tela; if (m.tipo === 'projeto') { projeto = m.nome; render() }; if (m.tipo === 'rolar') document.getElementById('main').scrollBy({ top: Number(m.y) || 0, behavior: 'smooth' }) })
 </script></body></html>"""
 html = html.replace("__LOGO__", LOGO).replace("__DADOS__", json.dumps(dados, ensure_ascii=False).replace("</", "<\\/"))
 (AQUI / "replica.html").write_text(html)

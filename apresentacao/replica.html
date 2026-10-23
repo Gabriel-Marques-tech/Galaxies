@@ -85,4 +85,5 @@ function render() {
   document.getElementById('main').innerHTML = (telas[t] || telas.projetos)()
 }
 addEventListener('hashchange', render); render()
+addEventListener('message', (e) => { const m = e.data; if (!m || m.origem !== 'deck') return; if (m.tipo === 'ir') location.hash = '#' + m.tela; if (m.tipo === 'projeto') { projeto = m.nome; render() }; if (m.tipo === 'rolar') document.getElementById('main').scrollBy({ top: Number(m.y) || 0, behavior: 'smooth' }) })
 </script></body></html>

@@ -262,7 +262,7 @@ body { -webkit-font-smoothing: antialiased; }
 .cinquenta { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.3fr); gap: 4vw; align-items: center; width: min(1500px, 94vw); height: 80vh; }
 .rio { position: relative; height: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; overflow: hidden; mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent); -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent); }
 .rio .col { display: flex; flex-direction: column; gap: 12px; animation: sobe linear infinite; }
-.rio .col:nth-child(1) { animation-duration: 26s; } .rio .col:nth-child(2) { animation-duration: 34s; animation-direction: reverse; } .rio .col:nth-child(3) { animation-duration: 22s; }
+.rio .col:nth-child(1) { animation-duration: 36s; } .rio .col:nth-child(2) { animation-duration: 46s; animation-direction: reverse; } .rio .col:nth-child(3) { animation-duration: 31s; }
 .rio .col img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 14px; filter: saturate(.85) brightness(.75); border: 1px solid rgba(255,255,255,.06); }
 @keyframes sobe { from { transform: translateY(0); } to { transform: translateY(-50%); } }
 .cinquenta .texto { text-align: left; }
@@ -531,11 +531,41 @@ async function abrirJanelaDesde(icone, s) {
 }
 document.addEventListener('click', (e) => { const ic = e.target.closest && e.target.closest('#icone-stars'); if (ic) { abrindoId++; esconderCursor(); abrirJanelaDesde(ic, slides[atual]) } }, true)
 
-// ---------------------------------------------------------------- cursor nas telas da UI
+// ---------------------------------------------------------------- controle remoto da UI (ao vivo ou réplica)
+// O cursor do deck "clica" na sidebar/cards do iframe; a ação real vai por postMessage (a UI e a réplica ouvem).
+const NAV_UI = {
+  vivo: { x: 120, y: { projetos: 83, inicio: 125, analisar: 167, analises: 209, modelos: 251, revisao: 293, erros: 335, trace: 377 } },
+  replica: { x: 100, y: { projetos: 78, inicio: 119, analisar: 160, analises: 201, modelos: 242, revisao: 283, erros: 324, trace: 365 } },
+}
+function mandarUI(f, msg) { try { f.contentWindow.postMessage({ origem: 'deck', ...msg }, '*') } catch { /* iframe ainda sem documento */ } }
+// ponto em px do conteúdo do iframe → deslocamento em relação ao centro do iframe na tela (respeita o scale do palco)
+function pontoUI(f, x, y) { const r = f.getBoundingClientRect(), esc = r.width / Math.max(f.clientWidth, 1); return { dx: x * esc - r.width / 2, dy: y * esc - r.height / 2 } }
+async function clicarUI(f, tela, ms = 1100) { const m = NAV_UI[replica ? 'replica' : 'vivo']; await clicar(f, { ...pontoUI(f, m.x, m.y[tela]), ms }); mandarUI(f, { tipo: 'ir', tela }) }
+async function rolarUI(f, y, passos = 8, ms = 200) { for (let k = 0; k < passos; k++) { mandarUI(f, { tipo: 'rolar', y: y / passos }); await espera(ms) } }
+
+// ---------------------------------------------------------------- cursor nas telas da UI (tour: ninguém clica, o deck passeia)
+let passeioId = 0
 async function passearUI(s) {
-  const q = s.querySelector('.quadro'); if (!q) return
-  await espera(1200); await moverCursor(q, { dx: -q.getBoundingClientRect().width * .22, dy: -q.getBoundingClientRect().height * .18, ms: 1300 })
-  await espera(500); await moverCursor(q, { dx: q.getBoundingClientRect().width * .1, dy: q.getBoundingClientRect().height * .12, ms: 1500 }); await espera(800); esconderCursor()
+  const id = ++passeioId, f = s.querySelector('.quadro iframe'); if (!f) return
+  const tela = (f.dataset.src.split('#')[1] || 'inicio')
+  await espera(1600); if (id !== passeioId) return
+  await moverCursor(f, { ...pontoUI(f, f.clientWidth * .55, 170), ms: 1300 }); if (id !== passeioId) return
+  await espera(500); await rolarUI(f, 420, 8, 220); await espera(1000); if (id !== passeioId) return
+  if (tela === 'analisar') { await clicarUI(f, 'analises'); await espera(1400); if (id !== passeioId) return; await rolarUI(f, 240, 6, 200) }
+  else { await rolarUI(f, 320, 8, 220); await espera(900); if (id !== passeioId) return; await rolarUI(f, -740, 6, 160) }
+  await espera(600); if (id === passeioId) esconderCursor()
+}
+// Na demo: quando a janela da UI entra, o cursor abre um projeto, desce pela visão geral e vai a Modelos.
+async function passeioDemo(id) {
+  const f = document.querySelector('#janela-ui iframe'); if (!f) return
+  await espera(1000); if (id !== demoAtiva) return
+  const w = f.clientWidth, xCard = replica ? 338 : 228 + (w - 228) * .3, yCard = replica ? 250 : 300
+  await clicar(f, { ...pontoUI(f, xCard, yCard), ms: 1200 }); if (id !== demoAtiva) return
+  mandarUI(f, { tipo: 'projeto', nome: 'moda-beleza' }); mandarUI(f, { tipo: 'ir', tela: 'inicio' })
+  await espera(2200); if (id !== demoAtiva) return
+  await rolarUI(f, 360, 8, 200); await espera(1400); if (id !== demoAtiva) return
+  await clicarUI(f, 'modelos'); await espera(1800); if (id !== demoAtiva) return
+  await rolarUI(f, 300, 8, 220); await espera(800); if (id === demoAtiva) esconderCursor()
 }
 
 // ---------------------------------------------------------------- números que sobem
@@ -606,6 +636,7 @@ async function demo() {
   for (const p of passos) {
     if (id !== demoAtiva) return
     if (p.tipo === 'prompt') continue
+    if (p.cena === 'ui' && palco.dataset.cena !== 'ui' && palco.dataset.cena !== 'final') passeioDemo(id)
     palco.dataset.cena = p.cena
     if (p.tipo === 'tool') {
       const nome = p.texto.split('(')[0], args = p.texto.slice(p.texto.indexOf('(')).slice(0, 70)
