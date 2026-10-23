@@ -131,6 +131,7 @@ export const api = {
     return dados as { fonte: string; nome: string }
   },
   analises: (pr: string) => pedir<AnaliseResumo[]>(`${p(pr)}/analises`),
+  analise: (pr: string, runId: string) => pedir<Analise>(`${p(pr)}/analises/${runId}`),
   acompanhar: (pr: string, run_id: string, video_id: string) => pedir<Acompanhamento>(`${p(pr)}/acompanhar`, { run_id, video_id }),
   atualizarAcompanhamentos: (pr: string) => pedir<{ atualizados: number; sem_dados: string[] }>(`${p(pr)}/acompanhamentos/atualizar`, {}),
   acompanhamentos: (pr: string) => pedir<ListaAcompanhamentos>(`${p(pr)}/acompanhamentos`),

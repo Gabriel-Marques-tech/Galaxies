@@ -156,6 +156,10 @@ def criar_app(fw: Framework) -> FastAPI:
     def analises(projeto: str, limite: int = 50):
         return _json(fw.analises(projeto, limite))
 
+    @app.get("/projetos/{projeto}/analises/{run_id}")
+    def analise_gravada(projeto: str, run_id: str):
+        return _json(fw.analise_gravada(projeto, run_id))
+
     @app.post("/projetos/{projeto}/acompanhar")
     def acompanhar(projeto: str, run_id: str = Body(), video_id: str = Body()):
         return _json(fw.acompanhar(projeto, run_id, video_id))

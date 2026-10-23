@@ -33,6 +33,14 @@ table{width:100%;border-collapse:collapse;font-size:13px}th{color:var(--sub);fon
 .aval{border:1px solid rgba(66,133,244,.5);box-shadow:0 0 22px rgba(66,133,244,.18)}
 .short{width:220px;height:390px;border-radius:22px;background:#0f1322;border:1px dashed var(--c);display:flex;align-items:center;justify-content:center;color:var(--sub);flex-direction:column;gap:8px}
 .duas{display:grid;grid-template-columns:240px 1fr;gap:18px}
+.short.pronto{border-style:solid;background:#0b0f1c;justify-content:flex-end;padding:12px;position:relative;overflow:hidden}.short.pronto .mini{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.55)}.short.pronto .nome-arq{position:relative;font-size:11px;background:rgba(0,0,0,.55);color:#fff;border-radius:6px;padding:3px 6px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pergunta{align-self:flex-end;background:#243055;color:#dfe7ff;border-radius:18px 18px 4px 18px;padding:10px 14px;max-width:80%;margin:0 0 12px auto;font-size:13.5px}.pergunta .sub{font-size:11.5px;color:#aab6d6}
+.grade2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.desc{font-size:12px;color:var(--sub);margin-bottom:8px}
+.chance{display:grid;grid-template-columns:1fr 140px 48px;gap:10px;align-items:center;padding:6px 0;font-size:13px}.chance .trilho{height:8px;border-radius:999px;background:#2a3150;overflow:hidden}.chance .trilho div{height:100%;background:linear-gradient(90deg,#4285f4,#9b72cb)}.chance b{text-align:right}
+.fator{display:grid;grid-template-columns:200px 1fr 56px;gap:10px;align-items:center;padding:5px 0;font-size:12.5px}.fator .trilho{position:relative;height:8px;background:#2a3150;border-radius:999px}.fator .trilho::before{content:'';position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--c)}.fator .trilho div{position:absolute;top:0;height:100%;border-radius:999px}.fator .n{text-align:right;color:var(--sub)}
+.sug{display:grid;grid-template-columns:24px 1fr auto auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--c);font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.campo{display:grid;grid-template-columns:130px 1fr;gap:10px;font-size:13px;padding:6px 0;border-top:1px solid var(--c)}.campo span:first-child{color:var(--sub)}
+.tl{width:100%;height:170px;display:block}
 .ap{opacity:0;transform:translateY(10px);animation:ap .5s forwards}@keyframes ap{to{opacity:1;transform:none}}
 </style></head><body>
 <aside><div class="marca">__LOGO__ Stars</div>
@@ -79,9 +87,36 @@ const telas = {
       `<div class="cartao" data-deck="experimentos"><table><thead><tr><th>modelo</th><th>mais preciso que a média do canal</th><th class="n">acerto A vs B</th><th>status</th></tr></thead><tbody>${ex.map((e) => `<tr><td><b>${receita(e.receita)}</b><br><span class="sub">${e.alvo} · ${e.resultado.n_teste} vídeos de teste</span></td><td><span class="barra" style="width:${Math.max(e.resultado.ganho, 0) / maior * 180}px"></span><b class="bom">${pct(e.resultado.ganho)}</b><br><span class="sub">erro típico ${Math.exp(e.resultado.modelo.mae).toFixed(1)}× · média do canal ${Math.exp(e.resultado.baseline.mae).toFixed(1)}×</span></td><td class="n">${e.resultado.modelo.acerto_pares == null ? '—' : pct(e.resultado.modelo.acerto_pares, false)}</td><td><span class="chip ${e.status === 'ativo' ? 'ok' : ''}">${e.status}</span></td></tr>`).join('')}</tbody></table></div>`
   },
   analisar() {
-    const a = (D[projeto].analises || []).find((x) => x.explicacao) || null
-    return `<h1>Analisar vídeo</h1><div class="duas"><div class="short"><span class="ms" style="font-size:40px">upload</span><span>arraste o Short ou cole o link</span></div><div>` +
-      (a ? `<div class="cartao aval ap" data-deck="avaliacao"><h3><span class="ms">${a.previsao_7d && a.previsao_7d.q50 >= 1.3 * (a.acompanhamento?.timeline ? 0 : 0) ? 'trending_up' : 'trending_flat'}</span> ${a.titulo} <span class="sub">· ${a.canal || ''}</span></h3><p>${a.explicacao}</p>${a.gancho ? `<div class="rot">o que se vê no gancho</div><p class="sub">${a.gancho}</p>` : ''}${a.fala ? `<div class="rot">o que se fala</div><p class="sub">${a.fala}</p>` : ''}<p class="sub" style="margin-top:8px">${a.chances.map((c) => c.evento + ' ' + Math.round(c.prob * 100) + '%').join(' · ')}</p></div>` : `<div class="cartao"><p class="sub">Sem análise gravada neste projeto.</p></div>`) + `</div></div>`
+    const A = D[projeto].analise_completa, resumo = (D[projeto].analises || []).find((x) => A && x.run_id === A.run_id) || (D[projeto].analises || []).find((x) => x.explicacao) || null
+    if (!A || !resumo) return `<h1>Analisar vídeo</h1><div class="duas"><div class="short"><span class="ms" style="font-size:40px">upload</span><span>arraste o Short ou cole o link</span></div><div class="cartao"><p class="sub">Sem análise gravada neste projeto.</p></div></div>`
+    const p = A.previsao_7d, med = A.mediana_canal, alvo = A.alvo
+    const verd = p.q50 >= med * 1.3 ? ['trending_up', 'Acima do normal do canal'] : p.q50 <= med * 0.7 ? ['trending_down', 'Abaixo do normal do canal'] : ['trending_flat', 'No normal do canal']
+    const arq = (resumo.fonte || '').split('/').pop() || 'short.mp4'
+    const mini = resumo.acompanhamento ? `<img class="mini" src="https://i.ytimg.com/vi/${resumo.acompanhamento.video_id}/mqdefault.jpg" alt="">` : ''
+    // timeline: área q10–q90, área q25–q75 e linha q50, eixo em dias (escala log) e valor (escala log)
+    const tl = A.timeline, W = 520, H = 150, PL = 44, PB = 22
+    const xs = tl.map((t) => Math.log(1 + t.dias)), ys = tl.flatMap((t) => [t.q10, t.q90]).map((v) => Math.log(1 + v))
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys) * .98, y1 = Math.max(...ys) * 1.02
+    const X = (d) => PL + (Math.log(1 + d) - x0) / (x1 - x0 || 1) * (W - PL - 8), Y = (v) => (H - PB) - (Math.log(1 + v) - y0) / (y1 - y0 || 1) * (H - PB - 8)
+    const area = (lo, hi) => 'M' + tl.map((t) => `${X(t.dias)},${Y(t[lo])}`).join(' L') + ' L' + [...tl].reverse().map((t) => `${X(t.dias)},${Y(t[hi])}`).join(' L') + ' Z'
+    const linha = 'M' + tl.map((t) => `${X(t.dias)},${Y(t.q50)}`).join(' L')
+    const marcas = [7, 30, 90].filter((d) => tl.some((t) => t.dias === d))
+    const svg = `<svg class="tl" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${area('q10', 'q90')}" fill="rgba(66,133,244,.16)"/><path d="${area('q25', 'q75')}" fill="rgba(66,133,244,.32)"/><path d="${linha}" fill="none" stroke="#8ab4f8" stroke-width="2"/>${marcas.map((d) => { const t = tl.find((t) => t.dias === d); return `<line x1="${X(d)}" x2="${X(d)}" y1="8" y2="${H - PB}" stroke="rgba(255,255,255,.08)"/><text x="${X(d)}" y="${H - 6}" fill="#9aa0b4" font-size="11" text-anchor="middle">${d} d</text><text x="${X(d) - 4}" y="${Y(t.q50) - 6}" fill="#dfe7ff" font-size="11" text-anchor="end">${k(t.q50)}</text>` }).join('')}<text x="4" y="14" fill="#9aa0b4" font-size="11">${alvo}</text></svg>`
+    const chips = A.atributos ? `<div class="chips">${Object.entries(A.atributos).map(([id, v]) => `<span class="chip"><span class="mono">${id.replace(/_/g, ' ')}</span>: ${v.type === 'noul' ? (Number(v.noul) >= .5 ? 'sim' : 'não') : v.type === 'score' ? v.score : (v.choice ?? '')}</span>`).join('')}</div>` : ''
+    const fatores = (A.fatores || []).map((f) => { const w = Math.min(Math.abs(f.impacto) * 50, 50); return `<div class="fator"><span class="mono">${f.feature}</span><span class="trilho"><div style="left:${f.impacto >= 0 ? 50 : 50 - w}%;width:${w}%;background:${f.impacto >= 0 ? '#5fd39a' : '#f08080'}"></div></span><span class="n">${f.impacto >= 0 ? '+' : ''}${f.impacto.toFixed(2)}</span></div>` }).join('')
+    const sug = (A.sugestoes || []).length ? `<div class="cartao" style="margin-top:12px"><h3>Para aumentar a chance de viralizar</h3><div class="desc">Mudanças que o modelo associa a mais alcance neste canal. Hipóteses para testar, não garantia.</div>${A.sugestoes.map((s) => `<div class="sug"><span class="ms" style="color:var(--p)">trending_up</span><span>${s.mudanca}</span><span class="sub">viral ${pct(A.p_viral, false)} → <b class="bom">${pct(s.p_viral, false)}</b></span><span class="sub">7 dias ${pct(s.ganho)}</span></div>`).join('')}</div>` : ''
+    return `<h1>Analisar vídeo</h1><div class="duas"><div class="short pronto">${mini}<span class="nome-arq">${arq}</span></div><div>
+      <div class="pergunta">${resumo.titulo}<div class="sub">${resumo.canal || ''}</div></div>
+      <div class="cartao aval ap" data-deck="avaliacao"><h3><span class="ms" style="color:var(--p)">${verd[0]}</span> ${verd[1]} <span class="sub">· ${k(p.q50)} ${alvo} em 7 dias (canal costuma fazer ${k(med)})</span></h3>
+        <p style="font-size:14.5px">Na metade dos casos fica entre <b>${k(p.q25)} e ${k(p.q75)}</b>; é quase certo (80%) que fique entre ${k(p.q10)} e ${k(p.q90)}. Chance de viralizar (${A.limite_viral}× a mediana em ${A.dias_viral} dias): <b>${pct(A.p_viral, false)}</b>.</p>
+        <p class="sub" style="margin-top:8px">${A.explicacao}</p>
+        ${A.gancho ? `<div style="margin-top:10px"><div class="campo"><span>O que se vê no gancho</span><span>${A.gancho.descricao}</span></div><div class="campo"><span>O que se fala</span><span>${A.gancho.transcricao || '(sem fala)'}</span></div></div>` : ''}${chips}</div>
+      <div class="grade2"><div class="cartao"><h3>Timeline prevista</h3><div class="desc">Mediana, faixa provável (50%) e quase certa (80%)</div>${svg}</div>
+        <div class="cartao"><h3>Chances em ${A.dias_viral} dias</h3><div class="desc">Hipóteses sobre a mediana do canal (${k(med)} ${alvo})</div>${A.chances.map((c) => `<div class="chance"><span>${c.evento}<span class="sub"> · ${c.multiplo}×</span></span><span class="trilho"><div style="width:${c.prob * 100}%"></div></span><b>${pct(c.prob, false)}</b></div>`).join('')}</div></div>
+      ${sug}
+      <div class="cartao" style="margin-top:12px"><h3>O que mais pesou</h3><div class="desc">Contribuição de cada fator na previsão (SHAP)</div>${fatores}</div>
+      <div class="cartao" style="margin-top:12px;display:flex;gap:10px;align-items:center"><span class="ms" style="color:var(--p)">publish</span><span style="flex:1"><b>Publicou?</b> <span class="sub">Cole o link do Short para acompanhar previsto × real.</span></span><span class="chip">link ou id do vídeo</span><span class="chip ok">Acompanhar</span></div>
+      <p class="sub mono" style="margin-top:8px">modelo ${A.experimento_id} · run ${A.run_id}</p></div></div>`
   },
   analises() {
     const L = D[projeto].analises || []

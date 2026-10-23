@@ -17,9 +17,10 @@ def test_rotas_chegam_nos_servicos_e_igualam_o_mcp(tmp_path):
     exp = api.post(
         "/projetos/moda-beleza/experimentos", json={"receita": {"camadas": ["metadados"]}}
     ).json()
+    # o MCP embrulha listas em {"itens", "n"} (o Gemini CLI valida listas cruas como registro)
     assert api.get("/projetos/moda-beleza/experimentos").json() == chamar(
         mcp, "experimentos", projeto="moda-beleza"
-    )
+    )["itens"]
     assert (
         api.post(f"/projetos/moda-beleza/experimentos/{exp['id']}/promover").json()["status"]
         == "ativo"
@@ -28,7 +29,13 @@ def test_rotas_chegam_nos_servicos_e_igualam_o_mcp(tmp_path):
         "/projetos/moda-beleza/analisar", json={"video": VIDEO, "canal_id": "canal1"}
     ).json()
     trace = api.get(f"/projetos/moda-beleza/runs/{analise['run_id']}/trace").json()
-    assert trace == chamar(mcp, "trace", projeto="moda-beleza", run_id=analise["run_id"])
+    assert trace == chamar(mcp, "trace", projeto="moda-beleza", run_id=analise["run_id"])["itens"]
+    # uma análise gravada reabre inteira a partir do trace, igual à resposta original
+    reaberta = api.get(f"/projetos/moda-beleza/analises/{analise['run_id']}").json()
+    assert reaberta["timeline"] == analise["timeline"]
+    assert reaberta["fatores"] == analise["fatores"]
+    assert reaberta["mediana_canal"] == analise["mediana_canal"]
+    assert reaberta["explicacao"] == analise["explicacao"]
 
 
 def test_humano_aprova_promocao_e_anota_erro(tmp_path):

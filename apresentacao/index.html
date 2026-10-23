@@ -611,7 +611,9 @@ async function passearUI(s) {
     await focarUI(f, 'proximo-passo'); await espera(2800); if (!vivo()) return
     await focarUI(f, 'diagnostico'); await espera(2400)
   } else if (tela === 'analisar') {
-    const achou = await focarUI(f, 'avaliacao'); await espera(achou ? 3000 : 800); if (!vivo()) return
+    mandarUI(f, { tipo: 'analise' }); await espera(1600); if (!vivo()) return
+    const achou = await focarUI(f, 'avaliacao'); await espera(achou ? 3200 : 800); if (!vivo()) return
+    if (achou) { await rolarUI(f, 520, 8, 220); await espera(2200); if (!vivo()) return; await rolarUI(f, 520, 8, 220); await espera(2200); if (!vivo()) return }
     await clicarUI(f, 'analises'); await espera(1600); if (!vivo()) return
     await focarUI(f, 'analises'); await espera(2600)
   } else {

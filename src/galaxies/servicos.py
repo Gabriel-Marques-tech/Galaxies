@@ -1,5 +1,6 @@
 """Camada de serviços: o único seam do núcleo. MCP e FastAPI só chamam isto."""
 
+import json
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Literal
@@ -853,6 +854,71 @@ class Framework:
                     }
                 )
             return saida
+
+    def analise_gravada(self, projeto: str, run_id: str) -> Analise:
+        """Reconstrói uma análise já feita (run de analisar) a partir do trace, com timeline,
+        chances, fatores, sugestões, gancho e atributos, para reabri-la na UI sem rodar de novo."""
+        config = self.obter_projeto(projeto)
+        with self._abrir_existente(projeto) as banco:
+            run = next((r for r in listar_runs(banco) if r.id == run_id), None)
+            if run is None or run.operacao != "analisar":
+                raise erros.ErroGalaxies(f"'{run_id}' não é um run de analisar.")
+            etapas = {e.nome: e for e in ler_trace(banco, run_id)}
+            prever_ = etapas.get("prever")
+            if prever_ is None or not prever_.saida:
+                raise erros.ErroGalaxies(f"O run {run_id} não tem previsão registrada.")
+            entrada, saida = prever_.entrada or {}, prever_.saida
+            explicar_ = (etapas["explicar"].saida if etapas.get("explicar") else {}) or {}
+            timeline = saida.get("timeline") or []
+            ultimo = timeline[-1] if timeline else None
+            p7 = next((p for p in timeline if p.get("dias") == 7), ultimo)
+            if p7 is None:
+                raise erros.ErroGalaxies(f"O run {run_id} não tem timeline.")
+            chances = saida.get("chances") or []
+            canal_id = entrada.get("canal_id") or ""
+            # a mesma mediana que o modelo usou (meta do experimento); se o modelo sumiu, a atual
+            mediana = None
+            exp_id = str(saida.get("experimento") or "")
+            pasta = self._pasta_do_projeto(projeto) / "modelos" / exp_id
+            if (pasta / "meta.json").exists():
+                meta = json.loads((pasta / "meta.json").read_text())
+                canais_meta = meta.get("canais", [])
+                mediana = next(
+                    (c["mediana"] for c in canais_meta if c["canal_id"] == canal_id), None
+                )
+            if mediana is None:
+                mediana = banco.execute(
+                    f"SELECT median({config.alvo}) FROM videos WHERE canal_id = ?", [canal_id]
+                ).fetchone()[0]
+            descrever = etapas.get("descrever_gancho")
+            transcrever = etapas.get("transcrever_gancho")
+            gancho = (
+                GanchoAnalisado(
+                    descricao=str(descrever.saida or ""),
+                    transcricao=str(transcrever.saida or "") if transcrever else "",
+                )
+                if descrever and isinstance(descrever.saida, str)
+                else None
+            )
+            perguntas = etapas.get("perguntar_atributos")
+            atributos = perguntas.saida if perguntas else None
+            return Analise(
+                run_id=run_id,
+                experimento_id=str(saida.get("experimento") or ""),
+                canal_id=canal_id,
+                alvo=config.alvo,
+                mediana_canal=float(mediana or 0.0),
+                previsao_7d=p7,
+                timeline=timeline,
+                limite_viral=config.limite_viral,
+                p_viral=float(chances[-1]["prob"]) if chances else 0.0,
+                chances=chances,
+                fatores=explicar_.get("fatores") or [],
+                sugestoes=explicar_.get("sugestoes") or [],
+                gancho=gancho,
+                atributos=atributos if isinstance(atributos, dict) else None,
+                explicacao=explicar_.get("explicacao") or "",
+            )
 
     def acompanhamentos(self, projeto: str) -> acompanhamento.ListaAcompanhamentos:
         """Previsto × real dos vídeos acompanhados, com cobertura da faixa e erro típico."""

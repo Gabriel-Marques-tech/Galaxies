@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, type Analise, type Projeto } from '../api'
 import { Aviso, compacto, GraficoTimeline, Icone, pct, TextoRico, useCarga } from '../componentes'
 
@@ -22,6 +22,23 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
     return novo
   })
   const [rodando, setRodando] = useState(false)
+  // Deck da apresentação: reabre uma análise gravada (a mais recente com gancho, ou um run_id) como se tivesse acabado de rodar
+  useEffect(() => {
+    const ouvir = (e: MessageEvent) => {
+      const m = e.data
+      if (!m || m.origem !== 'deck' || m.tipo !== 'analise') return
+      api.analises(projeto).then((L) => {
+        const ok = L.filter((a) => a.status === 'ok' && a.previsao_7d)
+        const r = (m.run_id ? ok.find((a) => a.run_id === m.run_id) : undefined) ?? ok.find((a) => a.gancho) ?? ok[0]
+        if (!r) return
+        return api.analise(projeto, r.run_id).then((analise) => {
+          setConversasBruto((c) => (c.some((x) => x.analise?.run_id === analise.run_id) ? c : [...c, { pergunta: r.titulo ?? '(análise gravada)', canal: analise.canal_id, analise }]))
+        })
+      }).catch(() => undefined)
+    }
+    addEventListener('message', ouvir)
+    return () => removeEventListener('message', ouvir)
+  }, [projeto])
   const canalEscolhido = canal || canais.dados?.[0]?.id || ''
   const nomeCanal = (id: string) => canais.dados?.find((c) => c.id === id)?.titulo ?? id
 
