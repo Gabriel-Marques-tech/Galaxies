@@ -63,12 +63,13 @@ export default function App() {
         const el = document.querySelector<HTMLElement>(`[data-deck="${CSS.escape(String(m.alvo))}"]`)
         const fonte = e.source as Window | null
         if (!el) { fonte?.postMessage({ origem: 'ui', tipo: 'rect', alvo: m.alvo, achou: false }, '*'); return }
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        const destacar = m.destacar !== false
+        if (destacar) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
         setTimeout(() => {
-          el.classList.add('foco-deck')
+          if (destacar) el.classList.add('foco-deck')
           const r = el.getBoundingClientRect()
           fonte?.postMessage({ origem: 'ui', tipo: 'rect', alvo: m.alvo, achou: true, x: r.left, y: r.top, w: r.width, h: r.height }, '*')
-        }, 650)
+        }, destacar ? 650 : 30)
       }
     }
     addEventListener('message', ouvir)
@@ -108,7 +109,7 @@ export default function App() {
           <span className="marca so-aberta"><img src="/logo.svg" alt="" className="logo-img" />Galaxies</span>
         </div>
         <div className={`item-nav projetos-nav ${tela === 'projetos' ? 'ativo' : ''}`}>
-          <button className="abrir" onClick={() => (tela === 'projetos' ? setListaAberta(!listaAberta) : ir('projetos'))} title="Projetos">
+          <button className="abrir" data-deck="nav-projetos" onClick={() => (tela === 'projetos' ? setListaAberta(!listaAberta) : ir('projetos'))} title="Projetos">
             <Icone nome="grid_view" cheio={tela === 'projetos'} />
             <span className="rotulo-nav">Projetos{projeto && <small> · {projeto}</small>}</span>
           </button>
@@ -127,7 +128,7 @@ export default function App() {
           </div>
         </div>
         {NAV.map((n) => (
-          <button key={n.id} className={`item-nav ${tela === n.id ? 'ativo' : ''}`} onClick={() => ir(n.id)} title={n.nome}>
+          <button key={n.id} data-deck={`nav-${n.id}`} className={`item-nav ${tela === n.id ? 'ativo' : ''}`} onClick={() => ir(n.id)} title={n.nome}>
             <Icone nome={n.icone} cheio={tela === n.id} />
             <span className="rotulo-nav">{n.nome}</span>
             {n.id === 'modelos' && pendentes > 0 && <span className="contador rotulo-nav">{pendentes}</span>}

@@ -44,11 +44,11 @@ table{width:100%;border-collapse:collapse;font-size:13px}th{color:var(--sub);fon
 .ap{opacity:0;transform:translateY(10px);animation:ap .5s forwards}@keyframes ap{to{opacity:1;transform:none}}
 </style></head><body>
 <aside><div class="marca">__LOGO__ Stars</div>
-<a href="#projetos" data-t="projetos"><span class="ms">grid_view</span>Projetos</a>
-<a href="#inicio" data-t="inicio"><span class="ms">home</span>Início</a>
-<a href="#analisar" data-t="analisar"><span class="ms">auto_awesome</span>Analisar vídeo</a>
-<a href="#analises" data-t="analises"><span class="ms">history</span>Vídeos analisados</a>
-<a href="#modelos" data-t="modelos"><span class="ms">model_training</span>Modelos</a>
+<a href="#projetos" data-t="projetos" data-deck="nav-projetos"><span class="ms">grid_view</span>Projetos</a>
+<a href="#inicio" data-t="inicio" data-deck="nav-inicio"><span class="ms">home</span>Início</a>
+<a href="#analisar" data-t="analisar" data-deck="nav-analisar"><span class="ms">auto_awesome</span>Analisar vídeo</a>
+<a href="#analises" data-t="analises" data-deck="nav-analises"><span class="ms">history</span>Vídeos analisados</a>
+<a href="#modelos" data-t="modelos" data-deck="nav-modelos"><span class="ms">model_training</span>Modelos</a>
 <a href="#revisao"><span class="ms">fact_check</span>Revisão de atributos</a>
 <a href="#erros"><span class="ms">troubleshoot</span>Erros</a>
 <a href="#trace"><span class="ms">account_tree</span>Trace</a></aside>
@@ -130,7 +130,7 @@ function render() {
   document.getElementById('main').innerHTML = (telas[t] || telas.projetos)()
 }
 addEventListener('hashchange', render); render()
-addEventListener('message', (e) => { const m = e.data; if (!m || m.origem !== 'deck') return; if (m.tipo === 'ir') location.hash = '#' + m.tela; if (m.tipo === 'projeto') { projeto = m.nome; render() }; if (m.tipo === 'rolar') document.getElementById('main').scrollBy({ top: Number(m.y) || 0, behavior: 'smooth' }); if (m.tipo === 'foco') { document.querySelectorAll('.foco-deck').forEach((x) => x.classList.remove('foco-deck')); const el = document.querySelector('[data-deck="' + m.alvo + '"]'); if (!el) { e.source.postMessage({ origem: 'ui', tipo: 'rect', alvo: m.alvo, achou: false }, '*'); return } el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => { el.classList.add('foco-deck'); const r = el.getBoundingClientRect(); e.source.postMessage({ origem: 'ui', tipo: 'rect', alvo: m.alvo, achou: true, x: r.left, y: r.top, w: r.width, h: r.height }, '*') }, 650) } })
+addEventListener('message', (e) => { const m = e.data; if (!m || m.origem !== 'deck') return; if (m.tipo === 'ir') location.hash = '#' + m.tela; if (m.tipo === 'projeto') { projeto = m.nome; render() }; if (m.tipo === 'rolar') document.getElementById('main').scrollBy({ top: Number(m.y) || 0, behavior: 'smooth' }); if (m.tipo === 'foco') { document.querySelectorAll('.foco-deck').forEach((x) => x.classList.remove('foco-deck')); const el = document.querySelector('[data-deck="' + m.alvo + '"]'); if (!el) { e.source.postMessage({ origem: 'ui', tipo: 'rect', alvo: m.alvo, achou: false }, '*'); return } const destacar = m.destacar !== false; if (destacar) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => { if (destacar) el.classList.add('foco-deck'); const r = el.getBoundingClientRect(); e.source.postMessage({ origem: 'ui', tipo: 'rect', alvo: m.alvo, achou: true, x: r.left, y: r.top, w: r.width, h: r.height }, '*') }, destacar ? 650 : 30) } })
 </script></body></html>"""
 html = html.replace("__LOGO__", LOGO).replace("__DADOS__", json.dumps(dados, ensure_ascii=False).replace("</", "<\\/"))
 (AQUI / "replica.html").write_text(html)

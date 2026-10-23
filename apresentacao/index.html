@@ -93,7 +93,7 @@ body { -webkit-font-smoothing: antialiased; }
 @keyframes pisca { 50% { opacity: 0; } }
 .palco[data-cena="prompt"] { transform: translate3d(0, -7%, 0) scale(1.1); }
 .palco[data-cena="tools"] { transform: translate3d(-3%, -3%, 0) scale(1.06) rotateY(-5deg); }
-.palco[data-cena="ui"] { transform: translate3d(0, 0, 0) scale(.96) rotateY(6deg) rotateX(2deg); }
+.palco[data-cena="ui"] { transform: translate3d(0, 0, 0) scale(.96) rotateY(3deg) rotateX(2deg); }
 .palco[data-cena="ui"] .terminal { transform: translate3d(-26%, 0, -200px) rotateY(18deg); opacity: .55; filter: blur(1px); }
 .palco[data-cena="final"] { transform: scale(1.02); }
 .ui { left: 34%; top: 6%; width: 66%; height: 92%; transform: translate3d(40%, 0, -100px) rotateY(-24deg); opacity: 0; }
@@ -128,7 +128,7 @@ body { -webkit-font-smoothing: antialiased; }
 [data-in] { transition-timing-function: cubic-bezier(.16, 1.1, .3, 1); }
 
 /* ---------------------------------------------------------------- cursor animado */
-.cursor-fake { position: fixed; left: 0; top: 0; width: 26px; height: 32px; z-index: 50; pointer-events: none; opacity: 0; transform: translate(-40px, -40px); transition: transform 1.1s cubic-bezier(.3, .9, .3, 1), opacity .4s; filter: drop-shadow(0 4px 10px rgba(0,0,0,.6)); }
+.cursor-fake { position: fixed; left: 0; top: 0; width: 26px; height: 32px; z-index: 50; pointer-events: none; opacity: 0; transform: translate(-40px, -40px); transition: opacity .25s; will-change: transform; filter: drop-shadow(0 4px 10px rgba(0,0,0,.6)); }
 .cursor-fake.on { opacity: 1; }
 .cursor-fake svg { width: 100%; height: 100%; }
 .cursor-fake .onda { position: absolute; left: 2px; top: 2px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff; opacity: 0; transform: scale(.3); }
@@ -501,14 +501,29 @@ addEventListener('click', (e) => { if (!e.target.closest('iframe, a, button')) m
 // ---------------------------------------------------------------- cursor animado
 const cursor = document.getElementById('cursor')
 const espera = (ms) => new Promise((r) => setTimeout(r, ms))
-async function moverCursor(el, { dx = 0, dy = 0, ms = 1100 } = {}) {
-  const r = el.getBoundingClientRect(); cursor.classList.add('on')
-  cursor.style.transitionDuration = `${ms}ms, .4s`
-  cursor.style.transform = `translate(${r.left + r.width / 2 + dx}px, ${r.top + r.height / 2 + dy}px)`
-  await espera(ms + 80)
+// Cursor movido por requestAnimationFrame: velocidade proporcional à distância, um movimento
+// cancela o anterior (nada de transição CSS presa), e ele nasce perto do alvo em vez de voar do canto.
+let cursorAnim = 0, cursorPos = { x: innerWidth / 2, y: innerHeight / 2 }
+function moverCursor(el, { dx = 0, dy = 0, ms } = {}) {
+  return new Promise((res) => {
+    const r = el.getBoundingClientRect(), ax = r.left + r.width / 2 + dx, ay = r.top + r.height / 2 + dy
+    if (!cursor.classList.contains('on')) { cursorPos = { x: ax - 90, y: ay + 70 }; cursor.style.transform = `translate(${cursorPos.x}px, ${cursorPos.y}px)` }
+    cursor.classList.add('on')
+    const d = Math.hypot(ax - cursorPos.x, ay - cursorPos.y), dur = ms ?? Math.min(950, Math.max(320, d / 1.6))
+    const id = ++cursorAnim, x0 = cursorPos.x, y0 = cursorPos.y, t0 = performance.now()
+    const passo = (t) => {
+      if (id !== cursorAnim) return res()
+      const p = Math.min((t - t0) / dur, 1), e = p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2
+      cursorPos = { x: x0 + (ax - x0) * e, y: y0 + (ay - y0) * e }
+      cursor.style.transform = `translate(${cursorPos.x}px, ${cursorPos.y}px)`
+      if (p < 1) requestAnimationFrame(passo); else setTimeout(res, 40)
+    }
+    requestAnimationFrame(passo)
+  })
 }
-async function clicar(el, opts) { await moverCursor(el, opts); cursor.classList.add('clicando'); await espera(600); cursor.classList.remove('clicando') }
-function esconderCursor() { cursor.classList.remove('on') }
+async function clicar(el, opts) { await moverCursor(el, opts); await pressionar() }
+async function pressionar() { cursor.classList.add('clicando'); await espera(380); cursor.classList.remove('clicando') }
+function esconderCursor() { cursorAnim++; cursor.classList.remove('on') }
 async function digitarEm(el, texto, ms = 38) { el.textContent = ''; for (const ch of texto) { el.textContent += ch; await espera(ch === ' ' ? ms * .5 : ms + Math.random() * 18) } }
 
 // ---------------------------------------------------------------- gancho: chat roteirizado
@@ -547,8 +562,8 @@ let abrindoId = 0
 async function abrirApp(s) {
   const id = ++abrindoId
   const icone = document.getElementById('icone-stars'); s.classList.remove('abrindo')
-  await espera(5200); if (id !== abrindoId || slides[atual] !== s) return
-  await clicar(icone, { ms: 1300 }); if (id !== abrindoId || slides[atual] !== s) return
+  await espera(3000); if (id !== abrindoId || slides[atual] !== s) return
+  await clicar(icone, { ms: 900 }); if (id !== abrindoId || slides[atual] !== s) return
   esconderCursor(); await abrirJanelaDesde(icone, s)
 }
 // Como no macOS: o ícone dá um pulo e a janela cresce a partir dele até ocupar a tela.
@@ -571,7 +586,11 @@ const NAV_UI = {
 function mandarUI(f, msg) { try { f.contentWindow.postMessage({ origem: 'deck', ...msg }, '*') } catch { /* iframe ainda sem documento */ } }
 // ponto em px do conteúdo do iframe → deslocamento em relação ao centro do iframe na tela (respeita o scale do palco)
 function pontoUI(f, x, y) { const r = f.getBoundingClientRect(), esc = r.width / Math.max(f.clientWidth, 1); return { dx: x * esc - r.width / 2, dy: y * esc - r.height / 2 } }
-async function clicarUI(f, tela, ms = 1100) { const m = NAV_UI[replica ? 'replica' : 'vivo']; await clicar(f, { ...pontoUI(f, m.x, m.y[tela]), ms }); mandarUI(f, { tipo: 'ir', tela }) }
+async function clicarUI(f, tela) {
+  const achou = await focarUI(f, `nav-${tela}`, { destacar: false })
+  if (!achou) { const m = NAV_UI[replica ? 'replica' : 'vivo']; await moverCursor(f, pontoUI(f, m.x, m.y[tela])) }
+  await pressionar(); mandarUI(f, { tipo: 'ir', tela })
+}
 async function rolarUI(f, y, passos = 8, ms = 200) { for (let k = 0; k < passos; k++) { mandarUI(f, { tipo: 'rolar', y: y / passos }); await espera(ms) } }
 
 // Os iframes rodam a UI em largura de desktop (1360 px) e são reduzidos para caber no quadro:
@@ -589,8 +608,8 @@ addEventListener('resize', ajustarIframes)
 // foco: a UI rola até o elemento marcado, destaca e devolve a posição; o cursor vai até lá
 const esperandoRect = new Map()
 addEventListener('message', (e) => { const m = e.data; if (m && m.origem === 'ui' && m.tipo === 'rect') { const r = esperandoRect.get(m.alvo); if (r) { esperandoRect.delete(m.alvo); r(m.achou ? m : null) } } })
-async function focarUI(f, alvo, { ms = 1100, dy = 0 } = {}) {
-  const rect = await new Promise((res) => { esperandoRect.set(alvo, res); mandarUI(f, { tipo: 'foco', alvo }); setTimeout(() => { if (esperandoRect.get(alvo) === res) { esperandoRect.delete(alvo); res(null) } }, 1800) })
+async function focarUI(f, alvo, { ms, dy = 0, destacar = true } = {}) {
+  const rect = await new Promise((res) => { esperandoRect.set(alvo, res); mandarUI(f, { tipo: 'foco', alvo, destacar }); setTimeout(() => { if (esperandoRect.get(alvo) === res) { esperandoRect.delete(alvo); res(null) } }, 1800) })
   if (!rect) return false
   await moverCursor(f, { ...pontoUI(f, rect.x + Math.min(rect.w * .35, 260), rect.y + Math.min(rect.h * .4, 70) + dy), ms })
   return true
@@ -602,7 +621,7 @@ async function passearUI(s) {
   const id = ++passeioId, f = s.querySelector('.quadro iframe'); if (!f) return
   const tela = (f.dataset.src.split('#')[1] || 'inicio')
   const vivo = () => id === passeioId
-  await espera(1800); if (!vivo()) return
+  await espera(900); if (!vivo()) return
   if (tela === 'modelos') {
     await focarUI(f, 'busca'); await espera(3200); if (!vivo()) return
     await focarUI(f, 'experimentos'); await espera(2600)
@@ -628,7 +647,7 @@ async function passeioDemo(id) {
   await espera(1000); if (!vivo()) return
   const achou = await focarUI(f, 'projeto-moda-beleza', { ms: 1200 }); if (!vivo()) return
   if (!achou) await moverCursor(f, { ...pontoUI(f, 520, 300), ms: 1000 })
-  cursor.classList.add('clicando'); await espera(600); cursor.classList.remove('clicando')
+  await pressionar()
   mandarUI(f, { tipo: 'projeto', nome: 'moda-beleza' }); mandarUI(f, { tipo: 'ir', tela: 'inicio' })
   await espera(1800); if (!vivo()) return
   await focarUI(f, 'modelo-ativo'); await espera(2200); if (!vivo()) return
