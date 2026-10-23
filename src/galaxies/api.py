@@ -11,7 +11,7 @@ from typing import Any
 import duckdb
 from fastapi import Body, FastAPI, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from galaxies import ErroGalaxies, Framework, ProjetoNaoEncontrado, coleta
 from galaxies.mcp_servidor import Jobs
@@ -138,6 +138,15 @@ def criar_app(fw: Framework) -> FastAPI:
         destino = pasta / f"{uuid.uuid4().hex[:8]}-{nome}"
         destino.write_bytes(await arquivo.read())
         return {"fonte": str(destino), "nome": nome}
+
+    @app.get("/projetos/{projeto}/uploads/{nome}")
+    def upload_gravado(projeto: str, nome: str):
+        """Devolve um Short já enviado (para reabrir a análise com o vídeo ao lado)."""
+        fw.obter_projeto(projeto)
+        arquivo = Path(fw.raiz) / "projetos" / projeto / "uploads" / Path(nome).name
+        if not arquivo.is_file():
+            return JSONResponse({"erro": "arquivo não encontrado"}, status_code=404)
+        return FileResponse(arquivo)
 
     @app.post("/projetos/{projeto}/analisar")
     def analisar(projeto: str, video: JSONLivre = Body(), canal_id: str = Body()):

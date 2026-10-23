@@ -5,7 +5,7 @@ import { Aviso, compacto, GraficoTimeline, Icone, pct, TextoRico, useCarga } fro
 type Conversa = { pergunta: string; canal: string; analise?: Analise; erro?: string }
 type Short = { fonte: string; nome: string; url?: string }
 
-export default function Analisar({ projeto, config }: { projeto: string; config: Projeto }) {
+export default function Analisar({ projeto, config, reabrir }: { projeto: string; config: Projeto; reabrir?: { run_id: string; titulo: string | null; fonte: string | null } | null }) {
   const canais = useCarga(() => api.canais(projeto), [projeto])
   const [titulo, setTitulo] = useState('')
   const [canal, setCanal] = useState('')
@@ -22,6 +22,18 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
     return novo
   })
   const [rodando, setRodando] = useState(false)
+  // Vindo de Vídeos analisados: carrega a análise completa e o Short gravado, lado a lado
+  useEffect(() => {
+    if (!reabrir) return
+    const nome = reabrir.fonte ? reabrir.fonte.split('/').pop() ?? '' : ''
+    if (nome && /\.(mp4|mov|webm|m4v)$/i.test(nome)) {
+      const url = `/api/projetos/${projeto}/uploads/${encodeURIComponent(nome)}`
+      setShort({ fonte: reabrir.fonte!, nome: nome.replace(/^[0-9a-f]{8}-/, ''), url })
+    }
+    api.analise(projeto, reabrir.run_id).then((analise) => {
+      setConversasBruto((c) => (c.some((x) => x.analise?.run_id === analise.run_id) ? c : [...c, { pergunta: reabrir.titulo ?? '(análise gravada)', canal: analise.canal_id, analise }]))
+    }).catch(() => undefined)
+  }, [projeto, reabrir])
   // Deck da apresentação: reabre uma análise gravada (a mais recente com gancho, ou um run_id) como se tivesse acabado de rodar
   useEffect(() => {
     const ouvir = (e: MessageEvent) => {

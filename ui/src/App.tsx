@@ -45,6 +45,8 @@ export default function App() {
   const config = useCarga(() => (projeto ? api.projeto(projeto) : Promise.resolve(null)), [projeto])
   // Deck da apresentação: mostra a troca de modo (com a onda) sem gravar nada no projeto
   const [modoVisual, setModoVisual] = useState<'automatico' | 'cientista' | null>(null)
+  // análise gravada que a tela Analisar deve reabrir (vinda de Vídeos analisados)
+  const [reabrir, setReabrir] = useState<{ run_id: string; titulo: string | null; fonte: string | null } | null>(null)
   const dadosConfig = config.dados && modoVisual ? { ...config.dados, modo: modoVisual } : config.dados
   const andamento = useAndamento(projeto)
   const experimentos = useCarga(() => (projeto ? api.experimentos(projeto) : Promise.resolve([])), [projeto, tela])
@@ -184,9 +186,9 @@ export default function App() {
             {tela !== 'projetos' && projeto && dadosConfig && (
               <>
                 {tela === 'inicio' && <Inicio projeto={projeto} config={dadosConfig} ir={ir} aoMudarModo={config.recarregar} />}
-                {tela === 'analisar' && <Analisar projeto={projeto} config={dadosConfig} />}
+                {tela === 'analisar' && <Analisar projeto={projeto} config={dadosConfig} reabrir={reabrir} />}
                 {tela === 'modelos' && <Modelos projeto={projeto} config={dadosConfig} aoMudar={experimentos.recarregar} />}
-                {tela === 'analises' && <Analises projeto={projeto} alvo={dadosConfig.alvo} />}
+                {tela === 'analises' && <Analises projeto={projeto} alvo={dadosConfig.alvo} reabrir={(a) => { setReabrir(a); ir('analisar') }} />}
                 {tela === 'revisao' && <Revisao projeto={projeto} />}
                 {tela === 'erros' && <Erros projeto={projeto} />}
                 {tela === 'trace' && <Trace projeto={projeto} />}

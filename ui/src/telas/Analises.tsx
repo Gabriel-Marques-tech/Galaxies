@@ -4,12 +4,15 @@ import { compacto, Icone, pct, TextoRico, useCarga, Vazio } from '../componentes
 import { Resultado } from './Analisar'
 
 // Histórico dos vídeos analisados: previsão, o que o gancho mostrou e, se acompanhado, o real.
-export default function Analises({ projeto, alvo }: { projeto: string; alvo: string }) {
+export default function Analises({ projeto, alvo, reabrir }: { projeto: string; alvo: string; reabrir?: (a: { run_id: string; titulo: string | null; fonte: string | null }) => void }) {
   const lista = useCarga(() => api.analises(projeto), [projeto])
   const [aberto, setAberto] = useState<string | null>(null)
   // análise completa (timeline, chances, SHAP, sugestões) reaberta a partir do trace; null = só o resumo
   const [completas, setCompletas] = useState<Record<string, Analise | null>>({})
   const abrir = (id: string | null) => {
+    // com a tela Analisar disponível, reabre lá: vídeo de um lado, análise do outro
+    const alvoLinha = id ? lista.dados?.find((x) => x.run_id === id) : null
+    if (id && reabrir && alvoLinha && alvoLinha.status === 'ok' && alvoLinha.previsao_7d) { reabrir({ run_id: id, titulo: alvoLinha.titulo, fonte: alvoLinha.fonte }); return }
     setAberto(id)
     if (id && completas[id] === undefined) {
       api.analise(projeto, id).then((a) => setCompletas((c) => ({ ...c, [id]: a }))).catch(() => setCompletas((c) => ({ ...c, [id]: null })))
