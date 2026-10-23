@@ -23,7 +23,8 @@ class ConfigProjeto(BaseModel):
 
     nome: NomeProjeto
     setores: list[str] = Field(min_length=1)
-    canais_semente: list[CanalSemente] = Field(min_length=1)
+    # Pode nascer vazio: o agente descobre canais (descobrir_canais) e adiciona (adicionar_canal).
+    canais_semente: list[CanalSemente] = []
     alvo: Literal["likes", "views"]
     detalhes: str = ""
     # Só coleta vídeos publicados a partir desta data; também poupa cota ao parar de paginar.

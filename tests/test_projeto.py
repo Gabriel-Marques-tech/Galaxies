@@ -47,7 +47,6 @@ def test_nome_repetido_e_recusado_sem_sobrescrever(tmp_path):
         ("nome", ""),
         ("alvo", "comentarios"),
         ("setores", []),
-        ("canais_semente", []),
         ("limite_viral", 1.0),
     ],
 )
@@ -71,3 +70,14 @@ def test_ler_projeto_com_nome_de_caminho_nao_sai_da_raiz(tmp_path):
 
     with pytest.raises(ProjetoNaoEncontrado):
         dentro.obter_projeto("../../fora/projetos/moda-beleza")
+
+
+def test_projeto_pode_nascer_sem_canais_e_o_roadmap_manda_descobrir(tmp_path):
+    from galaxies.portas import Dependencias
+    from tests.fakes import YouTubeFalso
+
+    framework = Framework(raiz=tmp_path, dependencias=Dependencias(youtube=YouTubeFalso({})))
+    projeto = framework.criar_projeto({**CONFIG_MODA_BELEZA, "canais_semente": []})
+
+    assert projeto.canais_semente == []
+    assert framework.proximo_passo("moda-beleza").acao == "descobrir_canais"
