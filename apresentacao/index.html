@@ -7,6 +7,7 @@
 <link rel="icon" href="logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
 <style>
 :root {
   --bg: #0b0d14;
@@ -280,6 +281,17 @@ body { -webkit-font-smoothing: antialiased; }
 
 
 /* ---------------------------------------------------------------- modo Data Scientist: o agente pergunta */
+.modo { width: min(1100px, 92vw); display: flex; flex-direction: column; align-items: center; text-align: center; will-change: filter; }
+.modo .h2, .modo .p { text-align: center; }
+.ms { font-family: 'Material Symbols Rounded'; font-weight: normal; font-style: normal; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; direction: ltr; -webkit-font-feature-settings: 'liga'; font-feature-settings: 'liga'; }
+.chip-modo { display: inline-flex; align-items: center; gap: 12px; height: clamp(46px, 5vh, 64px); padding: 0 1.8vw 0 1.4vw; border-radius: 999px; background: #1a1f31; border: 1px solid rgba(255,255,255,.16); font: 500 clamp(16px, 1.55vw, 23px) var(--body); color: #e3e3e3; margin-top: 3vh; cursor: pointer; transition: box-shadow .35s var(--ease), background .4s var(--ease), border-color .35s; position: relative; }
+.chip-modo .ms { font-size: 1.25em; color: #c4c7c5; }
+.chip-modo .seta { font-size: .8em; color: var(--sub); transition: transform .3s var(--ease); }
+.chip-modo.cientista { border-color: transparent; background: linear-gradient(#1a1f31, #1a1f31) padding-box, var(--grad) border-box; box-shadow: 0 0 36px rgba(155,114,203,.4); }
+.chip-modo.cientista .ms { color: #cfe0ff; }
+.chip-modo.cientista .seta { transform: rotate(180deg); }
+.chip-modo .dica { position: absolute; left: 50%; top: -2.6em; transform: translateX(-50%); font: 400 clamp(12px, 1vw, 15px) var(--body); color: var(--sub); white-space: nowrap; }
+.pergunta-agente { width: min(900px, 92vw); }
 .pergunta-agente { margin-top: 3vh; background: #141519; border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 2vh 1.6vw; display: grid; grid-template-columns: 30px 1fr; gap: 14px; align-items: start; text-align: left; opacity: 0; transition: opacity .5s var(--ease); }
 .pergunta-agente.on { opacity: 1; }
 .pergunta-agente .faisca { width: 24px; height: 24px; margin-top: 3px; background: conic-gradient(from 200deg, #4285f4, #9b72cb, #d96570, #4285f4); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
@@ -441,20 +453,18 @@ body { -webkit-font-smoothing: antialiased; }
 </section>
 
 <!-- 7b · modo Data Scientist: a troca e o trade-off -->
-<section class="slide">
-  <div class="tour">
-    <div class="quadro" data-in="left" data-passeio="modo" style="--i:0"><iframe data-src="http://127.0.0.1:5173/#inicio" title="Modo"></iframe></div>
-    <div class="texto">
-      <div class="kicker" data-in style="--i:1">modo Data Scientist</div>
-      <div class="h2" data-in style="--i:2">Quer decidir? Ele para e pergunta.</div>
-      <div class="p" data-in style="--i:3">No automático, promove sozinho o que vence no teste. No modo Data Scientist, cada promoção espera você, e o agente traz o trade-off com os números, não um "confia em mim".</div>
-      <div class="pergunta-agente" id="pergunta-agente" data-in style="--i:4">
-        <div class="faisca"></div>
-        <div>
-          <div class="rot">o que o agente pergunta · números reais de moda e beleza</div>
-          <div class="fala" id="fala-agente"></div>
-          <div class="opcoes" id="opcoes-agente"><span class="prim">Promover o candidato</span><span>Manter o ativo e coletar mais</span></div>
-        </div>
+<section class="slide" data-roteiro="modo">
+  <div class="modo" id="modo-area">
+    <div class="kicker" data-in style="--i:0">modo Data Scientist</div>
+    <div class="h2" data-in style="--i:1">Quer decidir? Ele para e pergunta.</div>
+    <div class="p" data-in style="--i:2">No automático, promove sozinho o que vence no teste. No modo Data Scientist, cada promoção espera você, e o agente traz o trade-off com os números, não um "confia em mim".</div>
+    <div class="chip-modo" id="chip-modo" data-in style="--i:3"><span class="dica">o botão do topo da plataforma</span><span class="ms" id="chip-ico">bolt</span><span id="chip-rotulo">Automático</span><span style="color:var(--sub)">· likes</span><span class="seta">▾</span></div>
+    <div class="pergunta-agente" id="pergunta-agente">
+      <div class="faisca"></div>
+      <div>
+        <div class="rot">o que o agente pergunta · números reais de moda e beleza</div>
+        <div class="fala" id="fala-agente"></div>
+        <div class="opcoes" id="opcoes-agente"><span class="prim">Promover o candidato</span><span>Manter o ativo e coletar mais</span></div>
       </div>
     </div>
   </div>
@@ -525,6 +535,7 @@ function mostrar(i) {
   if (s.classList.contains('s-gancho')) chat(); else chatAtivo++
   if (s.querySelector('.tour .quadro')) passearUI(s); else if (!s.classList.contains('s-demo')) esconderCursor()
   if (s.classList.contains('s-ideia')) abrirApp(s); else s.classList.remove('abrindo')
+  if (s.dataset.roteiro === 'modo') cenaModo(s)
   if (s.classList.contains('s-demo')) demo()
   carregarIframes(s)
 }
@@ -535,7 +546,7 @@ addEventListener('keydown', (e) => {
   if (e.key.toLowerCase() === 'r') alternarReplica()
   if (e.key.toLowerCase() === 'c' && slides[atual].classList.contains('s-gancho')) chat()
 })
-addEventListener('click', (e) => { if (!e.target.closest('iframe, a, button')) mostrar(atual + 1) })
+addEventListener('click', (e) => { if (!e.target.closest('iframe, a, button, #chip-modo, #icone-stars')) mostrar(atual + 1) })
 
 
 // ---------------------------------------------------------------- cursor animado
@@ -655,26 +666,73 @@ async function focarUI(f, alvo, { ms, dy = 0, destacar = true } = {}) {
   return true
 }
 
+// ---------------------------------------------------------------- onda: a mesma da plataforma (feDisplacementMap com um anel)
+const ONDA = { id: 'ondulacao', dur: 1500, tam: 512, ri: .46, re: .92, anel: null, anim: 0 }
+function gerarAnel() {
+  const c = document.createElement('canvas'); c.width = c.height = ONDA.tam; const ctx = c.getContext('2d'), img = ctx.createImageData(ONDA.tam, ONDA.tam), d = img.data, m = ONDA.tam / 2
+  for (let y = 0; y < ONDA.tam; y++) for (let x = 0; x < ONDA.tam; x++) {
+    const dx = x - m, dy = y - m, r = Math.hypot(dx, dy) / m; let f = 0
+    if (r > ONDA.ri && r < ONDA.re) f = Math.sin((r - ONDA.ri) / (ONDA.re - ONDA.ri) * Math.PI)
+    const a = Math.atan2(dy, dx), i = (y * ONDA.tam + x) * 4
+    d[i] = 128 + 127 * f * Math.cos(a); d[i + 1] = 128 + 127 * f * Math.sin(a); d[i + 2] = 128; d[i + 3] = 255
+  }
+  ctx.putImageData(img, 0, 0); return c.toDataURL('image/png')
+}
+function garantirFiltro() {
+  if (!document.getElementById(ONDA.id + '-svg')) {
+    ONDA.anel ??= gerarAnel()
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.id = ONDA.id + '-svg'; svg.setAttribute('width', '0'); svg.setAttribute('height', '0'); svg.style.position = 'absolute'
+    svg.innerHTML = `<filter id="${ONDA.id}" x="0" y="0" width="100%" height="100%" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feImage id="${ONDA.id}-img" href="${ONDA.anel}" preserveAspectRatio="none" result="mapa"/><feDisplacementMap id="${ONDA.id}-map" in="SourceGraphic" in2="mapa" scale="0" xChannelSelector="R" yChannelSelector="G"/></filter>`
+    document.body.appendChild(svg)
+  }
+  return { img: document.getElementById(ONDA.id + '-img'), mapa: document.getElementById(ONDA.id + '-map') }
+}
+function ondular(alvo, x, y, forca = 38) {
+  const { img, mapa } = garantirFiltro(), cx0 = alvo.getBoundingClientRect()
+  const cx = x - cx0.left, cy = y - cx0.top, alcance = Math.hypot(Math.max(cx, cx0.width - cx), Math.max(cy, cx0.height - cy)) / ONDA.ri
+  alvo.style.filter = `url(#${ONDA.id})`; cancelAnimationFrame(ONDA.anim); const t0 = performance.now()
+  const quadro = (agora) => {
+    const t = Math.min((agora - t0) / ONDA.dur, 1), av = 1 - Math.pow(1 - t, 1.8), raio = Math.max(alcance * av, 2), inten = forca * Math.min(t * 6, 1) * Math.pow(1 - t, 1.3)
+    img.setAttribute('x', (cx - raio).toFixed(1)); img.setAttribute('y', (cy - raio).toFixed(1)); img.setAttribute('width', (raio * 2).toFixed(1)); img.setAttribute('height', (raio * 2).toFixed(1)); mapa.setAttribute('scale', inten.toFixed(2))
+    if (t < 1) ONDA.anim = requestAnimationFrame(quadro); else alvo.style.filter = ''
+  }
+  ONDA.anim = requestAnimationFrame(quadro)
+}
+// Cena do modo: o cursor clica no chip do topo (reproduzido no slide), a onda atravessa o slide,
+// o chip vira Data Scientist e o agente traz o trade-off.
+let modoId = 0
+async function cenaModo(s) {
+  const id = ++modoId, vivo = () => id === modoId && slides[atual] === s
+  const area = document.getElementById('modo-area'), chip = document.getElementById('chip-modo'), ico = document.getElementById('chip-ico'), rotulo = document.getElementById('chip-rotulo')
+  const caixa = document.getElementById('pergunta-agente'), fala = document.getElementById('fala-agente'), opcoes = document.getElementById('opcoes-agente')
+  chip.classList.remove('cientista'); ico.textContent = 'bolt'; rotulo.textContent = 'Automático'; caixa.classList.remove('on'); opcoes.classList.remove('on'); fala.textContent = ''
+  garantirFiltro()
+  await espera(2200); if (!vivo()) return
+  await moverCursor(chip, { dx: -10 }); if (!vivo()) return
+  await pressionar()
+  ondular(area, cursorPos.x, cursorPos.y)
+  chip.classList.add('cientista'); ico.textContent = 'person_search'; rotulo.textContent = 'Data Scientist'
+  await espera(1400); if (!vivo()) return
+  esconderCursor(); caixa.classList.add('on')
+  await digitarEm(fala, 'Tenho um candidato para likes em moda e beleza. O ativo erra 24,4% menos que a média do canal, acerta 58,9% dos pares A vs B e a faixa de 80% cobre 73% dos casos. O candidato: 23,1%, 58,7% e faixa cobrindo 76%. Ele acerta um pouco menos, mas promete uma faixa mais honesta. A trava não troca sozinha, porque o ganho é menor. Quer trocar mesmo assim, ou mantemos o ativo e coletamos mais antes de reavaliar?', 14)
+  if (!vivo()) return
+  opcoes.classList.add('on'); await espera(400); await moverCursor(opcoes.children[1]); await espera(900); await moverCursor(opcoes.children[0]); await espera(1200); if (vivo()) esconderCursor()
+}
+document.addEventListener('click', (e) => { const c = e.target.closest && e.target.closest('#chip-modo'); if (c && slides[atual].dataset.roteiro === 'modo') { modoId++; cenaModoManual(c) } }, true)
+async function cenaModoManual(chip) {
+  const area = document.getElementById('modo-area'), r = chip.getBoundingClientRect(), cientista = !chip.classList.contains('cientista')
+  ondular(area, r.left + r.width / 2, r.top + r.height / 2); chip.classList.toggle('cientista', cientista)
+  document.getElementById('chip-ico').textContent = cientista ? 'person_search' : 'bolt'; document.getElementById('chip-rotulo').textContent = cientista ? 'Data Scientist' : 'Automático'
+}
+
 // ---------------------------------------------------------------- cursor nas telas da UI (tour: ninguém clica, o deck passeia)
 let passeioId = 0
 async function passearUI(s) {
   const id = ++passeioId, f = s.querySelector('.quadro iframe'); if (!f) return
-  const tela = (f.dataset.src.split('#')[1] || 'inicio'), passeio = f.parentElement.dataset.passeio
+  const tela = (f.dataset.src.split('#')[1] || 'inicio')
   const vivo = () => id === passeioId
   await espera(900); if (!vivo()) return
-  if (passeio === 'modo') {
-    const caixa = document.getElementById('pergunta-agente'), fala = document.getElementById('fala-agente'), opcoes = document.getElementById('opcoes-agente')
-    caixa.classList.remove('on'); opcoes.classList.remove('on'); fala.textContent = ''
-    mandarUI(f, { tipo: 'modo', valor: 'automatico' })
-    await focarUI(f, 'modo'); await espera(1400); if (!vivo()) return
-    const achou = await focarUI(f, 'modo-cientista', { destacar: false }); if (!vivo()) return
-    await pressionar(); mandarUI(f, { tipo: 'modo', valor: 'cientista' })
-    await espera(1500); if (!vivo()) return
-    esconderCursor(); caixa.classList.add('on')
-    await digitarEm(fala, 'Tenho um candidato para likes em moda e beleza. O ativo erra 24,4% menos que a média do canal, acerta 58,9% dos pares A vs B e a faixa de 80% cobre 73% dos casos. O candidato: 23,1%, 58,7% e faixa cobrindo 76%. Ele acerta um pouco menos, mas promete uma faixa mais honesta. A trava não troca sozinha, porque o ganho é menor. Quer trocar mesmo assim, ou mantemos o ativo e coletamos mais antes de reavaliar?', 14)
-    if (!vivo()) return
-    opcoes.classList.add('on'); await espera(400); await moverCursor(opcoes.children[1]); await espera(900); await moverCursor(opcoes.children[0]); await espera(1200)
-  } else if (tela === 'modelos') {
+  if (tela === 'modelos') {
     await focarUI(f, 'busca'); await espera(3200); if (!vivo()) return
     await focarUI(f, 'experimentos'); await espera(2600)
   } else if (tela === 'inicio') {
