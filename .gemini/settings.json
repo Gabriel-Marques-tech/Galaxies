@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "stars": {
+      "command": "uv",
+      "args": ["run", "--extra", "multimodal", "galaxies-mcp"],
+      "cwd": "/home/gabriel4804/Documents/Projects/Academy/Galaxies",
+      "timeout": 600000,
+      "trust": true
+    }
+  }
+}
