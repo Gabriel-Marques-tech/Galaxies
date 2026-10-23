@@ -34,6 +34,17 @@ def resumir_saida(o: str) -> str:
         return o.replace("\n", " ")[:160]
     if isinstance(d, list):
         return f"{len(d)} itens" + (f": {', '.join(map(str, d[:3]))}…" if d else "")
+    if isinstance(d, dict) and isinstance(d.get("itens"), list):
+        itens = d["itens"]
+        ativo = next((e for e in itens if isinstance(e, dict) and e.get("status") == "ativo" and e.get("resultado")), None)
+        if ativo:
+            r = ativo["resultado"]
+            return (f"{len(itens)} experimentos; ativo {ativo.get('id')}: {-r.get('ganho', 0):+.1%} de erro vs média do canal, "
+                    f"A vs B {r.get('modelo', {}).get('acerto_pares', 0):.1%}, faixa 80% cobre {r.get('cobertura_80', 0):.0%}")
+        ops = [e.get("operacao") for e in itens if isinstance(e, dict) and e.get("operacao")]
+        if ops:
+            return f"{len(itens)} execuções registradas · últimas: {', '.join(ops[-3:])}"
+        return f"{len(itens)} itens"
     if isinstance(d, dict):
         if isinstance(d.get("resultado"), dict) and d.get("status") == "ok":
             r = d["resultado"]
