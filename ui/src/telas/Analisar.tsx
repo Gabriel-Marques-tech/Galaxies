@@ -164,7 +164,7 @@ function ShortDrop({ projeto, short, setShort }: { projeto: string; short: Short
   )
 }
 
-function Resultado({ a, alvo, projeto }: { a: Analise; alvo: string; projeto: string }) {
+export function Resultado({ a, alvo, projeto }: { a: Analise; alvo: string; projeto: string }) {
   const p = a.previsao_7d
   return (
     <div className="pilha" style={{ minWidth: 0 }}>
