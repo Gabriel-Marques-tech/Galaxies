@@ -247,3 +247,133 @@ Medido em 23/10 no teste de moda e beleza (3.014 vídeos, modelo ativo `1786c3fd
 - **Frase**: "Ninguém prevê o viral de um Short antes de publicar; o que dá para prever, e
   conferir, é a chance. Quando o Stars diz 20%, um em cada quatro viraliza. Quando diz 2%,
   quase nenhum."
+
+---
+
+# De Receita a modelo de verdade: o caminho completo
+
+Uma **Receita** é só uma intenção: `{camadas, atributos, extrator, params, âncora}`. Vira
+modelo passando por `experimentos.avaliar` (medir), `experimentos.treinar` (medir + salvar),
+`servicos.promover` (ativar) e `analise.prever` (usar). Nada disso o LLM executa diretamente:
+ele chama `experimentar` ou `otimizar`, e o framework percorre o caminho abaixo.
+
+## 0. O que uma Receita pode ser
+
+- `camadas`: `metadados` (obrigatória) · `historico` · `texto` · `titulo` · `multimodal` ·
+  `atributos`. Metadados, histórico, texto e título existem para todos os vídeos; multimodal
+  e atributos só para os que têm gancho processado.
+- `atributos`: quais perguntas do gancho entram (None = todas); `extrator`: quem respondeu
+  (`laya`, `@cf/...`, `vizinhos`).
+- `params`: `num_leaves` 4–127, `learning_rate` 0,005–0,3, `rodadas` 20–2000,
+  `min_data_in_leaf` 5–200, `meia_vida_dias` (peso por recência) 30–3000 ou None. Limites
+  validados pelo Pydantic: o agente não sai deles.
+- `ancora`: `mediana_canal` (fixa, do treino) ou `movel` (média dos últimos 10 vídeos do
+  canal, defasada 7 dias; exige a camada `historico`).
+
+## 1. Base (`modelagem.montar_base`)
+
+Um SELECT: vídeos × canais, só com o alvo preenchido, sem os excluídos (vídeo ou canal), no
+máximo 300 por canal (os mais recentes), ordenados por data. Acrescenta `idade_dias` (coleta −
+publicação) e `log_y = log(1+y)`.
+
+## 2. Split temporal (`modelagem.dividir`)
+
+Corte no quantil 80% da data de publicação: **treino** antes, **teste** depois. No teste só
+vídeos com 7+ dias de idade (contagens assentadas) e de canais que têm histórico no treino.
+Para a **validação**, `dividir` é aplicado de novo só sobre o treino (os 20% finais do treino
+viram "teste da busca").
+
+## 3. Âncoras por canal (`estatisticas_dos_canais`)
+
+Calculadas **só no treino**: mediana do alvo, média do log, posts por 30 dias. É o que define
+o baseline e o alvo relativo. O teste nunca vaza para cá.
+
+## 4. Camadas extras e linhas elegíveis (`_camadas_extras`)
+
+Para cada camada pedida, um DataFrame alinhado à base: histórico do canal (janelas de 10 e
+30 vídeos, desvio, tendência, dias desde o último, posts em 7 d), embedding MiniLM do texto,
+respostas das perguntas de título, embedding SigLIP do gancho, respostas dos atributos do
+extrator pedido. Uma máscara `tem` marca as linhas que possuem **todas** as camadas: a
+receita treina e testa só nelas. Por isso cada receita é comparada com baseline e controle
+**nas suas próprias linhas**; ganhos de receitas diferentes nunca se comparam em absoluto.
+Menos de 50 linhas de treino ou 10 de teste: erro "poucos dados". Menos de 300 na validação
+quando a busca pede poder: `PoucoPoder`, e a tentativa vira "sem poder estatístico".
+
+## 5. Matriz de features (`features_de_metadados` + `_montar_x`)
+
+Metadados: duração, hora e dia da semana (fuso de São Paulo), `log_idade_dias`, contagens
+do título (caracteres, palavras, pergunta, número, exclamação, maiúsculas, emojis),
+hashtags, tamanho da descrição, nº de tags, `log_inscritos`, `log_mediana_canal`,
+`posts_por_30d`, código do setor. Extras: histórico (+ `hist_rel_10` = momento recente −
+mediana), embeddings reduzidos por **PCA ajustado só no treino** (texto e SigLIP), título,
+atributos (choice vira colunas `id=rótulo`; score e noul viram uma coluna).
+
+## 6. Alvo (`_ancora_log`)
+
+`y = log_y − log(1+âncora)`. Fixa: mediana do canal no treino. Móvel: `hist_media_10` (já em
+log) com fallback na fixa quando o canal não tem passado. O modelo aprende **quanto o vídeo
+sai do normal do canal**, não o valor absoluto.
+
+## 7. Três LightGBM quantílicos (`_quantis` → `treinar_quantis`)
+
+Um booster por quantil (0,1 / 0,5 / 0,9) com `objective=quantile, alpha=q`, os `params` da
+receita e, se houver `meia_vida_dias`, peso por recência (metade a cada meia-vida). Em
+paralelo treina o **controle**: só metadados, parâmetros padrão, alvo com âncora fixa, nas
+mesmas linhas.
+
+## 8. Calibração conformal (`_calibrar`)
+
+Separa os 20% finais do treino, retreina sem eles, prevê neles e mede o escore
+`max((mid−real)/(mid−lo), (real−mid)/(hi−mid))`. O quantil 80% desse escore é `k`: o fator
+que **alarga** a faixa q10–q90 (`alargar`) para ela conter 80% dos casos. `k` vai para o
+`meta.json` e é aplicado em toda previsão.
+
+## 9. Medição no teste (`avaliar`)
+
+Previsão `q50 + âncora` no teste. `medir` dá MAE no log, acerto A vs B em pares do mesmo
+canal, Spearman por canal. Baseline = `predicao_baseline` (mediana do canal). Controle =
+modelo só de metadados. `ganho = 1 − MAE_modelo/MAE_baseline`; `melhora_sobre_controle`
+idem vs controle; `confianca_sobre_controle` = bootstrap pareado (1000 reamostras) da
+diferença de erros. `cobertura_bruta` (k=1), `cobertura_80` (com k), `cobertura_50`
+(q25–q75 derivada). `assinatura_base = "<n>@<início do teste>"` identifica **qual** teste
+mediu isto. Mais `ganho_por_atributo` (permutação), piores erros e segmentos.
+
+## 10. Modelo final e persistência (`_modelo_final` → `salvar_modelos`)
+
+Retreina os três quantis em **todas** as linhas elegíveis (treino + teste) e salva em
+`data/projetos/<p>/modelos/<id>/`: `q10.txt`, `q50.txt`, `q90.txt` (LightGBM) e `meta.json`
+com: receita, setores, `calibracao` (k), PCAs (média e componentes) por camada, definições
+dos atributos e extrator, se há título, colunas na ordem, estatísticas dos canais (âncoras),
+n. O `Experimento` (id, receita, hipótese, resultado, status `candidato`) vai para a tabela
+`experimentos` do DuckDB.
+
+## 11. Escolha e promoção
+
+- `otimizar`: a busca (`otimizacao.otimizar`) só usa `avaliar(em="validacao")`; a melhor
+  receita vai a `experimentar` (passo 9+10, no teste, uma vez). Se há ativo com
+  `assinatura_base` diferente, o ativo é **reavaliado no teste atual** (`reavaliar_ativo`)
+  para a comparação ser justa.
+- `motivo_para_nao_promover`: ganho ≤ 0 → não; camadas extras com melhora < 1% sobre o
+  controle → não; confiança < 90% → não; ganho ≤ ativo (tolerância 0) → "troca lateral não
+  vale". Sem motivo: automático promove (`experimentos.ativar`: o anterior vira
+  `aposentado`); cientista marca `aguardando_aprovacao` e espera `decidir` (só pela UI).
+
+## 12. Uso (`analisar` → `analise.prever`)
+
+Carrega `modelos` e `meta` do ativo. O vídeo novo vira uma linha com as mesmas features
+(`linha_do_video` + `features(meta, …)`: aplica os PCAs salvos, as colunas na ordem do
+`meta`, o histórico atual do canal, respostas de atributos se a receita pede). Prevê os
+quantis relativos para as idades 1/3/7/14/30 dias (com `log_idade_dias` variando), converte
+âncora móvel para a mediana fixa (`deslocamento`), aplica a **curva de crescimento**
+observada abaixo da idade mínima vista, força a timeline a não decrescer, alarga por `k`,
+deriva a faixa de 50%, calcula chances (P(y > m × mediana) por normal ajustada à largura),
+fatores via `pred_contrib` (SHAP do LightGBM) e sugestões por alavancas (duração, hora, nº no
+título). O trace guarda `prever` e `explicar`, e é dele que a análise é reaberta depois.
+
+## Invariantes para citar
+
+- Âncoras, PCA e calibração ajustados **só no treino**; teste intocado até a medição.
+- Toda receita compete contra baseline e controle **nas mesmas linhas**.
+- O teste é usado uma vez por experimento; a busca vive na validação.
+- `meta.json` carrega tudo que a previsão precisa: um modelo é reproduzível e portável.
+- Nenhuma tool do MCP altera split, âncora, métrica, k ou status fora de `promover`.
