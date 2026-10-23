@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stars</title>
-<link rel="icon" href="../ui/public/logo.svg">
+<link rel="icon" href="logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -66,7 +66,9 @@ body { -webkit-font-smoothing: antialiased; }
 
 /* ---------------------------------------------------------------- marca */
 .marca { display: flex; flex-direction: column; align-items: center; gap: 2vh; }
-.marca img { width: clamp(90px, 12vw, 180px); filter: drop-shadow(0 0 40px rgba(155,114,203,.45)); animation: gira 60s linear infinite; }
+.marca .logo { width: clamp(110px, 14vw, 210px); aspect-ratio: 1; background: linear-gradient(100deg, #4285f4, #9b72cb, #d96570, #4285f4); background-size: 300% 100%; animation: flui 8s linear infinite, gira 90s linear infinite; -webkit-mask: url(logo.svg) center / contain no-repeat; mask: url(logo.svg) center / contain no-repeat; filter: drop-shadow(0 0 40px rgba(155,114,203,.5)); transition: transform 1.1s cubic-bezier(.6, 0, .2, 1), opacity .9s var(--ease); cursor: pointer; }
+.marca .logo.abrindo { transform: scale(14); opacity: 0; }
+.slide.abrindo .marca > :not(.logo) { opacity: 0; transition: opacity .5s; }
 @keyframes gira { to { transform: rotate(360deg); } }
 .marca .nome { font: 500 clamp(64px, 11vw, 200px)/1 var(--display); letter-spacing: -.04em; }
 .marca .tag { font: 400 clamp(18px, 2.2vw, 34px) var(--display); color: var(--sub); }
@@ -299,9 +301,9 @@ body { -webkit-font-smoothing: antialiased; }
 </section>
 
 <!-- 3 · a ideia -->
-<section class="slide">
+<section class="slide s-ideia">
   <div class="marca">
-    <img src="../ui/public/logo.svg" alt="" data-in="zoom" style="--i:0">
+    <div class="logo" id="logo-stars" data-in="zoom" style="--i:0"></div>
     <div class="nome gradvivo" data-in style="--i:1">Stars</div>
     <div class="tag" data-in style="--i:2">um cientista de dados na palma da mão</div>
     <div class="plug" data-in style="--i:3">
@@ -423,6 +425,7 @@ function mostrar(i) {
   const s = slides[atual]
   if (s.classList.contains('s-gancho')) chat(); else chatAtivo++
   if (s.querySelector('.tour .quadro')) passearUI(s); else if (!s.classList.contains('s-demo')) esconderCursor()
+  if (s.classList.contains('s-ideia')) abrirApp(s); else s.classList.remove('abrindo')
   if (s.classList.contains('s-demo')) demo()
   carregarIframes(s)
 }
@@ -480,6 +483,19 @@ function contarEm(c) {
   const passo = (t) => { const p = Math.min(Math.max((t - ini) / dur, 0), 1), e = 1 - Math.pow(1 - p, 3); el.textContent = pre + (alvo * e).toFixed(dec).replace('.', ',') + suf; if (p < 1) requestAnimationFrame(passo) }
   requestAnimationFrame(passo)
 }
+
+// ---------------------------------------------------------------- a ideia: o logo abre como um app
+let abrindoId = 0
+async function abrirApp(s) {
+  const id = ++abrindoId
+  const logo = document.getElementById('logo-stars'); logo.classList.remove('abrindo'); s.classList.remove('abrindo')
+  await espera(5200); if (id !== abrindoId || slides[atual] !== s) return
+  await clicar(logo, { ms: 1300 }); if (id !== abrindoId || slides[atual] !== s) return
+  esconderCursor(); s.classList.add('abrindo'); logo.classList.add('abrindo')
+  await espera(900); if (id !== abrindoId || slides[atual] !== s) return
+  mostrar(atual + 1)
+}
+document.addEventListener('click', (e) => { if (e.target.id === 'logo-stars') { abrindoId++; const s = slides[atual]; s.classList.add('abrindo'); e.target.classList.add('abrindo'); setTimeout(() => mostrar(atual + 1), 900) } }, true)
 
 // ---------------------------------------------------------------- cursor nas telas da UI
 async function passearUI(s) {
