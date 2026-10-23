@@ -126,7 +126,7 @@ if __name__ == "__main__":
     html = index.read_text()
     inline = "const SESSAO_INLINE = " + json.dumps(roteiro, ensure_ascii=False) + ";"
     if "const SESSAO_INLINE" in html:
-        html = re.sub(r"const SESSAO_INLINE = .*?;\n", inline + "\n", html, count=1, flags=re.S)
+        html = re.sub(r"const SESSAO_INLINE = .*?;\n", lambda _m: inline + "\n", html, count=1, flags=re.S)
     else:
         html = html.replace("let roteiro = null", inline + "\nlet roteiro = null", 1)
     html = html.replace(
