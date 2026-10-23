@@ -160,6 +160,41 @@ body { -webkit-font-smoothing: antialiased; }
 .chat .entrada .enviar { width: 42px; height: 42px; border-radius: 50%; background: var(--grad); display: grid; place-items: center; color: #0b0d14; font-weight: 700; flex-shrink: 0; }
 .chat .resposta-final { font: 500 clamp(22px, 2.6vw, 40px)/1.2 var(--display); margin-top: 1.4vh; }
 
+
+/* ---------------------------------------------------------------- abertura com a cara do Gemini */
+.s-gancho { padding: 0; align-items: stretch; justify-content: stretch; }
+.gapp { position: absolute; inset: 0; display: grid; grid-template-columns: 72px 1fr; background: #131314; color: #e3e3e3; font-family: 'Google Sans', 'Inter', system-ui, sans-serif; }
+.gapp .trilho { background: #1e1f20; display: flex; flex-direction: column; align-items: center; padding: 18px 0; gap: 22px; color: #c4c7c5; }
+.gapp .trilho .ico { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; }
+.gapp .trilho .ico.novo { background: #2a2b2d; }
+.gapp .area { position: relative; display: flex; flex-direction: column; }
+.gapp .cab { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; font-size: 20px; color: #e3e3e3; }
+.gapp .cab .modelo { display: flex; align-items: center; gap: 8px; }
+.gapp .cab .modelo small { color: #9aa0a6; font-size: 13px; }
+.gapp .cab .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #4285f4, #9b72cb); }
+.gapp .meio { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; width: min(820px, 86%); margin: 0 auto; padding-bottom: 14vh; gap: 2.4vh; }
+.gapp .ola { font: 500 clamp(36px, 4.6vw, 64px)/1.15 'Google Sans', 'Inter', sans-serif; transition: opacity .6s var(--ease), transform .8s var(--ease); }
+.gapp .ola.some { opacity: 0; transform: translateY(-20px); position: absolute; }
+.gapp .ola .g { background: linear-gradient(90deg, #4285f4 0%, #9b72cb 45%, #d96570 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.gapp .ola .d { color: #444746; display: block; }
+.gapp .msg.eu { background: #333537; border: 0; color: #e3e3e3; border-radius: 22px 22px 6px 22px; font-size: clamp(15px, 1.5vw, 20px); padding: 1.2vh 1.4vw; }
+.gapp .msg.ia { display: grid; grid-template-columns: 34px 1fr; gap: 14px; align-items: start; }
+.gapp .msg.ia .faisca { width: 30px; height: 30px; margin-top: 2px; background: conic-gradient(from 180deg, #4285f4, #9b72cb, #d96570, #4285f4); border-radius: 50%; -webkit-mask: radial-gradient(circle at 50% 50%, transparent 0 22%, #000 23% 100%); mask: radial-gradient(circle at 50% 50%, transparent 0 22%, #000 23% 100%); animation: gira 6s linear infinite; }
+.gapp .msg.ia .faisca.parada { animation: none; }
+.gapp .corpo { font-size: clamp(15px, 1.5vw, 20px); line-height: 1.5; color: #e3e3e3; }
+.gapp .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.gapp .card { background: #1e1f20; border-color: #2d2e30; border-radius: 16px; backdrop-filter: none; }
+.gapp .card .l { color: #9aa0a6; }
+.gapp .resposta-final { color: #e3e3e3; font: 500 clamp(18px, 2vw, 30px)/1.25 'Google Sans', 'Inter', sans-serif; }
+.gapp .rodape { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 0 2.4vh; display: flex; flex-direction: column; align-items: center; gap: 1vh; }
+.gapp .entrada { width: min(820px, 86%); background: #1e1f20; border: 1px solid #2d2e30; border-radius: 28px; padding: 1.4vh 1.4vw 1.4vh 1.8vw; display: flex; align-items: center; gap: 12px; color: #e3e3e3; font-size: clamp(15px, 1.5vw, 20px); min-height: 7vh; position: relative; }
+.gapp .entrada::before { display: none; }
+.gapp .entrada .texto:empty::before { content: 'Pergunte ao Gemini'; color: #9aa0a6; }
+.gapp .entrada .mais, .gapp .entrada .mic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: #c4c7c5; font-size: 22px; }
+.gapp .entrada .enviar { width: 40px; height: 40px; border-radius: 50%; background: #e3e3e3; color: #131314; display: grid; place-items: center; font-weight: 700; opacity: 0; transition: opacity .3s; }
+.gapp .entrada .enviar.on { opacity: 1; }
+.gapp .aviso { font-size: 12px; color: #9aa0a6; }
+
 /* progresso e ajuda */
 .progresso { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--grad); width: 0; transition: width .5s var(--ease); z-index: 5; }
 .ajuda { position: fixed; right: 16px; bottom: 12px; font: 400 12px var(--body); color: rgba(255,255,255,.35); z-index: 5; }
@@ -171,23 +206,35 @@ body { -webkit-font-smoothing: antialiased; }
 <canvas class="estrelas" id="estrelas"></canvas>
 <div class="deck" id="deck">
 
-<!-- 1 · gancho invertido: um chat, uma pergunta, os números nascendo -->
+<!-- 1 · gancho invertido: uma pergunta num chat com a cara do Gemini; os números nascem na resposta -->
 <section class="slide s-gancho">
-  <div class="chat" id="chat">
-    <div class="topo"><span class="faisca"></span>Stars · cientista de dados</div>
-    <div class="msg eu" id="msg-eu"></div>
-    <div class="msg ia" id="msg-ia">
-      <div class="pensando" id="pensando"><i></i><i></i><i></i></div>
-      <div id="ia-texto"></div>
-      <div class="cards" id="cards">
-        <div class="card"><div class="v" data-conta="24.4" data-prefixo="−" data-sufixo="%">−0%</div><div class="l">menos erro que chutar a média do canal · moda e beleza</div></div>
-        <div class="card"><div class="v" data-conta="4" data-sufixo="">0</div><div class="l">setores, mesma régua: moda, saúde, automotivo, fitness</div></div>
-        <div class="card"><div class="v" data-conta="112" data-sufixo=" mil">0</div><div class="l">Shorts coletados, 267 canais, zero reais gastos</div></div>
-        <div class="card"><div class="v c" data-conta="83" data-sufixo="%">0%</div><div class="l">dos vídeos reais caem na faixa que o modelo prometeu com 80% · saúde</div></div>
+  <div class="gapp" id="chat">
+    <div class="trilho"><div class="ico">☰</div><div class="ico novo">＋</div><div style="flex:1"></div><div class="ico">⚙</div></div>
+    <div class="area">
+      <div class="cab"><div class="modelo">Gemini <small>▾</small></div><div class="avatar"></div></div>
+      <div class="meio">
+        <div class="ola" id="ola"><span class="g">Olá, Gabriel</span><span class="d">Como posso ajudar hoje?</span></div>
+        <div class="msg eu" id="msg-eu"></div>
+        <div class="msg ia" id="msg-ia">
+          <div class="faisca" id="faisca"></div>
+          <div class="corpo">
+            <div class="pensando" id="pensando"><i></i><i></i><i></i></div>
+            <div id="ia-texto"></div>
+            <div class="cards" id="cards">
+              <div class="card"><div class="v" data-conta="24.4" data-prefixo="−" data-sufixo="%">−0%</div><div class="l">menos erro que chutar a média do canal · moda e beleza</div></div>
+              <div class="card"><div class="v" data-conta="4" data-sufixo="">0</div><div class="l">setores, mesma régua: moda, saúde, automotivo, fitness</div></div>
+              <div class="card"><div class="v" data-conta="112" data-sufixo=" mil">0</div><div class="l">Shorts coletados, 267 canais, zero reais gastos</div></div>
+              <div class="card"><div class="v c" data-conta="83" data-sufixo="%">0%</div><div class="l">dos vídeos reais caem na faixa prometida com 80% · saúde</div></div>
+            </div>
+            <div class="resposta-final" id="resposta-final"></div>
+          </div>
+        </div>
       </div>
-      <div class="resposta-final" id="resposta-final"></div>
+      <div class="rodape">
+        <div class="entrada" id="entrada"><div class="mais">＋</div><div class="texto" id="entrada-texto"></div><div class="mic">🎤</div><div class="enviar" id="enviar">➤</div></div>
+        <div class="aviso">O Gemini pode cometer erros. Verifique as informações.</div>
+      </div>
     </div>
-    <div class="entrada" id="entrada"><div class="texto" id="entrada-texto"></div><div class="enviar" id="enviar">➤</div></div>
   </div>
 </section>
 
@@ -354,16 +401,19 @@ async function chat() {
   const eu = document.getElementById('msg-eu'), ia = document.getElementById('msg-ia'), pensando = document.getElementById('pensando')
   const texto = document.getElementById('entrada-texto'), cards = [...document.querySelectorAll('#cards .card')], final = document.getElementById('resposta-final'), iaTexto = document.getElementById('ia-texto')
   eu.classList.remove('on'); ia.classList.remove('on'); cards.forEach((c) => c.classList.remove('on')); texto.textContent = ''; final.textContent = ''; iaTexto.textContent = ''; pensando.style.display = 'inline-flex'
+  document.getElementById('ola').classList.remove('some'); document.getElementById('enviar').classList.remove('on'); document.getElementById('faisca').classList.remove('parada')
   await espera(700); if (id !== chatAtivo) return
   await clicar(document.getElementById('entrada'), { dx: -120 })
-  await digitarEm(texto, 'Como foram os modelos que você montou essa semana?')
+  await digitarEm(texto, 'Como foram os modelos de previsão de Shorts que o Stars montou essa semana?')
+  document.getElementById('enviar').classList.add('on')
   await espera(350); await clicar(document.getElementById('enviar')); esconderCursor()
+  document.getElementById('ola').classList.add('some')
   eu.textContent = texto.textContent; texto.textContent = ''; eu.classList.add('on')
   await espera(600); ia.classList.add('on'); await espera(1400); if (id !== chatAtivo) return
-  pensando.style.display = 'none'; iaTexto.textContent = 'Quatro setores, mesma régua. Resumo:'
+  pensando.style.display = 'none'; document.getElementById('faisca').classList.add('parada'); iaTexto.textContent = 'Pelo que o Stars me devolveu via MCP: quatro setores, mesma régua.'
   for (const [k, c] of cards.entries()) { await espera(k ? 650 : 400); if (id !== chatAtivo) return; c.classList.add('on'); contarEm(c) }
   await espera(900); if (id !== chatAtivo) return
-  await digitarEm(final, 'Nenhum desses modelos foi montado por você.', 30)
+  await digitarEm(final, 'E nenhum deles foi montado por uma pessoa.', 30)
 }
 function contarEm(c) {
   const el = c.querySelector('[data-conta]'); const alvo = parseFloat(el.dataset.conta), pre = el.dataset.prefixo || '', suf = el.dataset.sufixo || ''
