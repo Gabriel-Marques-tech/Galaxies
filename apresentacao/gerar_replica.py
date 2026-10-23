@@ -41,6 +41,8 @@ table{width:100%;border-collapse:collapse;font-size:13px}th{color:var(--sub);fon
 .sug{display:grid;grid-template-columns:24px 1fr auto auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--c);font-size:13px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.campo{display:grid;grid-template-columns:130px 1fr;gap:10px;font-size:13px;padding:6px 0;border-top:1px solid var(--c)}.campo span:first-child{color:var(--sub)}
 .tl{width:100%;height:170px;display:block}
+.seg{display:inline-flex;border:1px solid var(--c);border-radius:999px;overflow:hidden;margin-top:8px}.seg span{padding:8px 16px;font-size:13px;color:var(--sub);display:inline-flex;align-items:center;gap:6px}.seg span.on{background:#243055;color:#cfe0ff}
+.onda-deck{position:fixed;width:40px;height:40px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(155,114,203,.55),rgba(66,133,244,.25) 60%,transparent 70%);transform:translate(-50%,-50%) scale(0);animation:ondadeck 1.3s ease-out forwards;z-index:9}@keyframes ondadeck{to{transform:translate(-50%,-50%) scale(60);opacity:0}}
 .ap{opacity:0;transform:translateY(10px);animation:ap .5s forwards}@keyframes ap{to{opacity:1;transform:none}}
 </style></head><body>
 <aside><div class="marca">__LOGO__ Stars</div>
@@ -56,7 +58,8 @@ table{width:100%;border-collapse:collapse;font-size:13px}th{color:var(--sub);fon
 <script id="dados" type="application/json">__DADOS__</script>
 <script>
 const D = JSON.parse(document.getElementById('dados').textContent)
-let projeto = 'moda-beleza'
+let projeto = 'moda-beleza', modoVisual = null
+const modoDe = (p) => modoVisual || D[p].config.modo
 const k = (v) => v >= 1000 ? (v/1000).toFixed(v >= 10000 ? 0 : 1).replace('.', ',') + ' mil' : String(Math.round(v))
 const pct = (v, s = true) => (s && v > 0 ? '+' : '') + (v * 100).toFixed(1).replace('.', ',') + '%'
 const receita = (r) => r.camadas.join(' + ') + (r.ancora === 'movel' ? ' · âncora móvel' : '')
@@ -70,13 +73,14 @@ const telas = {
   inicio() {
     const r = D[projeto].resumo, a = ativo(projeto, D[projeto].config.alvo), pp = D[projeto]['proximo-passo'], cv = D[projeto].crescimento, ac = D[projeto].acompanhamentos
     const est = (cv.faixas || []).find((f) => f.inclinacao === 0)
-    return `<h1>Visão geral <span class="chip">${D[projeto].config.modo === 'cientista' ? 'Data Scientist' : 'Automático'} · ${D[projeto].config.alvo}</span></h1><div class="grade">
+    return `<h1>Visão geral <span class="chip">${modoDe(projeto) === 'cientista' ? 'Data Scientist' : 'Automático'} · ${D[projeto].config.alvo}</span></h1><div class="grade">
       <div class="cartao met"><div class="r">Shorts na base</div><div class="v">${k(r.videos)}</div><div class="d">${r.canais} canais · ${D[projeto].config.setores.join(', ')}</div></div>
       <div class="cartao met" data-deck="modelo-ativo"><div class="r">Modelo ativo</div><div class="v">${a ? '−' + pct(a.resultado.ganho, false) : '—'}</div><div class="d">${a ? 'mais preciso que a média do canal · ' + receita(a.receita) : 'nenhum'}</div></div>
       <div class="cartao met"><div class="r">Experimentos</div><div class="v">${r.experimentos}</div><div class="d">${r.runs} execuções</div></div>
       <div class="cartao met"><div class="r">Em produção</div><div class="v">${ac.n ? Math.round(ac.cobertura * 100) + '%' : '—'}</div><div class="d">${ac.n ? ac.n + ' vídeo(s) · dentro da faixa quase certa' : 'nenhum vídeo acompanhado'}</div></div>
       <div class="cartao met"><div class="r">Curva de crescimento</div><div class="v">${cv.videos ? k(cv.videos) : '—'}</div><div class="d">${cv.videos ? 'vídeos reobservados · ' + cv.alvo + (est ? ' estabilizam a partir de ~' + est.de_dias + ' dias' : '') : 'sem reobservação'}</div></div></div>
       <div class="cartao ${pp.certeza === 'ambiguo' ? '' : 'aval'}" data-deck="proximo-passo"><h3><span class="ms">${pp.certeza === 'ambiguo' ? 'help' : 'route'}</span> Próximo passo: <span class="mono">${pp.acao}</span></h3><p class="sub">${pp.motivo}</p>${pp.alternativas.length ? `<p class="sub" style="margin-top:4px">ou: ${pp.alternativas.join(', ')}</p>` : ''}<p class="sub" style="margin-top:8px">${pp.certeza === 'ambiguo' ? 'Decisão de custo ou escopo: o agente pergunta antes de agir.' : 'Deduzido do estado do projeto por regra; o agente segue sem perguntar.'}</p></div>
+      <div class="cartao" style="margin-top:12px" data-deck="modo"><h3>Como você quer trabalhar?</h3><p class="sub">O agente faz o trabalho de cientista de dados. Você decide quanto quer participar.</p><div class="seg"><span class="${modoDe(projeto) === 'automatico' ? 'on' : ''}"><span class="ms">bolt</span> Automático</span><span data-deck="modo-cientista" class="${modoDe(projeto) === 'cientista' ? 'on' : ''}"><span class="ms">person_search</span> Data Scientist</span></div><p class="sub" style="margin-top:10px">${modoDe(projeto) === 'automatico' ? 'O agente testa as receitas e promove sozinho o melhor modelo que supera a média do canal.' : 'Cada promoção espera sua aprovação. Você revisa atributos e faz a triagem dos erros; suas notas viram pistas para o agente.'}</p></div>
       <div class="cartao" style="margin-top:12px" data-deck="diagnostico"><h3>Diagnóstico</h3>${D[projeto].diagnostico.pistas.slice(0, 5).map((p) => `<div class="lin"><span><b class="mono">${p.tipo}</b> · ${p.mensagem.slice(0, 120)}…</span><span class="mono sub">→ ${p.acao}</span></div>`).join('')}</div>`
   },
   modelos() {
@@ -130,7 +134,7 @@ function render() {
   document.getElementById('main').innerHTML = (telas[t] || telas.projetos)()
 }
 addEventListener('hashchange', render); render()
-addEventListener('message', (e) => { const m = e.data; if (!m || m.origem !== 'deck') return; if (m.tipo === 'ir') location.hash = '#' + m.tela; if (m.tipo === 'projeto') { projeto = m.nome; render() }; if (m.tipo === 'rolar') document.getElementById('main').scrollBy({ top: Number(m.y) || 0, behavior: 'smooth' }); if (m.tipo === 'foco') { document.querySelectorAll('.foco-deck').forEach((x) => x.classList.remove('foco-deck')); const el = document.querySelector('[data-deck="' + m.alvo + '"]'); if (!el) { e.source.postMessage({ origem: 'ui', tipo: 'rect', alvo: m.alvo, achou: false }, '*'); return } const destacar = m.destacar !== false; if (destacar) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => { if (destacar) el.classList.add('foco-deck'); const r = el.getBoundingClientRect(); e.source.postMessage({ origem: 'ui', tipo: 'rect', alvo: m.alvo, achou: true, x: r.left, y: r.top, w: r.width, h: r.height }, '*') }, destacar ? 650 : 30) } })
+addEventListener('message', (e) => { const m = e.data; if (!m || m.origem !== 'deck') return; if (m.tipo === 'ir') location.hash = '#' + m.tela; if (m.tipo === 'projeto') { projeto = m.nome; render() }; if (m.tipo === 'modo') { modoVisual = m.valor; const b = document.querySelector('[data-deck="modo-cientista"]'); const r = b ? b.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0 }; const o = document.createElement('div'); o.className = 'onda-deck'; o.style.left = (r.left + r.width / 2) + 'px'; o.style.top = (r.top + r.height / 2) + 'px'; document.body.appendChild(o); setTimeout(() => o.remove(), 1400); render() }; if (m.tipo === 'rolar') document.getElementById('main').scrollBy({ top: Number(m.y) || 0, behavior: 'smooth' }); if (m.tipo === 'foco') { document.querySelectorAll('.foco-deck').forEach((x) => x.classList.remove('foco-deck')); const el = document.querySelector('[data-deck="' + m.alvo + '"]'); if (!el) { e.source.postMessage({ origem: 'ui', tipo: 'rect', alvo: m.alvo, achou: false }, '*'); return } const destacar = m.destacar !== false; if (destacar) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => { if (destacar) el.classList.add('foco-deck'); const r = el.getBoundingClientRect(); e.source.postMessage({ origem: 'ui', tipo: 'rect', alvo: m.alvo, achou: true, x: r.left, y: r.top, w: r.width, h: r.height }, '*') }, destacar ? 650 : 30) } })
 </script></body></html>"""
 html = html.replace("__LOGO__", LOGO).replace("__DADOS__", json.dumps(dados, ensure_ascii=False).replace("</", "<\\/"))
 (AQUI / "replica.html").write_text(html)

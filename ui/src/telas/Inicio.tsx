@@ -60,14 +60,14 @@ export default function Inicio({ projeto, config, ir, aoMudarModo }: {
           </p>
         </div>
       )}
-      <div className="cartao">
+      <div className="cartao" data-deck="modo">
         <h3>Como você quer trabalhar?</h3>
         <p className="descricao">O agente faz o trabalho de cientista de dados. Você decide quanto quer participar.</p>
         <div className="segmentado" role="radiogroup" aria-label="Modo do projeto">
           <button className={config.modo === 'automatico' ? 'ativo' : ''} onClick={() => mudarModo('automatico')} role="radio" aria-checked={config.modo === 'automatico'}>
             <Icone nome="bolt" /> Automático
           </button>
-          <button className={config.modo === 'cientista' ? 'ativo' : ''} onClick={() => mudarModo('cientista')} role="radio" aria-checked={config.modo === 'cientista'}>
+          <button data-deck="modo-cientista" className={config.modo === 'cientista' ? 'ativo' : ''} onClick={() => mudarModo('cientista')} role="radio" aria-checked={config.modo === 'cientista'}>
             <Icone nome="person_search" /> Data Scientist
           </button>
         </div>

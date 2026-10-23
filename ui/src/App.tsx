@@ -43,6 +43,9 @@ export default function App() {
   const shell = useRef<HTMLDivElement>(null)
   const chipModo = useRef<HTMLButtonElement>(null)
   const config = useCarga(() => (projeto ? api.projeto(projeto) : Promise.resolve(null)), [projeto])
+  // Deck da apresentação: mostra a troca de modo (com a onda) sem gravar nada no projeto
+  const [modoVisual, setModoVisual] = useState<'automatico' | 'cientista' | null>(null)
+  const dadosConfig = config.dados && modoVisual ? { ...config.dados, modo: modoVisual } : config.dados
   const andamento = useAndamento(projeto)
   const experimentos = useCarga(() => (projeto ? api.experimentos(projeto) : Promise.resolve([])), [projeto, tela])
 
@@ -56,6 +59,7 @@ export default function App() {
       if (!m || m.origem !== 'deck') return
       if (m.tipo === 'ir' && TELAS.includes(m.tela)) { setTela(m.tela); history.replaceState(null, '', `#${m.tela}`) }
       if (m.tipo === 'projeto' && typeof m.nome === 'string') setProjeto(m.nome)
+      if (m.tipo === 'modo') setModoVisual(m.valor === 'cientista' ? 'cientista' : 'automatico')
       if (m.tipo === 'rolar') document.querySelector('.conteudo')?.scrollBy({ top: Number(m.y) || 0, behavior: 'smooth' })
       if (m.tipo === 'foco') {
         // leva o elemento marcado ao centro, destaca e devolve a posição para o cursor do deck
@@ -76,10 +80,10 @@ export default function App() {
     return () => removeEventListener('message', ouvir)
   }, [])
   useEffect(() => {
-    const modo = config.dados?.modo ?? 'automatico'
+    const modo = dadosConfig?.modo ?? 'automatico'
     document.documentElement.dataset.modo = modo
     const mudou = modoAnterior.current !== undefined && modoAnterior.current !== modo
-    modoAnterior.current = config.dados?.modo
+    modoAnterior.current = dadosConfig?.modo
     if (!mudou) return
     setOnda(modo)
     if (shell.current) {
@@ -88,7 +92,7 @@ export default function App() {
     }
     const t = setTimeout(() => setOnda(null), 1500)
     return () => clearTimeout(t)
-  }, [config.dados?.modo])
+  }, [dadosConfig?.modo])
   useEffect(() => {
     document.documentElement.dataset.theme = tema
     try { localStorage.setItem('tema', tema) } catch { /* sem storage: só não lembra */ }
@@ -98,7 +102,7 @@ export default function App() {
   const pendentes = experimentos.dados?.filter((e) => e.status === 'aguardando_aprovacao').length ?? 0
   const titulo = tela === 'terminal' ? 'Harness' : tela === 'projetos' ? 'Projetos' : NAV.find((n) => n.id === tela)?.titulo
   const abrirProjeto = (nome: string) => { setProjeto(nome); ir('inicio') }
-  const alternarModo = () => config.dados && api.definirModo(projeto, config.dados.modo === 'cientista' ? 'automatico' : 'cientista').then(config.recarregar)
+  const alternarModo = () => dadosConfig && api.definirModo(projeto, dadosConfig.modo === 'cientista' ? 'automatico' : 'cientista').then(config.recarregar)
 
   return (
     <div className={`shell ${onda ? 'ressoando' : ''}`} ref={shell}>
@@ -151,11 +155,11 @@ export default function App() {
         <div className="barra-topo">
           {recolhida && <button className="btn-icone" onClick={() => setRecolhida(false)} aria-label="Abrir menu"><Icone nome="menu" /></button>}
           <h1>{titulo}</h1>
-          {config.dados && tela !== 'projetos' && (
+          {dadosConfig && tela !== 'projetos' && (
             <button className="chip alternar" ref={chipModo} onClick={alternarModo}
-              title={`Clique para mudar para ${config.dados.modo === 'cientista' ? 'Automático' : 'Data Scientist'}`}>
-              <Icone nome={config.dados.modo === 'cientista' ? 'person_search' : 'bolt'} />
-              {config.dados.modo === 'cientista' ? 'Data Scientist' : 'Automático'} · {config.dados.alvo}
+              title={`Clique para mudar para ${dadosConfig.modo === 'cientista' ? 'Automático' : 'Data Scientist'}`}>
+              <Icone nome={dadosConfig.modo === 'cientista' ? 'person_search' : 'bolt'} />
+              {dadosConfig.modo === 'cientista' ? 'Data Scientist' : 'Automático'} · {dadosConfig.alvo}
               <Icone nome="swap_horiz" className="seta" />
             </button>
           )}
@@ -177,12 +181,12 @@ export default function App() {
             {tela !== 'projetos' && projeto && config.erro && (
               <Aviso texto={`Projeto "${projeto}": ${config.erro}. Enquanto um job roda nele por fora da API, escolha outro projeto em Projetos; volta sozinho quando o job acabar.`} />
             )}
-            {tela !== 'projetos' && projeto && config.dados && (
+            {tela !== 'projetos' && projeto && dadosConfig && (
               <>
-                {tela === 'inicio' && <Inicio projeto={projeto} config={config.dados} ir={ir} aoMudarModo={config.recarregar} />}
-                {tela === 'analisar' && <Analisar projeto={projeto} config={config.dados} />}
-                {tela === 'modelos' && <Modelos projeto={projeto} config={config.dados} aoMudar={experimentos.recarregar} />}
-                {tela === 'analises' && <Analises projeto={projeto} alvo={config.dados.alvo} />}
+                {tela === 'inicio' && <Inicio projeto={projeto} config={dadosConfig} ir={ir} aoMudarModo={config.recarregar} />}
+                {tela === 'analisar' && <Analisar projeto={projeto} config={dadosConfig} />}
+                {tela === 'modelos' && <Modelos projeto={projeto} config={dadosConfig} aoMudar={experimentos.recarregar} />}
+                {tela === 'analises' && <Analises projeto={projeto} alvo={dadosConfig.alvo} />}
                 {tela === 'revisao' && <Revisao projeto={projeto} />}
                 {tela === 'erros' && <Erros projeto={projeto} />}
                 {tela === 'trace' && <Trace projeto={projeto} />}

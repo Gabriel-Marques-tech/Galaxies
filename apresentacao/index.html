@@ -278,6 +278,19 @@ body { -webkit-font-smoothing: antialiased; }
 .regras { font: 400 clamp(15px, 1.3vw, 20px)/1.5 var(--body); color: var(--sub); text-align: center; max-width: 1100px; }
 .regras b { color: var(--txt, #fff); font-weight: 500; }
 
+
+/* ---------------------------------------------------------------- modo Data Scientist: o agente pergunta */
+.pergunta-agente { margin-top: 3vh; background: #141519; border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 2vh 1.6vw; display: grid; grid-template-columns: 30px 1fr; gap: 14px; align-items: start; text-align: left; opacity: 0; transition: opacity .5s var(--ease); }
+.pergunta-agente.on { opacity: 1; }
+.pergunta-agente .faisca { width: 24px; height: 24px; margin-top: 3px; background: conic-gradient(from 200deg, #4285f4, #9b72cb, #d96570, #4285f4); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+.pergunta-agente .rot { font: 500 clamp(11px, .9vw, 13px) var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--sub); margin-bottom: .8vh; }
+.pergunta-agente .fala { font: 400 clamp(15px, 1.35vw, 20px)/1.45 var(--body); color: #e3e3e3; min-height: 6em; }
+.pergunta-agente .fala b { color: #fff; font-weight: 500; }
+.pergunta-agente .opcoes { display: flex; gap: 10px; margin-top: 1.4vh; opacity: 0; transition: opacity .4s; }
+.pergunta-agente .opcoes.on { opacity: 1; }
+.pergunta-agente .opcoes span { border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: .7vh 1.2vw; font: 500 clamp(13px, 1.1vw, 16px) var(--body); color: #e3e3e3; }
+.pergunta-agente .opcoes span.prim { background: var(--grad); border-color: transparent; color: #fff; }
+
 /* progresso e ajuda */
 .progresso { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--grad); width: 0; transition: width .5s var(--ease); z-index: 5; }
 .ajuda { position: fixed; right: 16px; bottom: 12px; font: 400 12px var(--body); color: rgba(255,255,255,.35); z-index: 5; }
@@ -423,6 +436,26 @@ body { -webkit-font-smoothing: antialiased; }
       <div class="h2" data-in style="--i:2">Fitness e saúde juntos: −12%.</div>
       <div class="p" data-in style="--i:3">O diagnóstico apontou "setores misturados" e canais rasos. Separou. Saúde foi a <b style="color:var(--verde)">−23%</b>. Fitness mostrou ser ruído: likes que não dependem do canal. Ele disse isso com os números, não escondeu.</div>
       <div class="fato grad" data-in style="--i:4">−12% → −23%</div>
+    </div>
+  </div>
+</section>
+
+<!-- 7b · modo Data Scientist: a troca e o trade-off -->
+<section class="slide">
+  <div class="tour">
+    <div class="quadro" data-in="left" data-passeio="modo" style="--i:0"><iframe data-src="http://127.0.0.1:5173/#inicio" title="Modo"></iframe></div>
+    <div class="texto">
+      <div class="kicker" data-in style="--i:1">modo Data Scientist</div>
+      <div class="h2" data-in style="--i:2">Quer decidir? Ele para e pergunta.</div>
+      <div class="p" data-in style="--i:3">No automático, promove sozinho o que vence no teste. No modo Data Scientist, cada promoção espera você, e o agente traz o trade-off com os números, não um "confia em mim".</div>
+      <div class="pergunta-agente" id="pergunta-agente" data-in style="--i:4">
+        <div class="faisca"></div>
+        <div>
+          <div class="rot">o que o agente pergunta · números reais de moda e beleza</div>
+          <div class="fala" id="fala-agente"></div>
+          <div class="opcoes" id="opcoes-agente"><span class="prim">Promover o candidato</span><span>Manter o ativo e coletar mais</span></div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -626,10 +659,22 @@ async function focarUI(f, alvo, { ms, dy = 0, destacar = true } = {}) {
 let passeioId = 0
 async function passearUI(s) {
   const id = ++passeioId, f = s.querySelector('.quadro iframe'); if (!f) return
-  const tela = (f.dataset.src.split('#')[1] || 'inicio')
+  const tela = (f.dataset.src.split('#')[1] || 'inicio'), passeio = f.parentElement.dataset.passeio
   const vivo = () => id === passeioId
   await espera(900); if (!vivo()) return
-  if (tela === 'modelos') {
+  if (passeio === 'modo') {
+    const caixa = document.getElementById('pergunta-agente'), fala = document.getElementById('fala-agente'), opcoes = document.getElementById('opcoes-agente')
+    caixa.classList.remove('on'); opcoes.classList.remove('on'); fala.textContent = ''
+    mandarUI(f, { tipo: 'modo', valor: 'automatico' })
+    await focarUI(f, 'modo'); await espera(1400); if (!vivo()) return
+    const achou = await focarUI(f, 'modo-cientista', { destacar: false }); if (!vivo()) return
+    await pressionar(); mandarUI(f, { tipo: 'modo', valor: 'cientista' })
+    await espera(1500); if (!vivo()) return
+    esconderCursor(); caixa.classList.add('on')
+    await digitarEm(fala, 'Tenho um candidato para likes em moda e beleza. O ativo erra 24,4% menos que a média do canal, acerta 58,9% dos pares A vs B e a faixa de 80% cobre 73% dos casos. O candidato: 23,1%, 58,7% e faixa cobrindo 76%. Ele acerta um pouco menos, mas promete uma faixa mais honesta. A trava não troca sozinha, porque o ganho é menor. Quer trocar mesmo assim, ou mantemos o ativo e coletamos mais antes de reavaliar?', 14)
+    if (!vivo()) return
+    opcoes.classList.add('on'); await espera(400); await moverCursor(opcoes.children[1]); await espera(900); await moverCursor(opcoes.children[0]); await espera(1200)
+  } else if (tela === 'modelos') {
     await focarUI(f, 'busca'); await espera(3200); if (!vivo()) return
     await focarUI(f, 'experimentos'); await espera(2600)
   } else if (tela === 'inicio') {
