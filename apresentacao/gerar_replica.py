@@ -33,7 +33,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th{color:var(--sub);fon
 .aval{border:1px solid rgba(66,133,244,.5);box-shadow:0 0 22px rgba(66,133,244,.18)}
 .short{width:220px;height:390px;border-radius:22px;background:#0f1322;border:1px dashed var(--c);display:flex;align-items:center;justify-content:center;color:var(--sub);flex-direction:column;gap:8px}
 .duas{display:grid;grid-template-columns:240px 1fr;gap:18px}
-.short.pronto{border-style:solid;background:#0b0f1c;justify-content:flex-end;padding:12px;position:relative;overflow:hidden}.short.pronto .mini{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.55)}.short.pronto .nome-arq{position:relative;font-size:11px;background:rgba(0,0,0,.55);color:#fff;border-radius:6px;padding:3px 6px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.short.pronto{border-style:solid;background:#0b0f1c;justify-content:flex-end;padding:12px;position:relative;overflow:hidden}.short.pronto .mini{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.short.pronto .nome-arq{position:relative;font-size:11px;background:rgba(0,0,0,.55);color:#fff;border-radius:6px;padding:3px 6px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pergunta{align-self:flex-end;background:#243055;color:#dfe7ff;border-radius:18px 18px 4px 18px;padding:10px 14px;max-width:80%;margin:0 0 12px auto;font-size:13.5px}.pergunta .sub{font-size:11.5px;color:#aab6d6}
 .grade2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.desc{font-size:12px;color:var(--sub);margin-bottom:8px}
 .chance{display:grid;grid-template-columns:1fr 140px 48px;gap:10px;align-items:center;padding:6px 0;font-size:13px}.chance .trilho{height:8px;border-radius:999px;background:#2a3150;overflow:hidden}.chance .trilho div{height:100%;background:linear-gradient(90deg,#4285f4,#9b72cb)}.chance b{text-align:right}
@@ -96,7 +96,7 @@ const telas = {
     const p = A.previsao_7d, med = A.mediana_canal, alvo = A.alvo
     const verd = p.q50 >= med * 1.3 ? ['trending_up', 'Acima do normal do canal'] : p.q50 <= med * 0.7 ? ['trending_down', 'Abaixo do normal do canal'] : ['trending_flat', 'No normal do canal']
     const arq = (resumo.fonte || '').split('/').pop() || 'short.mp4'
-    const mini = resumo.acompanhamento ? `<img class="mini" src="https://i.ytimg.com/vi/${resumo.acompanhamento.video_id}/mqdefault.jpg" alt="">` : ''
+    const mini = `<video class="mini" src="demo-short.mp4" autoplay muted loop playsinline></video>`
     // timeline: área q10–q90, área q25–q75 e linha q50, eixo em dias (escala log) e valor (escala log)
     const tl = A.timeline, W = 520, H = 150, PL = 44, PB = 22
     const xs = tl.map((t) => Math.log(1 + t.dias)), ys = tl.flatMap((t) => [t.q10, t.q90]).map((v) => Math.log(1 + v))

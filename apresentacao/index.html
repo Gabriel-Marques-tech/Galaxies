@@ -601,6 +601,7 @@ function mostrar(i) {
   if (s.dataset.roteiro === 'modo') cenaModo(s)
   if (s.classList.contains('s-demo')) demo()
   carregarIframes(s)
+  if (slides[atual + 1]) carregarIframes(slides[atual + 1]) // o próximo já carrega, para a UI estar pronta
 }
 addEventListener('keydown', (e) => {
   if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); mostrar(atual + 1) }
@@ -803,8 +804,11 @@ async function passearUI(s) {
     await focarUI(f, 'proximo-passo'); await espera(2800); if (!vivo()) return
     await focarUI(f, 'diagnostico'); await espera(2400)
   } else if (tela === 'analisar') {
-    mandarUI(f, { tipo: 'analise' }); await espera(1600); if (!vivo()) return
-    const achou = await focarUI(f, 'avaliacao'); await espera(achou ? 3200 : 800); if (!vivo()) return
+    // a UI pode ainda estar subindo: insiste até a análise gravada aparecer
+    const short = { tipo: 'short', url: location.origin + location.pathname.replace(/[^/]*$/, '') + 'demo-short.mp4', nome: 'Bella Dias Makeup - FIZ A VAMPIRA KATHERINE PIERCE.mp4' }
+    let achou = false
+    for (let k = 0; k < 8 && !achou; k++) { mandarUI(f, short); mandarUI(f, { tipo: 'analise' }); await espera(k ? 700 : 1200); if (!vivo()) return; achou = await focarUI(f, 'avaliacao') }
+    await espera(achou ? 3200 : 600); if (!vivo()) return
     if (achou) { await rolarUI(f, 520, 8, 220); await espera(2200); if (!vivo()) return; await rolarUI(f, 520, 8, 220); await espera(2200); if (!vivo()) return }
     await clicarUI(f, 'analises'); await espera(1600); if (!vivo()) return
     await focarUI(f, 'analises'); await espera(2600)

@@ -26,7 +26,9 @@ export default function Analisar({ projeto, config }: { projeto: string; config:
   useEffect(() => {
     const ouvir = (e: MessageEvent) => {
       const m = e.data
-      if (!m || m.origem !== 'deck' || m.tipo !== 'analise') return
+      if (!m || m.origem !== 'deck') return
+      if (m.tipo === 'short' && typeof m.url === 'string') { setShort({ fonte: m.url, nome: String(m.nome || m.url.split('/').pop()), url: m.url }); return }
+      if (m.tipo !== 'analise') return
       api.analises(projeto).then((L) => {
         const ok = L.filter((a) => a.status === 'ok' && a.previsao_7d)
         const r = (m.run_id ? ok.find((a) => a.run_id === m.run_id) : undefined) ?? ok.find((a) => a.gancho) ?? ok[0]

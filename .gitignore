@@ -11,3 +11,5 @@ mlruns/
 *.pdf
 node_modules/
 ui/dist/
+# vídeo de demonstração (direito do criador): fica local
+apresentacao/demo-short.mp4
