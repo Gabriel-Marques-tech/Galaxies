@@ -620,7 +620,7 @@ addEventListener('click', (e) => { if (!e.target.closest('iframe, a, button, #ch
 // ---------------------------------------------------------------- som: efeitos discretos sintetizados (Web Audio)
 // Nada de arquivo: cada efeito é um osciladorzinho ou um sopro de ruído filtrado. Volume baixo.
 // O navegador só libera áudio depois de um gesto do usuário: o primeiro clique/tecla destrava.
-const SOM = { ctx: null, ligado: true, volume: .07 }
+const SOM = { ctx: null, ligado: false, volume: .07 } // desligado: efeitos sonoros removidos a pedido
 function somPronto() {
   if (!SOM.ligado) return null
   try { SOM.ctx ??= new (window.AudioContext || window.webkitAudioContext)() } catch { return null }
@@ -653,8 +653,6 @@ const som = {
   ok: () => { tom({ freq: 880, dur: .08, ganho: .3 }); setTimeout(() => tom({ freq: 1320, dur: .12, ganho: .3 }), 70) },
   onda: () => { tom({ freq: 220, para: 660, dur: .9, ganho: .6, ataque: .03 }); sopro({ dur: .9, de: 200, ate: 3000, ganho: .4 }) },
 }
-addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'm') { SOM.ligado = !SOM.ligado; if (SOM.ligado) somPronto() } else somPronto() })
-addEventListener('pointerdown', () => somPronto())
 
 // ---------------------------------------------------------------- cursor animado
 const cursor = document.getElementById('cursor')
