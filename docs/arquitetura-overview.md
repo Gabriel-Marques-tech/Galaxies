@@ -377,3 +377,26 @@ título). O trace guarda `prever` e `explicar`, e é dele que a análise é reab
 - O teste é usado uma vez por experimento; a busca vive na validação.
 - `meta.json` carrega tudo que a previsão precisa: um modelo é reproduzível e portável.
 - Nenhuma tool do MCP altera split, âncora, métrica, k ou status fora de `promover`.
+
+## Âncoras, em detalhe
+
+A âncora é o "normal do canal". O modelo prevê `log((y+1)/(âncora+1))`: quanto o vídeo sai
+desse normal. Dividir pela âncora (e tirar log) é o que coloca canais de 20 mil e de 2
+milhões na mesma régua e permite um modelo por setor.
+
+| âncora | o que é | quando serve |
+|---|---|---|
+| `mediana_canal` (fixa) | mediana do alvo do canal, só no treino | referência estável; é a do baseline, das chances e das sugestões |
+| `movel` | média em log dos últimos 10 vídeos do canal, defasada 7 dias (`hist_media_10`) | segue o momento do canal e a deriva do setor; exige a camada `historico`; sem passado, cai na fixa |
+
+- Defasagem de 7 dias: no momento de publicar, os últimos vídeos ainda crescem; usar a média
+  "crua" vazaria informação que não existe na hora da previsão.
+- Fixa calculada só no treino (`estatisticas_dos_canais`); o teste não entra.
+- Baseline = prever a âncora fixa; `ganho` = quanto o modelo erra menos que isso.
+- As âncoras de todos os canais vão para `meta.json`: `analisar` sabe o normal de cada
+  canal sem consultar o banco (e um canal fora da base é recusado: `CanalForaDaBase`).
+- Modelo com âncora móvel: a previsão sai relativa ao momento do canal e é convertida para a
+  fixa (`deslocamento = hist_media_10 − log(1+mediana)`), porque faixas, chances e sugestões
+  são expressas em "× a mediana do canal".
+- Os três modelos ativos de likes (moda, saúde, automotivo) usam a móvel; em moda foi o que
+  levou o ganho de ~−19% para −24%.
