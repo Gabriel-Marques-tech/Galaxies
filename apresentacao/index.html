@@ -501,8 +501,7 @@ async function chat() {
   await espera(700); if (id !== chatAtivo) return
   area.classList.add('escura'); document.getElementById('chat').classList.add('escura')
   for (const [k, c] of figs.entries()) { await espera(k ? 1100 : 500); if (id !== chatAtivo) return; c.classList.add('on'); contarEm(c) }
-  await espera(1600); if (id !== chatAtivo) return
-  revelar.classList.add('recolhe'); await espera(300); fecho.classList.add('on')
+  // os números ficam na tela; a frase vem no próximo slide
 }
 function contarEm(c) {
   const el = c.querySelector('[data-conta]'); const alvo = parseFloat(el.dataset.conta), pre = el.dataset.prefixo || '', suf = el.dataset.sufixo || ''
