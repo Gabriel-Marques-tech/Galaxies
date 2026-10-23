@@ -269,6 +269,20 @@ body { -webkit-font-smoothing: antialiased; }
 .cinquenta .texto .kicker, .cinquenta .texto .h1, .cinquenta .texto .p { text-align: left; }
 .cinquenta .texto .h1 { max-width: none; }
 
+
+/* ---------------------------------------------------------------- o que é o Stars: a fábrica de modelos */
+.fabrica { width: min(1560px, 94vw); display: flex; flex-direction: column; align-items: center; gap: 4vh; }
+.fabrica .h1 { font-size: clamp(34px, 4.6vw, 76px); }
+.ciclo { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1vw; width: 100%; }
+.ciclo .etapa { position: relative; border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 2.2vh 1.3vw 2.4vh; background: rgba(255,255,255,.03); text-align: left; }
+.ciclo .etapa .n { font: 500 clamp(12px, 1vw, 14px) var(--body); letter-spacing: .14em; text-transform: uppercase; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ciclo .etapa .t { margin-top: 1vh; font: 500 clamp(18px, 1.55vw, 26px)/1.15 var(--display); letter-spacing: -.01em; }
+.ciclo .etapa .d { margin-top: 1.2vh; font: 400 clamp(13px, 1.05vw, 16px)/1.4 var(--body); color: var(--sub); }
+.ciclo .etapa::after { content: '→'; position: absolute; right: -0.9vw; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,.28); font-size: clamp(14px, 1.1vw, 18px); }
+.ciclo .etapa:last-child::after { content: '↺'; }
+.regras { font: 400 clamp(15px, 1.3vw, 20px)/1.5 var(--body); color: var(--sub); text-align: center; max-width: 1100px; }
+.regras b { color: var(--txt, #fff); font-weight: 500; }
+
 /* progresso e ajuda */
 .progresso { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--grad); width: 0; transition: width .5s var(--ease); z-index: 5; }
 .ajuda { position: fixed; right: 16px; bottom: 12px; font: 400 12px var(--body); color: rgba(255,255,255,.35); z-index: 5; }
@@ -359,6 +373,24 @@ body { -webkit-font-smoothing: antialiased; }
       <iframe id="ui-demo" data-src="http://127.0.0.1:5173/#projetos" title="Stars"></iframe>
     </div>
     <div class="legenda" id="legenda">replay de uma sessão real · Gemini plugado no Stars por MCP</div>
+  </div>
+</section>
+
+<!-- 5b · o que é o Stars -->
+<section class="slide">
+  <div class="fabrica">
+    <div class="kicker" data-in style="--i:0">o que é, afinal</div>
+    <div class="h1" data-in="zoom" style="--i:1">Stars é uma <span class="grad">ferramenta que treina modelos.</span></div>
+    <div class="p" data-in style="--i:2">Não é um modelo pronto de um setor. É a linha de produção que faz um modelo por setor, mede, promove e cuida dele depois.</div>
+    <div class="ciclo">
+      <div class="etapa" data-in style="--i:3"><div class="n">1 · dados</div><div class="t">Coleta o setor</div><div class="d">Descobre canais, baixa os Shorts, reobserva todo dia. Só API gratuita.</div></div>
+      <div class="etapa" data-in style="--i:4"><div class="n">2 · camadas</div><div class="t">Lê cada vídeo</div><div class="d">Metadados, histórico do canal, texto, título, gancho visto e ouvido.</div></div>
+      <div class="etapa" data-in style="--i:5"><div class="n">3 · busca</div><div class="t">Testa receitas</div><div class="d">Combina camadas e parâmetros na validação. Cada tentativa recebe um veredito.</div></div>
+      <div class="etapa" data-in style="--i:6"><div class="n">4 · prova</div><div class="t">Teste uma vez</div><div class="d">Só a vencedora vê o teste. Compara com a média do canal e com um controle.</div></div>
+      <div class="etapa" data-in style="--i:7"><div class="n">5 · trava</div><div class="t">Promove se ganhar</div><div class="d">Troca lateral não vale. Sem poder estatístico, diz quantos vídeos faltam.</div></div>
+      <div class="etapa" data-in style="--i:8"><div class="n">6 · operação</div><div class="t">Vigia em produção</div><div class="d">Previsto × real, curva de crescimento, diagnóstico, próximo passo.</div></div>
+    </div>
+    <div class="regras" data-in style="--i:9"><b>Regras fixas:</b> alvo, split temporal, baseline do canal, controle, teste uma vez. <b>O agente escolhe o resto.</b> Qualquer LLM opera por MCP.</div>
   </div>
 </section>
 
