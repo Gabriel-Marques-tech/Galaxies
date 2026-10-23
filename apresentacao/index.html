@@ -77,7 +77,7 @@ body { -webkit-font-smoothing: antialiased; }
 .plug span.mcp { border-color: transparent; background: var(--grad); color: #0b0d14; font-weight: 600; }
 
 /* ---------------------------------------------------------------- palco 3D da demo */
-.palco { position: relative; width: min(1380px, 88vw); height: min(74vh, 800px); transform-style: preserve-3d; transition: transform 1.6s var(--ease); transform-origin: 50% 60%; }
+.palco { position: relative; width: min(1760px, 96vw); height: min(86vh, 1000px); transform-style: preserve-3d; transition: transform 1.6s var(--ease); transform-origin: 50% 60%; }
 .janela { position: absolute; border-radius: 18px; background: #0d1018; border: 1px solid rgba(255,255,255,.1); box-shadow: 0 40px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04) inset; overflow: hidden; transform-style: preserve-3d; transition: transform 1.6s var(--ease), opacity 1s var(--ease), filter 1s var(--ease); }
 .janela .barra { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.07); font: 500 12.5px var(--body); color: var(--sub); }
 .janela .barra i { width: 11px; height: 11px; border-radius: 50%; background: #3a3f4f; }
@@ -91,15 +91,15 @@ body { -webkit-font-smoothing: antialiased; }
 .terminal .dim { color: var(--sub); }
 .terminal .cursor { display: inline-block; width: .6em; height: 1.1em; background: var(--texto); vertical-align: -0.2em; animation: pisca 1s steps(2) infinite; }
 @keyframes pisca { 50% { opacity: 0; } }
-.palco[data-cena="prompt"] { transform: translate3d(0, -7%, 0) scale(1.1); }
-.palco[data-cena="tools"] { transform: translate3d(-3%, -3%, 0) scale(1.06) rotateY(-5deg); }
+.palco[data-cena="prompt"] { transform: translate3d(0, -2%, 0) scale(1.0); }
+.palco[data-cena="tools"] { transform: translate3d(-2%, -1%, 0) scale(1.0) rotateY(-4deg); }
 .palco[data-cena="ui"] { transform: translate3d(0, 0, 0) scale(.96) rotateY(3deg) rotateX(2deg); }
 .palco[data-cena="ui"] .terminal { transform: translate3d(-26%, 0, -200px) rotateY(18deg); opacity: .55; filter: blur(1px); }
 .palco[data-cena="final"] { transform: scale(1.02); }
 .ui { left: 34%; top: 6%; width: 66%; height: 92%; transform: translate3d(40%, 0, -100px) rotateY(-24deg); opacity: 0; }
 .palco[data-cena="ui"] .ui, .palco[data-cena="final"] .ui { transform: translate3d(0, 0, 60px) rotateY(-4deg); opacity: 1; }
 .ui iframe { width: 100%; height: calc(100% - 38px); border: 0; display: block; background: #11141f; }
-.legenda { position: absolute; left: 50%; bottom: 2vh; transform: translateX(-50%); font: 500 clamp(14px, 1.4vw, 20px) var(--body); color: var(--sub); background: rgba(11,13,20,.7); padding: .8vh 1.6vw; border-radius: 999px; backdrop-filter: blur(10px); white-space: nowrap; }
+.legenda { position: absolute; right: 2vw; top: 2vh; font: 500 clamp(11px, .9vw, 14px) var(--body); letter-spacing: .06em; text-transform: uppercase; color: var(--sub); opacity: .7; white-space: nowrap; }
 
 /* ---------------------------------------------------------------- tour da UI */
 .tour { display: grid; grid-template-columns: 1.4fr 1fr; gap: 4vw; align-items: center; width: min(1400px, 92vw); }
@@ -223,29 +223,24 @@ body { -webkit-font-smoothing: antialiased; }
 /* ---------------------------------------------------------------- demo: chat do Gemini com tools do MCP */
 .janela.terminal { background: #0e0e10; }
 .janela.terminal .barra { background: #1f2023; border-color: #2a2b2e; }
-.gchat { height: calc(100% - 38px); display: flex; flex-direction: column; font-family: 'Google Sans', 'Inter', sans-serif; color: #e3e3e3; position: relative; }
-.gchat .brilho2 { position: absolute; left: 50%; bottom: -30%; width: 120%; height: 80%; transform: translateX(-50%); background: radial-gradient(ellipse at center, rgba(28,56,160,.8), rgba(10,16,40,.15) 55%, transparent 70%); filter: blur(12px); pointer-events: none; }
-.gchat .rolo { position: relative; flex: 1; overflow: hidden; padding: 22px 28px 10px; display: flex; flex-direction: column; gap: 14px; }
-.gchat .rolo .msg { opacity: 1; transform: none; max-width: 100%; }
-.gchat .eu { align-self: flex-end; background: #2a2b2e; color: #e3e3e3; border-radius: 22px 22px 6px 22px; padding: 10px 16px; font-size: clamp(14px, 1.3vw, 19px); max-width: 80%; }
-.gchat .ia { display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: start; }
-.gchat .ia .faisca { width: 24px; height: 24px; margin-top: 3px; background: conic-gradient(from 200deg, #4285f4, #9b72cb, #d96570, #4285f4); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: gira 4s linear infinite; }
-.gchat .ia .faisca.parada { animation: none; }
-.gchat .ia .corpo { font-size: clamp(14px, 1.3vw, 19px); line-height: 1.5; display: flex; flex-direction: column; gap: 8px; }
-.gchat .tool { display: flex; align-items: center; gap: 10px; background: #1f2023; border: 1px solid #2a2b2e; border-radius: 12px; padding: 8px 12px; font-size: clamp(12.5px, 1.1vw, 16px); color: #c4c7c5; opacity: 0; transform: translateY(8px); transition: opacity .4s var(--ease), transform .5s var(--ease); }
-.gchat .tool.on { opacity: 1; transform: none; }
-.gchat .tool .ic { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: #2a2b2e; font-size: 13px; flex-shrink: 0; }
-.gchat .tool .nome { font-family: var(--mono); color: #e3e3e3; }
-.gchat .tool .estado { margin-left: auto; font-size: .9em; color: #9aa0a6; white-space: nowrap; }
-.gchat .tool.ok .estado { color: #5fd39a; } .gchat .tool.erro .estado { color: #f28b82; }
-.gchat .tool .giro { width: 12px; height: 12px; border: 2px solid #4285f4; border-right-color: transparent; border-radius: 50%; animation: gira 1s linear infinite; display: inline-block; }
-.gchat .resultado { font-size: .92em; color: #9aa0a6; padding-left: 32px; margin-top: -4px; opacity: 0; transition: opacity .4s; }
-.gchat .resultado.on { opacity: 1; }
-.gchat .entrada { position: relative; margin: 0 28px 16px; background: #1f2023; border: 1px solid #2a2b2e; border-radius: 999px; padding: 10px 14px 10px 18px; display: flex; align-items: center; gap: 12px; font-size: clamp(14px, 1.3vw, 19px); min-height: 54px; }
-.gchat .entrada .texto { flex: 1; min-height: 1.2em; }
-.gchat .entrada .texto:empty::before { content: 'Digite @ para acessar conectores, habilidades e muito mais'; color: #9aa0a6; }
-.gchat .entrada .modelo { color: #e3e3e3; font-size: .85em; white-space: nowrap; } .gchat .entrada .modelo small { color: #9aa0a6; }
-.gchat .entrada .enviar { width: 36px; height: 36px; border-radius: 50%; background: #e3e3e3; color: #0e0e10; display: grid; place-items: center; font-weight: 700; }
+.demo-chat .rolo { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 14px; }
+.demo-chat .rolo .msg { opacity: 1; transform: none; max-width: 100%; }
+.demo-chat .rolo .eu { align-self: flex-end; background: #2a2b2e; color: #e3e3e3; border-radius: 22px 22px 6px 22px; padding: 1.2vh 1.4vw; font-size: clamp(15px, 1.5vw, 20px); max-width: 82%; }
+.demo-chat .rolo .ia { display: grid; grid-template-columns: 34px 1fr; gap: 14px; align-items: start; }
+.demo-chat .rolo .ia .faisca { width: 26px; height: 26px; margin-top: 4px; background: conic-gradient(from 200deg, #4285f4, #9b72cb, #d96570, #4285f4); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: gira 4s linear infinite; }
+.demo-chat .rolo .ia .faisca.parada { animation: none; }
+.demo-chat .rolo .ia .corpo { font-size: clamp(15px, 1.5vw, 20px); line-height: 1.5; display: flex; flex-direction: column; gap: 8px; }
+.demo-chat .tool { display: flex; align-items: center; gap: 10px; background: #1f2023; border: 1px solid #2a2b2e; border-radius: 12px; padding: 8px 12px; font-size: clamp(13px, 1.15vw, 17px); color: #c4c7c5; opacity: 0; transform: translateY(8px); transition: opacity .3s var(--ease), transform .35s var(--ease); }
+.demo-chat .tool.on { opacity: 1; transform: none; }
+.demo-chat .tool .ic { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: #2a2b2e; font-size: 13px; flex-shrink: 0; }
+.demo-chat .tool .nome { font-family: var(--mono); color: #e3e3e3; }
+.demo-chat .tool .estado { margin-left: auto; font-size: .9em; color: #9aa0a6; white-space: nowrap; }
+.demo-chat .tool.ok .estado { color: #5fd39a; } .demo-chat .tool.erro .estado { color: #f28b82; }
+.demo-chat .tool .giro { width: 12px; height: 12px; border: 2px solid #4285f4; border-right-color: transparent; border-radius: 50%; animation: gira 1s linear infinite; display: inline-block; }
+.demo-chat .resultado { font-size: .92em; color: #9aa0a6; padding-left: 32px; margin-top: -4px; opacity: 0; transition: opacity .3s; }
+.demo-chat .resultado.on { opacity: 1; }
+.demo-chat .meio.conversa { padding-bottom: 13vh; }
+.demo-chat .brilho { top: 70%; }
 
 
 /* ---------------------------------------------------------------- ícone de app estilo macOS */
@@ -383,14 +378,26 @@ body { -webkit-font-smoothing: antialiased; }
 <section class="slide s-demo">
   <div class="palco" id="palco" data-cena="prompt">
     <div class="janela terminal" id="terminal">
-      <div class="barra"><i></i><i></i><i></i><span>Gemini · conector: stars (MCP)</span></div>
-      <div class="gchat"><div class="brilho2"></div><div class="rolo" id="rolo"></div><div class="entrada" id="demo-entrada"><span style="color:#c4c7c5;font-size:22px">＋</span><div class="texto" id="demo-texto"></div><div class="modelo">Gemini <small>Auto</small> ▾</div><div class="enviar">➤</div></div></div>
+      <div class="gapp demo-chat" id="demo-app">
+        <div class="brilho"></div>
+        <div class="trilho"><div class="faisca-logo"><b></b></div><div class="ico novo">✎</div><div class="ico">⌕</div><div class="ico">▦</div><div class="ico">▣</div><div class="ico">◴</div><div class="ico">◎</div><div style="flex:1"></div><div class="ico">⚙</div><div class="avatar"></div></div>
+        <div class="area">
+          <div class="cab"><div class="upgrade">Fazer upgrade</div><div class="ico">✎</div></div>
+          <div class="meio" id="demo-meio">
+            <div class="ola" id="demo-ola">Por onde começamos?</div>
+            <div class="rolo" id="rolo"></div>
+          </div>
+          <div class="rodape">
+            <div class="entrada" id="demo-entrada"><div class="mais">＋</div><div class="texto" id="demo-texto"></div><div class="modelo">Gemini <small>Auto</small> ▾</div><div class="mic">🎙</div><div class="enviar" id="demo-enviar">➤</div></div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="janela ui" id="janela-ui">
       <div class="barra"><i></i><i></i><i></i><span>Stars · console</span></div>
       <iframe id="ui-demo" data-src="http://127.0.0.1:5173/#projetos" title="Stars"></iframe>
     </div>
-    <div class="legenda" id="legenda">replay de uma sessão real · Gemini plugado no Stars por MCP</div>
+    <div class="legenda" id="legenda">sessão real · Gemini CLI + Stars por MCP</div>
   </div>
 </section>
 
@@ -644,16 +651,16 @@ async function passearUI(s) {
 async function passeioDemo(id) {
   const f = document.querySelector('#janela-ui iframe'); if (!f) return
   const vivo = () => id === demoAtiva
-  await espera(1000); if (!vivo()) return
-  const achou = await focarUI(f, 'projeto-moda-beleza', { ms: 1200 }); if (!vivo()) return
+  await espera(700); if (!vivo()) return
+  const achou = await focarUI(f, 'projeto-moda-beleza'); if (!vivo()) return
   if (!achou) await moverCursor(f, { ...pontoUI(f, 520, 300), ms: 1000 })
   await pressionar()
   mandarUI(f, { tipo: 'projeto', nome: 'moda-beleza' }); mandarUI(f, { tipo: 'ir', tela: 'inicio' })
-  await espera(1800); if (!vivo()) return
-  await focarUI(f, 'modelo-ativo'); await espera(2200); if (!vivo()) return
-  await focarUI(f, 'proximo-passo'); await espera(2400); if (!vivo()) return
-  await clicarUI(f, 'modelos'); await espera(1600); if (!vivo()) return
-  await focarUI(f, 'busca'); await espera(2600); if (vivo()) esconderCursor()
+  await espera(1400); if (!vivo()) return
+  await focarUI(f, 'modelo-ativo'); await espera(1800); if (!vivo()) return
+  await focarUI(f, 'proximo-passo'); await espera(1800); if (!vivo()) return
+  await clicarUI(f, 'modelos'); await espera(1200); if (!vivo()) return
+  await focarUI(f, 'busca'); await espera(2200); if (vivo()) esconderCursor()
 }
 
 // ---------------------------------------------------------------- números que sobem
@@ -711,16 +718,20 @@ async function demo() {
   const id = ++demoAtiva
   const rolo = document.getElementById('rolo'), palco = document.getElementById('palco'), entradaTexto = document.getElementById('demo-texto')
   rolo.innerHTML = ''; entradaTexto.textContent = ''; palco.dataset.cena = 'prompt'
+  const meio = document.getElementById('demo-meio'), ola = document.getElementById('demo-ola'), enviar = document.getElementById('demo-enviar')
+  meio.classList.remove('conversa'); ola.classList.remove('some'); enviar.classList.remove('on')
   const passos = await carregarRoteiro()
   const no = (html, cls = '') => { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; rolo.appendChild(d); rolo.scrollTop = rolo.scrollHeight; return d }
   const prompt = passos.find((p) => p.tipo === 'prompt')
-  await espera(600); if (id !== demoAtiva) return
+  await espera(350); if (id !== demoAtiva) return
   await clicar(document.getElementById('demo-entrada'), { dx: -160 })
-  await digitarEm(entradaTexto, prompt ? prompt.texto : 'Monta um modelo de likes para culinária e me explica.', 16)
-  await espera(300); if (id !== demoAtiva) return
-  esconderCursor(); no(entradaTexto.textContent, 'msg eu'); entradaTexto.textContent = ''
+  await digitarEm(entradaTexto, prompt ? prompt.texto : 'Monta um modelo de likes para culinária e me explica.', 12)
+  enviar.classList.add('on'); await espera(200); if (id !== demoAtiva) return
+  await clicar(enviar); esconderCursor()
+  ola.classList.add('some'); meio.classList.add('conversa')
+  no(entradaTexto.textContent, 'msg eu'); entradaTexto.textContent = ''
   const ia = no('<div class="faisca"></div><div class="corpo"><div class="pensando" style="display:inline-flex;gap:6px"><i style="width:8px;height:8px;border-radius:50%;background:#4285f4"></i><i style="width:8px;height:8px;border-radius:50%;background:#9b72cb"></i><i style="width:8px;height:8px;border-radius:50%;background:#d96570"></i></div></div>', 'msg ia')
-  const corpo = ia.querySelector('.corpo'); await espera(900); corpo.innerHTML = ''
+  const corpo = ia.querySelector('.corpo'); await espera(600); corpo.innerHTML = ''
   let ultimaTool = null
   for (const p of passos) {
     if (id !== demoAtiva) return
@@ -732,14 +743,14 @@ async function demo() {
       ultimaTool = document.createElement('div'); ultimaTool.className = 'tool'
       ultimaTool.innerHTML = `<span class="ic">⚙</span><span>stars · <span class="nome">${nome}</span><span style="color:#9aa0a6"> ${args}</span></span><span class="estado"><span class="giro"></span></span>`
       corpo.appendChild(ultimaTool); requestAnimationFrame(() => ultimaTool.classList.add('on')); rolo.scrollTop = rolo.scrollHeight
-      await espera(p.espera ?? 700)
+      await espera(Math.min(p.espera ?? 700, 420))
     } else if (p.tipo === 'ok' || p.tipo === 'dim') {
       if (ultimaTool) { ultimaTool.classList.add(p.tipo === 'ok' ? 'ok' : 'erro'); ultimaTool.querySelector('.estado').textContent = p.tipo === 'ok' ? '✓ concluído' : '✗ erro' }
       const r = document.createElement('div'); r.className = 'resultado'; r.textContent = p.texto.replace(/^[✗✓] ?/, ''); corpo.appendChild(r); requestAnimationFrame(() => r.classList.add('on')); rolo.scrollTop = rolo.scrollHeight
-      await espera(p.espera ?? 500)
+      await espera(Math.min(p.espera ?? 500, 320))
     } else {
       ia.querySelector('.faisca').classList.add('parada')
-      const t = document.createElement('div'); corpo.appendChild(t); await digitarEm(t, p.texto, 9); rolo.scrollTop = rolo.scrollHeight; await espera(400)
+      const t = document.createElement('div'); corpo.appendChild(t); await digitarEm(t, p.texto, 5); rolo.scrollTop = rolo.scrollHeight; await espera(300)
     }
   }
 }
