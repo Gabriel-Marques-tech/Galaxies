@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 AQUI = Path(__file__).parent
-IGNORAR = {"update_topic", "google_web_search"}  # ferramentas internas do CLI, não do Stars
+IGNORAR = {"update_topic", "google_web_search", "run_shell_command"}  # ferramentas internas do CLI (sleep etc.), não do Stars
 
 
 def resumir_args(p: dict) -> str:
@@ -35,6 +35,13 @@ def resumir_saida(o: str) -> str:
     if isinstance(d, list):
         return f"{len(d)} itens" + (f": {', '.join(map(str, d[:3]))}…" if d else "")
     if isinstance(d, dict):
+        if isinstance(d.get("resultado"), dict) and d.get("status") == "ok":
+            r = d["resultado"]
+            if r.get("experimentos") or r.get("promovido") or r.get("motivo"):
+                return (f"status={d['status']!r}, " + resumir_saida(json.dumps(r)))[:220]
+            if r.get("tentativas") and not r.get("experimentos"):
+                erros = [t.get("erro") for t in r["tentativas"] if t.get("erro")]
+                return f"status='ok', nenhum modelo: {erros[0][:150]}" if erros else "status='ok', nenhum modelo"
         chaves = ("job_id", "status", "videos_novos", "acao", "motivo", "calculados", "promovido", "nome")
         itens = [f"{k}={d[k]!r}" if isinstance(d[k], str) else f"{k}={d[k]}" for k in chaves if k in d]
         if "experimentos" in d and d["experimentos"]:
@@ -54,7 +61,7 @@ def converter(caminho: Path) -> list[dict]:
     for e in eventos:
         t = e.get("type")
         if t == "message" and e.get("role") == "user" and not roteiro:
-            texto = e["content"].strip()
+            texto = e["content"].strip().split("\n")[0].strip()
             roteiro.append({"cena": "prompt", "tipo": "prompt", "texto": texto[:230] + ("…" if len(texto) > 230 else "")})
         elif t == "tool_use":
             nome = e["tool_name"].replace("mcp_stars_", "")
@@ -70,20 +77,43 @@ def converter(caminho: Path) -> list[dict]:
                 roteiro.append({"cena": "tools", "tipo": "dim", "texto": f"✗ {nome}: {(m.group(1) if m else msg)[:140]}", "espera": 500})
             else:
                 roteiro.append({"cena": "tools", "tipo": "ok", "texto": f"{nome} → {resumir_saida(e.get('output', ''))}", "espera": 550})
-        elif t == "message" and e.get("role") == "assistant" and e.get("content", "").strip():
-            roteiro.append({"cena": "final", "tipo": "resposta", "texto": e["content"].strip()[:900]})
+        elif t == "message" and e.get("role") == "assistant" and e.get("content", ""):
+            if roteiro and roteiro[-1]["tipo"] == "resposta":
+                roteiro[-1]["texto"] = (roteiro[-1]["texto"] + e["content"])[:900]
+            else:
+                roteiro.append({"cena": "final", "tipo": "resposta", "texto": e["content"].lstrip()[:900]})
     # cena da UI: a partir do primeiro otimizar/diagnostico concluído
     for p in roteiro:
         if p["tipo"] in ("tool", "ok") and ("otimizar" in p["texto"] or "diagnostico" in p["texto"]):
             p["cena"] = "ui"
-    # compacta sequências longas de status(...) em um só passo
+    # polling (status / proximo_passo repetidos enquanto um job roda) vira um bloco só com ×N,
+    # mantendo o último resultado de cada um; o roteiro fica com o ritmo da sessão, não com os sleeps
     compacto: list[dict] = []
-    for p in roteiro:
-        if compacto and p["tipo"] in ("tool", "ok") and p["texto"].startswith("status") and compacto[-1]["texto"].startswith("status"):
-            compacto[-1]["texto"] = compacto[-1]["texto"].split(" ×")[0] + f" ×{int(compacto[-1].get('vezes', 1)) + 1}"
-            compacto[-1]["vezes"] = int(compacto[-1].get("vezes", 1)) + 1
-            continue
-        compacto.append(dict(p))
+    nome = lambda p: p["texto"].split("(")[0].split(" →")[0].strip()
+    POLL = ("status", "proximo_passo")
+    i = 0
+    while i < len(roteiro):
+        p = roteiro[i]
+        if p["tipo"] == "tool" and nome(p) in POLL:
+            j = i
+            bloco: list[dict] = []
+            while j < len(roteiro) and roteiro[j]["tipo"] in ("tool", "ok") and nome(roteiro[j]) in POLL:
+                bloco.append(roteiro[j]); j += 1
+            tools = [b for b in bloco if b["tipo"] == "tool"]
+            if len(tools) > 1:
+                ultimo = {}
+                for b in bloco:
+                    ultimo[(b["tipo"], nome(b))] = b
+                for n in POLL:
+                    t, ok = ultimo.get(("tool", n)), ultimo.get(("ok", n))
+                    if t:
+                        vezes = sum(1 for b in tools if nome(b) == n)
+                        compacto.append({**t, "texto": t["texto"] + (f" ×{vezes}" if vezes > 1 else ""), "espera": 900})
+                        if ok:
+                            compacto.append(dict(ok))
+                i = j
+                continue
+        compacto.append(dict(p)); i += 1
     return compacto
 
 

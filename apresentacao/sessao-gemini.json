@@ -2,67 +2,7 @@
  {
   "cena": "prompt",
   "tipo": "prompt",
-  "texto": "Você é o agente do Stars (servidor MCP stars). Objetivo: um modelo de likes para o nicho de culinária. Passos: 1) criar_projeto com config {nome: 'culinaria', setores: ['receitas'], alvo: 'likes', modo: 'automatico', canais_sement…"
- },
- {
-  "cena": "tools",
-  "tipo": "tool",
-  "texto": "criar_projeto(nome='culinaria', setores=[{'setor': 'culinaria', 'ref': 'receitas'}], alvo='likes')",
-  "espera": 650
- },
- {
-  "cena": "tools",
-  "tipo": "dim",
-  "texto": "✗ criar_projeto: Error executing tool criar_projeto: 1 validation error for ConfigProjeto\\\\nsetores.0\\\\n  Input should be a valid string [type=string_type, i",
-  "espera": 500
- },
- {
-  "cena": "tools",
-  "tipo": "tool",
-  "texto": "criar_projeto(nome='culinaria', setores=['culinaria'], alvo='likes')",
-  "espera": 650
- },
- {
-  "cena": "tools",
-  "tipo": "ok",
-  "texto": "criar_projeto → nome='culinaria'",
-  "espera": 550
- },
- {
-  "cena": "tools",
-  "tipo": "tool",
-  "texto": "descobrir_canais(projeto='culinaria', teto_unidades=100, consulta='receitas fáceis')",
-  "espera": 650
- },
- {
-  "cena": "tools",
-  "tipo": "tool",
-  "texto": "descobrir_canais(projeto='culinaria', consulta='receita rápida shorts', teto_unidades=100)",
-  "espera": 650
- },
- {
-  "cena": "tools",
-  "tipo": "tool",
-  "texto": "descobrir_canais(teto_unidades=100, projeto='culinaria', consulta='doces e sobremesas receita')",
-  "espera": 650
- },
- {
-  "cena": "tools",
-  "tipo": "dim",
-  "texto": "✗ descobrir_canais: {'type': 'mcp_tool_error', 'message': 'MCP tool \\'descobrir_canais\\' reported tool error for function call: {\"name\":\"descobrir_canais\",\"args",
-  "espera": 500
- },
- {
-  "cena": "tools",
-  "tipo": "dim",
-  "texto": "✗ descobrir_canais: {'type': 'mcp_tool_error', 'message': 'MCP tool \\'descobrir_canais\\' reported tool error for function call: {\"name\":\"descobrir_canais\",\"args",
-  "espera": 500
- },
- {
-  "cena": "tools",
-  "tipo": "dim",
-  "texto": "✗ descobrir_canais: {'type': 'mcp_tool_error', 'message': 'MCP tool \\'descobrir_canais\\' reported tool error for function call: {\"name\":\"descobrir_canais\",\"args",
-  "espera": 500
+  "texto": "Você é o agente do Stars (servidor MCP stars). Objetivo: um modelo de likes para o nicho de culinária. O projeto 'culinaria' já existe (setores receitas, alvo likes, modo automatico). Comece por proximo_passo(projeto='culinaria') …"
  },
  {
   "cena": "tools",
@@ -73,7 +13,204 @@
  {
   "cena": "tools",
   "tipo": "ok",
-  "texto": "proximo_passo → acao='descobrir_canais', motivo='o projeto não tem canais'",
+  "texto": "proximo_passo → acao='calcular_texto', motivo='505 vídeos sem embedding de texto'",
   "espera": 550
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "calcular_texto(projeto='culinaria')",
+  "espera": 650
+ },
+ {
+  "cena": "tools",
+  "tipo": "ok",
+  "texto": "calcular_texto → job_id='b19c78b749ad', status='rodando'",
+  "espera": 550
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "status(job_id='b19c78b749ad') ×6",
+  "espera": 900
+ },
+ {
+  "cena": "tools",
+  "tipo": "ok",
+  "texto": "status → job_id='b19c78b749ad', status='rodando'",
+  "espera": 550
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "proximo_passo(projeto='culinaria') ×2",
+  "espera": 900
+ },
+ {
+  "cena": "tools",
+  "tipo": "ok",
+  "texto": "proximo_passo → acao='calcular_texto', motivo='505 vídeos sem embedding de texto'",
+  "espera": 550
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "runs(projeto='culinaria')",
+  "espera": 650
+ },
+ {
+  "cena": "tools",
+  "tipo": "ok",
+  "texto": "runs → {\"itens\": [{\"id\": \"cdade30ce01e4e78becf28c1e861c4b1\", \"operacao\": \"criar_projeto\", \"inicio\": \"2026-10-23T00:09:29.574537",
+  "espera": 550
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "obter_projeto(projeto='culinaria')",
+  "espera": 650
+ },
+ {
+  "cena": "tools",
+  "tipo": "ok",
+  "texto": "obter_projeto → nome='culinaria'",
+  "espera": 550
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "status(job_id='b19c78b749ad')",
+  "espera": 900
+ },
+ {
+  "cena": "tools",
+  "tipo": "ok",
+  "texto": "status → job_id='b19c78b749ad', status='ok'",
+  "espera": 550
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "proximo_passo(projeto='culinaria')",
+  "espera": 900
+ },
+ {
+  "cena": "tools",
+  "tipo": "ok",
+  "texto": "proximo_passo → acao='calcular_titulos', motivo='505 vídeos da base sem perguntas de título (local)'",
+  "espera": 550
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "calcular_titulos(projeto='culinaria')",
+  "espera": 650
+ },
+ {
+  "cena": "tools",
+  "tipo": "ok",
+  "texto": "calcular_titulos → job_id='f9021bbda947', status='rodando'",
+  "espera": 550
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "status(job_id='f9021bbda947') ×14",
+  "espera": 900
+ },
+ {
+  "cena": "tools",
+  "tipo": "ok",
+  "texto": "status → job_id='f9021bbda947', status='rodando'",
+  "espera": 550
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "proximo_passo(projeto='culinaria') ×13",
+  "espera": 900
+ },
+ {
+  "cena": "ui",
+  "tipo": "ok",
+  "texto": "proximo_passo → acao='otimizar', motivo='nenhum modelo ativo para likes'",
+  "espera": 550
+ },
+ {
+  "cena": "ui",
+  "tipo": "tool",
+  "texto": "otimizar(alvo='likes', projeto='culinaria')",
+  "espera": 650
+ },
+ {
+  "cena": "ui",
+  "tipo": "ok",
+  "texto": "otimizar → job_id='00aeea3c10a8', status='rodando'",
+  "espera": 550
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "status(job_id='00aeea3c10a8')",
+  "espera": 650
+ },
+ {
+  "cena": "tools",
+  "tipo": "ok",
+  "texto": "status → status='ok', nenhum modelo: receita com poucos dados (41 treino, 11 teste): processe mais ganchos, calcule os atributos ou o texto",
+  "espera": 550
+ },
+ {
+  "cena": "ui",
+  "tipo": "tool",
+  "texto": "diagnostico(alvo='likes', projeto='culinaria')",
+  "espera": 650
+ },
+ {
+  "cena": "ui",
+  "tipo": "ok",
+  "texto": "diagnostico → pistas: setor_ruidoso; canais_rasos; ganchos_insuficientes; sem_reobservacao",
+  "espera": 550
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "avaliar(projeto='culinaria', alvo='likes')",
+  "espera": 650
+ },
+ {
+  "cena": "tools",
+  "tipo": "dim",
+  "texto": "✗ avaliar: Error executing tool avaliar: Nenhum treino para o alvo \\'likes\\'. Rode treinar primeiro.",
+  "espera": 500
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "treinar(projeto='culinaria', alvo='likes')",
+  "espera": 650
+ },
+ {
+  "cena": "tools",
+  "tipo": "ok",
+  "texto": "treinar → job_id='74daa03d8cca', status='rodando'",
+  "espera": 550
+ },
+ {
+  "cena": "tools",
+  "tipo": "tool",
+  "texto": "status(job_id='74daa03d8cca')",
+  "espera": 650
+ },
+ {
+  "cena": "tools",
+  "tipo": "ok",
+  "texto": "status → job_id='74daa03d8cca', status='ok'",
+  "espera": 550
+ },
+ {
+  "cena": "final",
+  "tipo": "resposta",
+  "texto": "- **Modelo (Metadados):** MAE de 1,06 (vs 0,82 do baseline) na previsão de likes.\n- **Acerto de Pares (A vs B):** 52,85% para metadados (vs 50,00% do baseline).\n- **Diagnóstico e Pistas:** \n  - Setor ruidoso (desvio de 1,013) com teto mais baixo.\n  - Canais rasos detectados (precisam de mais vídeos ou exclusão).\n  - 0 ganchos processados (sugerido `processar_ganchos(leve=True)`) e nenhuma reobservação recente (`observar_recentes`)."
  }
 ]
