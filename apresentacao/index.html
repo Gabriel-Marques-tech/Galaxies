@@ -303,6 +303,15 @@ body { -webkit-font-smoothing: antialiased; }
 .pergunta-agente .opcoes span { border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: .7vh 1.2vw; font: 500 clamp(13px, 1.1vw, 16px) var(--body); color: #e3e3e3; }
 .pergunta-agente .opcoes span.prim { background: var(--grad); border-color: transparent; color: #fff; }
 
+
+/* ---------------------------------------------------------------- o que mais: o que não coube */
+.mais { width: min(1560px, 94vw); display: flex; flex-direction: column; align-items: center; gap: 3.5vh; }
+.mais .grade { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2vw; width: 100%; }
+.mais .item { border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 2.4vh 1.4vw; background: rgba(255,255,255,.03); text-align: left; display: flex; flex-direction: column; gap: 1vh; }
+.mais .item .ms { font-size: clamp(22px, 2vw, 30px); background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.mais .item .t { font: 500 clamp(17px, 1.5vw, 24px)/1.15 var(--display); letter-spacing: -.01em; }
+.mais .item .d { font: 400 clamp(13px, 1.05vw, 16px)/1.4 var(--body); color: var(--sub); }
+
 /* progresso e ajuda */
 .progresso { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--grad); width: 0; transition: width .5s var(--ease); z-index: 5; }
 .ajuda { position: fixed; right: 16px; bottom: 12px; font: 400 12px var(--body); color: rgba(255,255,255,.35); z-index: 5; }
@@ -495,6 +504,23 @@ body { -webkit-font-smoothing: antialiased; }
     </tbody>
   </table>
   <div class="p" data-in style="--i:2">Erro típico de 2,4× para 1,9×. De dois vídeos do mesmo canal, aponta o melhor em ~58% (acaso: 50%). Validação separada do teste; teste usado uma vez.</div>
+</section>
+
+<!-- 9b · o que mais -->
+<section class="slide">
+  <div class="mais">
+    <div class="kicker" data-in style="--i:0">o que mais ele faz, e não coube nos 10 minutos</div>
+    <div class="grade">
+      <div class="item" data-in style="--i:1"><span class="ms">compare_arrows</span><div class="t">Compara dois vídeos</div><div class="d">A ou B antes de publicar, com as faixas de cada um e o que decide.</div></div>
+      <div class="item" data-in style="--i:2"><span class="ms">monitoring</span><div class="t">Previsto × real</div><div class="d">Publicou? Cola o link. Ele acompanha e mostra se caiu na faixa prometida.</div></div>
+      <div class="item" data-in style="--i:3"><span class="ms">show_chart</span><div class="t">Curva de crescimento</div><div class="d">Reobserva os vídeos todo dia e aprende quando likes estabilizam (~10 dias).</div></div>
+      <div class="item" data-in style="--i:4"><span class="ms">fact_check</span><div class="t">Revisão de atributos</div><div class="d">Dois extratores leram o gancho e discordam? O humano desempata; vira dado.</div></div>
+      <div class="item" data-in style="--i:5"><span class="ms">troubleshoot</span><div class="t">Triagem de erros</div><div class="d">Os piores erros do modelo, com uma caixa de notas. A nota do humano vira pista para o agente.</div></div>
+      <div class="item" data-in style="--i:6"><span class="ms">hub</span><div class="t">Gancho sem cota</div><div class="d">Frames + SigLIP + vizinhos: 474 ganchos lidos pelo LLM ensinaram a rotular mais 2.084, de graça.</div></div>
+      <div class="item" data-in style="--i:7"><span class="ms">account_tree</span><div class="t">Trace de tudo</div><div class="d">Cada execução guarda entrada, saída e tempo de cada etapa. Nada acontece sem rastro.</div></div>
+      <div class="item" data-in style="--i:8"><span class="ms">savings</span><div class="t">Custo zero</div><div class="d">YouTube Data API, AI Studio, Workers AI, Whisper e SigLIP locais. 112 mil Shorts por 14 mil unidades de cota (de 10 mil por dia).</div></div>
+    </div>
+  </div>
 </section>
 
 <!-- 10 · diferente em quê -->
