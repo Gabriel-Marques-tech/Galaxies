@@ -23,7 +23,8 @@ INSTRUCOES = """Galaxies: você (o agente) constrói o modelo que prevê a perfo
 YouTube Shorts de um setor. As regras de avaliação são fixas; você escolhe as receitas.
 
 Dados: criar_projeto (pode ser sem canais-semente) → descobrir_canais (100 unidades por
-página; devolve ids) → adicionar_canal para cada id escolhido (já coleta) → coletar (job) → calcular_texto (job) → calcular_titulos (job, local)
+página; devolve ids) → adicionar_canal para cada id escolhido (já coleta) → coletar (job)
+→ calcular_texto (job) → calcular_titulos (job, local)
 → processar_ganchos (job, caro: confirme com o usuário lotes grandes) → calcular_atributos
 (job, LLM lê o gancho). Camadas: metadados, historico, texto e titulo existem para todos os
 vídeos; multimodal e atributos só para os com gancho processado. Para escalar o gancho sem
