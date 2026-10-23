@@ -195,6 +195,22 @@ body { -webkit-font-smoothing: antialiased; }
 .gapp .entrada .enviar.on { opacity: 1; }
 .gapp .aviso { font-size: 12px; color: #9aa0a6; }
 
+
+/* ---------------------------------------------------------------- números espalhados (gancho) */
+.gapp .area.escura .meio, .gapp .area.escura .cab, .gapp.escura .trilho, .gapp .area.escura .rodape { opacity: .18; filter: blur(2px); transition: opacity .9s var(--ease), filter .9s var(--ease); }
+.revelar { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.fig { position: absolute; opacity: 0; transform: translate(-50%, -50%) scale(.6); transition: opacity .7s var(--ease), transform 1s cubic-bezier(.16, 1.2, .3, 1); text-align: left; animation: flutua 7s ease-in-out infinite; animation-play-state: paused; }
+.fig.on { opacity: 1; transform: translate(-50%, -50%) scale(1); animation-play-state: running; }
+.fig .v { font: 500 1em/1 'Google Sans', 'Inter', sans-serif; letter-spacing: -.035em; white-space: nowrap; }
+.fig .l { font: 400 .19em/1.3 'Inter', sans-serif; color: #c4c7c5; margin-top: .14em; max-width: 14em; }
+.fig.g .v { background: linear-gradient(100deg, #4285f4, #9b72cb, #d96570); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.fig.verde .v { color: #5fd39a; }
+.fig.branco .v { color: #f3f4f8; }
+@keyframes flutua { 0%, 100% { margin-top: 0; } 50% { margin-top: -10px; } }
+.fecho-gancho { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(.9); width: min(1100px, 86vw); text-align: center; font: 500 clamp(30px, 4.4vw, 72px)/1.1 'Google Sans', 'Inter', sans-serif; color: #f3f4f8; opacity: 0; transition: opacity .8s var(--ease), transform 1s cubic-bezier(.16, 1.2, .3, 1); z-index: 4; text-shadow: 0 10px 60px rgba(0,0,0,.8); }
+.fecho-gancho.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.revelar.recolhe .fig { opacity: .12; filter: blur(3px); transition: opacity .9s var(--ease), filter .9s var(--ease); }
+
 /* progresso e ajuda */
 .progresso { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--grad); width: 0; transition: width .5s var(--ease); z-index: 5; }
 .ajuda { position: fixed; right: 16px; bottom: 12px; font: 400 12px var(--body); color: rgba(255,255,255,.35); z-index: 5; }
@@ -220,12 +236,6 @@ body { -webkit-font-smoothing: antialiased; }
           <div class="corpo">
             <div class="pensando" id="pensando"><i></i><i></i><i></i></div>
             <div id="ia-texto"></div>
-            <div class="cards" id="cards">
-              <div class="card"><div class="v" data-conta="24.4" data-prefixo="−" data-sufixo="%">−0%</div><div class="l">menos erro que chutar a média do canal · moda e beleza</div></div>
-              <div class="card"><div class="v" data-conta="4" data-sufixo="">0</div><div class="l">setores, mesma régua: moda, saúde, automotivo, fitness</div></div>
-              <div class="card"><div class="v" data-conta="112" data-sufixo=" mil">0</div><div class="l">Shorts coletados, 267 canais, zero reais gastos</div></div>
-              <div class="card"><div class="v c" data-conta="83" data-sufixo="%">0%</div><div class="l">dos vídeos reais caem na faixa prometida com 80% · saúde</div></div>
-            </div>
             <div class="resposta-final" id="resposta-final"></div>
           </div>
         </div>
@@ -235,6 +245,17 @@ body { -webkit-font-smoothing: antialiased; }
         <div class="aviso">O Gemini pode cometer erros. Verifique as informações.</div>
       </div>
     </div>
+
+    <div class="revelar" id="revelar">
+      <div class="fig g" style="left:22%; top:30%; font-size:clamp(70px,9.5vw,170px)"><div class="v" data-conta="24.4" data-prefixo="−" data-sufixo="%">−0%</div><div class="l">menos erro que chutar a média do canal · moda e beleza</div></div>
+      <div class="fig branco" style="left:70%; top:22%; font-size:clamp(56px,7.2vw,130px)"><div class="v" data-conta="23" data-prefixo="−" data-sufixo="%">−0%</div><div class="l">saúde</div></div>
+      <div class="fig branco" style="left:82%; top:52%; font-size:clamp(50px,6.4vw,116px)"><div class="v" data-conta="19.8" data-prefixo="−" data-sufixo="%">−0%</div><div class="l">automotivo</div></div>
+      <div class="fig verde" style="left:28%; top:70%; font-size:clamp(64px,8.4vw,150px)"><div class="v" data-conta="83" data-sufixo="%">0%</div><div class="l">dos vídeos reais caem na faixa prometida com 80%</div></div>
+      <div class="fig branco" style="left:58%; top:76%; font-size:clamp(46px,6vw,108px)"><div class="v" data-conta="112" data-sufixo=" mil">0</div><div class="l">Shorts · 267 canais · R$ 0</div></div>
+      <div class="fig g" style="left:52%; top:48%; font-size:clamp(60px,8vw,140px)"><div class="v" data-conta="4" data-sufixo=" setores">0</div><div class="l">mesma régua</div></div>
+      <div class="fig branco" style="left:14%; top:12%; font-size:clamp(40px,5.4vw,96px)"><div class="v" data-conta="50" data-sufixo=" min">0</div><div class="l">de um nicho a um modelo</div></div>
+    </div>
+    <div class="fecho-gancho" id="fecho-gancho">E nenhum deles foi montado por uma pessoa.</div>
   </div>
 </section>
 
@@ -399,8 +420,9 @@ let chatAtivo = 0
 async function chat() {
   const id = ++chatAtivo
   const eu = document.getElementById('msg-eu'), ia = document.getElementById('msg-ia'), pensando = document.getElementById('pensando')
-  const texto = document.getElementById('entrada-texto'), cards = [...document.querySelectorAll('#cards .card')], final = document.getElementById('resposta-final'), iaTexto = document.getElementById('ia-texto')
-  eu.classList.remove('on'); ia.classList.remove('on'); cards.forEach((c) => c.classList.remove('on')); texto.textContent = ''; final.textContent = ''; iaTexto.textContent = ''; pensando.style.display = 'inline-flex'
+  const texto = document.getElementById('entrada-texto'), figs = [...document.querySelectorAll('#revelar .fig')], final = document.getElementById('resposta-final'), iaTexto = document.getElementById('ia-texto')
+  const revelar = document.getElementById('revelar'), fecho = document.getElementById('fecho-gancho'), area = document.querySelector('#chat .area')
+  eu.classList.remove('on'); ia.classList.remove('on'); figs.forEach((c) => c.classList.remove('on')); revelar.classList.remove('recolhe'); fecho.classList.remove('on'); area.classList.remove('escura'); document.getElementById('chat').classList.remove('escura'); texto.textContent = ''; final.textContent = ''; iaTexto.textContent = ''; pensando.style.display = 'inline-flex'
   document.getElementById('ola').classList.remove('some'); document.getElementById('enviar').classList.remove('on'); document.getElementById('faisca').classList.remove('parada')
   await espera(700); if (id !== chatAtivo) return
   await clicar(document.getElementById('entrada'), { dx: -120 })
@@ -410,10 +432,13 @@ async function chat() {
   document.getElementById('ola').classList.add('some')
   eu.textContent = texto.textContent; texto.textContent = ''; eu.classList.add('on')
   await espera(600); ia.classList.add('on'); await espera(1400); if (id !== chatAtivo) return
-  pensando.style.display = 'none'; document.getElementById('faisca').classList.add('parada'); iaTexto.textContent = 'Pelo que o Stars me devolveu via MCP: quatro setores, mesma régua.'
-  for (const [k, c] of cards.entries()) { await espera(k ? 650 : 400); if (id !== chatAtivo) return; c.classList.add('on'); contarEm(c) }
-  await espera(900); if (id !== chatAtivo) return
-  await digitarEm(final, 'E nenhum deles foi montado por uma pessoa.', 30)
+  pensando.style.display = 'none'; document.getElementById('faisca').classList.add('parada')
+  await digitarEm(iaTexto, 'Pelo que o Stars me devolveu via MCP, esta semana:', 22)
+  await espera(700); if (id !== chatAtivo) return
+  area.classList.add('escura'); document.getElementById('chat').classList.add('escura')
+  for (const [k, c] of figs.entries()) { await espera(k ? 1100 : 500); if (id !== chatAtivo) return; c.classList.add('on'); contarEm(c) }
+  await espera(1600); if (id !== chatAtivo) return
+  revelar.classList.add('recolhe'); await espera(300); fecho.classList.add('on')
 }
 function contarEm(c) {
   const el = c.querySelector('[data-conta]'); const alvo = parseFloat(el.dataset.conta), pre = el.dataset.prefixo || '', suf = el.dataset.sufixo || ''
